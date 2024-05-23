@@ -130,9 +130,11 @@ def main():
 
 
     # Load data thief
-    data = np.loadtxt("data/bad_data_thief/denton_uboone.csv", delimiter=",", skiprows=1)
-    denton_sin_squared = data[:, 0]
-    denton_delta_m_squared = data[:, 1]
+    data1 = np.loadtxt("data/bad_data_thief/denton_uboone.csv", delimiter=",", skiprows=1)
+    denton_sin_squared = data1[:, 0]
+    denton_delta_m_squared = data1[:, 1]
+
+    
 
 
     
