@@ -12,8 +12,8 @@ def main():
 
     N_sm = 5e6
 
-    N_sm_at_baseline1 = 785*0.689*.9 # N_sm / (4 * np.pi * L1 ** 2)
-    N_sm_at_baseline2 = 785*0.689*.9 # N_sm / (4 * np.pi * L2 ** 2)
+    N_sm_at_baseline1 = 3*785*0.689*.9 # N_sm / (4 * np.pi * L1 ** 2)
+    N_sm_at_baseline2 = 3*785*0.689*.9 # N_sm / (4 * np.pi * L2 ** 2)
 
     N_observed1 = N_sm_at_baseline1 
     N_observed2 = N_sm_at_baseline2 
@@ -84,33 +84,33 @@ def main():
     chi2_total_arr_combined_101 = np.zeros((len(flux_norm_param_arr), len(delta_m_squared_arr), len(sin_squared_arr)))
 
 
-    for i, flux_norm_param in enumerate(flux_norm_param_arr):
-        for j, delta_m_squared in enumerate(delta_m_squared_arr):
-            for k, sin_squared_2_theta_14 in enumerate(sin_squared_arr):
+    # for i, flux_norm_param in enumerate(flux_norm_param_arr):
+    #     for j, delta_m_squared in enumerate(delta_m_squared_arr):
+    #         for k, sin_squared_2_theta_14 in enumerate(sin_squared_arr):
                 
-                # Background Free
+    #             # Background Free
 
-                chi_stat1_bkd_free = chi2_stat(pb_glass_b1_bkd_free, toy_model, [E, L1, delta_m_squared, sin_squared_2_theta_14, N_sm_at_baseline1], [flux_norm_param])
-                chi_stat2_bkd_free = chi2_stat(pb_glass_b2_bkd_free, toy_model, [E, L2, delta_m_squared, sin_squared_2_theta_14, N_sm_at_baseline2], [flux_norm_param])
-                chi_sys_bkd_free = chi2_sys([flux_norm_param], pb_glass_b1_bkd_free.get_systematic_error_dict())
+    #             chi_stat1_bkd_free = chi2_stat(pb_glass_b1_bkd_free, toy_model, [E, L1, delta_m_squared, sin_squared_2_theta_14, N_sm_at_baseline1], [flux_norm_param])
+    #             chi_stat2_bkd_free = chi2_stat(pb_glass_b2_bkd_free, toy_model, [E, L2, delta_m_squared, sin_squared_2_theta_14, N_sm_at_baseline2], [flux_norm_param])
+    #             chi_sys_bkd_free = chi2_sys([flux_norm_param], pb_glass_b1_bkd_free.get_systematic_error_dict())
 
-                chi2_total_arr_combined_bkd_free[i, j, k] = chi_stat1_bkd_free + chi_stat2_bkd_free + chi_sys_bkd_free
+    #             chi2_total_arr_combined_bkd_free[i, j, k] = chi_stat1_bkd_free + chi_stat2_bkd_free + chi_sys_bkd_free
 
-                # 1:1 Background Ratio
+    #             # 1:1 Background Ratio
 
-                chi_stat1_11 = chi2_stat(pb_glass_b1_11, toy_model, [E, L1, delta_m_squared, sin_squared_2_theta_14, N_sm_at_baseline1], [flux_norm_param])
-                chi_stat2_11 = chi2_stat(pb_glass_b2_11, toy_model, [E, L2, delta_m_squared, sin_squared_2_theta_14, N_sm_at_baseline2], [flux_norm_param])
-                chi_sys_11 = chi2_sys([flux_norm_param], pb_glass_b1_11.get_systematic_error_dict())
+    #             chi_stat1_11 = chi2_stat(pb_glass_b1_11, toy_model, [E, L1, delta_m_squared, sin_squared_2_theta_14, N_sm_at_baseline1], [flux_norm_param])
+    #             chi_stat2_11 = chi2_stat(pb_glass_b2_11, toy_model, [E, L2, delta_m_squared, sin_squared_2_theta_14, N_sm_at_baseline2], [flux_norm_param])
+    #             chi_sys_11 = chi2_sys([flux_norm_param], pb_glass_b1_11.get_systematic_error_dict())
 
-                chi2_total_arr_combined_11[i, j, k] = chi_stat1_11 + chi_stat2_11 + chi_sys_11
+    #             chi2_total_arr_combined_11[i, j, k] = chi_stat1_11 + chi_stat2_11 + chi_sys_11
 
-                # 10:1 Background Ratio
+    #             # 10:1 Background Ratio
 
-                chi_stat1_101 = chi2_stat(pb_glass_b1_101, toy_model, [E, L1, delta_m_squared, sin_squared_2_theta_14, N_sm_at_baseline1], [flux_norm_param])
-                chi_stat2_101 = chi2_stat(pb_glass_b2_101, toy_model, [E, L2, delta_m_squared, sin_squared_2_theta_14, N_sm_at_baseline2], [flux_norm_param])
-                chi_sys_101 = chi2_sys([flux_norm_param], pb_glass_b1_101.get_systematic_error_dict())
+    #             chi_stat1_101 = chi2_stat(pb_glass_b1_101, toy_model, [E, L1, delta_m_squared, sin_squared_2_theta_14, N_sm_at_baseline1], [flux_norm_param])
+    #             chi_stat2_101 = chi2_stat(pb_glass_b2_101, toy_model, [E, L2, delta_m_squared, sin_squared_2_theta_14, N_sm_at_baseline2], [flux_norm_param])
+    #             chi_sys_101 = chi2_sys([flux_norm_param], pb_glass_b1_101.get_systematic_error_dict())
 
-                chi2_total_arr_combined_101[i, j, k] = chi_stat1_101 + chi_stat2_101 + chi_sys_101
+    #             chi2_total_arr_combined_101[i, j, k] = chi_stat1_101 + chi_stat2_101 + chi_sys_101
 
             
 
@@ -128,6 +128,14 @@ def main():
     optimal_flux_index_combined_101 = min_indexes_combined_101[0][0]
     chi2_2d_projection_101 = chi2_total_arr_combined_101[optimal_flux_index_combined_101]
 
+
+    # Load data thief
+    data = np.loadtxt("data/bad_data_thief/denton_uboone.csv", delimiter=",", skiprows=1)
+    denton_sin_squared = data[:, 0]
+    denton_delta_m_squared = data[:, 1]
+
+
+    
     # Plot the chi2_total contour
     plt.style.use("science")
     plt.figure(figsize=(12, 10))
@@ -136,6 +144,8 @@ def main():
     plt.contourf(sin_squared_arr, delta_m_squared_arr, chi2_2d_projection_bkd_free, levels=[7.7,7.9], cmap="plasma")
     plt.contourf(sin_squared_arr, delta_m_squared_arr, chi2_2d_projection_11, levels=[7.7,7.9], cmap="viridis")
     plt.contourf(sin_squared_arr, delta_m_squared_arr, chi2_2d_projection_101, levels=[7.7,7.9], cmap="cividis")
+
+    plt.plot(denton_sin_squared, denton_delta_m_squared, "orange", label=r"Denton 2022, 2$\sigma$")
 
     # at coordinates 0.01, 0.1 make an annotation that will act as a legend
     # because contourf does not have labels
@@ -164,6 +174,9 @@ def main():
     plt.xscale("log")
     plt.xlabel(r"$\sin^2(2\theta_{14})$")
     plt.ylabel(r"$\Delta m^2_{14}$")
+
+    plt.xlim(0.01, 0.5)
+    plt.ylim(0.1, 10)
 
     plt.legend(fontsize=15)
 
