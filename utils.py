@@ -10,9 +10,12 @@ def toy_model(E, L, delta_m14_squared, sin_squared_2_theta_14, SM_prediction):
 
 def chi2_stat(experiment, toy_model, prediction_parameters, sytematic_error_arr):
     
-    background = 0
-
+    # get the set observed value
     observed = experiment.get_n_observed()
+    
+    # set steady state background to a ratio of observed for now
+    background = experiment.get_steady_state_background()*observed
+
     predicted = toy_model(*prediction_parameters)
 
     num = (observed - predicted*(1 + np.sum(sytematic_error_arr)))**2
