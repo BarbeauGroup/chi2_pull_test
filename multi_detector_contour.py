@@ -1,5 +1,5 @@
 import numpy as np
-from utils import P_nue_nue, chi2_stat, chi2_sys, chi2_total, toy_model
+from utils.utils import P_nue_nue, chi2_stat, chi2_sys, chi2_total, toy_model
 from experiment import Experiment
 import matplotlib.pyplot as plt
 import scienceplots
@@ -150,9 +150,9 @@ def main():
     plt.figure(figsize=(12, 10))
 
 
-    plt.contourf(sin_squared_arr, delta_m_squared_arr, chi2_2d_projection_bkd_free, levels=[7.7,7.9], cmap="plasma")
-    plt.contourf(sin_squared_arr, delta_m_squared_arr, chi2_2d_projection_11, levels=[7.7,7.9], cmap="viridis")
-    plt.contourf(sin_squared_arr, delta_m_squared_arr, chi2_2d_projection_101, levels=[7.7,7.9], cmap="cividis")
+    plt.contourf(sin_squared_arr, delta_m_squared_arr, chi2_2d_projection_bkd_free, levels=[5.9,6.1], cmap="plasma")
+    plt.contourf(sin_squared_arr, delta_m_squared_arr, chi2_2d_projection_11, levels=[5.9,6.1], cmap="viridis")
+    plt.contourf(sin_squared_arr, delta_m_squared_arr, chi2_2d_projection_101, levels=[5.9,6.1], cmap="cividis")
 
     plt.plot(denton_sin_squared, denton_delta_m_squared, "orange", label=r"Denton 2022, 2$\sigma$")
     plt.plot(0.35, 1.25, "darkorange", marker="o", markersize=10, label="Denton uboone best fit")

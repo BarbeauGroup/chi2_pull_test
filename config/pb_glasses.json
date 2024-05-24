@@ -1,0 +1,15 @@
+{
+
+    "Detectors": {
+        "pb_glass_1":{
+            "Distance": 20,
+            "Mass": 1,
+            "N observed": 486.7785,
+            "Steady state background": 5,
+            "Number of background windows": 1,
+            "Systematic uncertainties": {
+                "Flux": 0.1
+            }
+        }
+    }
+}
