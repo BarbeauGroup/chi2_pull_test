@@ -84,33 +84,33 @@ def main():
     chi2_total_arr_combined_101 = np.zeros((len(flux_norm_param_arr), len(delta_m_squared_arr), len(sin_squared_arr)))
 
 
-    # for i, flux_norm_param in enumerate(flux_norm_param_arr):
-    #     for j, delta_m_squared in enumerate(delta_m_squared_arr):
-    #         for k, sin_squared_2_theta_14 in enumerate(sin_squared_arr):
+    for i, flux_norm_param in enumerate(flux_norm_param_arr):
+        for j, delta_m_squared in enumerate(delta_m_squared_arr):
+            for k, sin_squared_2_theta_14 in enumerate(sin_squared_arr):
                 
-    #             # Background Free
+                # Background Free
 
-    #             chi_stat1_bkd_free = chi2_stat(pb_glass_b1_bkd_free, toy_model, [E, L1, delta_m_squared, sin_squared_2_theta_14, N_sm_at_baseline1], [flux_norm_param])
-    #             chi_stat2_bkd_free = chi2_stat(pb_glass_b2_bkd_free, toy_model, [E, L2, delta_m_squared, sin_squared_2_theta_14, N_sm_at_baseline2], [flux_norm_param])
-    #             chi_sys_bkd_free = chi2_sys([flux_norm_param], pb_glass_b1_bkd_free.get_systematic_error_dict())
+                chi_stat1_bkd_free = chi2_stat(pb_glass_b1_bkd_free, toy_model, [E, L1, delta_m_squared, sin_squared_2_theta_14, N_sm_at_baseline1], [flux_norm_param])
+                chi_stat2_bkd_free = chi2_stat(pb_glass_b2_bkd_free, toy_model, [E, L2, delta_m_squared, sin_squared_2_theta_14, N_sm_at_baseline2], [flux_norm_param])
+                chi_sys_bkd_free = chi2_sys([flux_norm_param], pb_glass_b1_bkd_free.get_systematic_error_dict())
 
-    #             chi2_total_arr_combined_bkd_free[i, j, k] = chi_stat1_bkd_free + chi_stat2_bkd_free + chi_sys_bkd_free
+                chi2_total_arr_combined_bkd_free[i, j, k] = chi_stat1_bkd_free + chi_stat2_bkd_free + chi_sys_bkd_free
 
-    #             # 1:1 Background Ratio
+                # 1:1 Background Ratio
 
-    #             chi_stat1_11 = chi2_stat(pb_glass_b1_11, toy_model, [E, L1, delta_m_squared, sin_squared_2_theta_14, N_sm_at_baseline1], [flux_norm_param])
-    #             chi_stat2_11 = chi2_stat(pb_glass_b2_11, toy_model, [E, L2, delta_m_squared, sin_squared_2_theta_14, N_sm_at_baseline2], [flux_norm_param])
-    #             chi_sys_11 = chi2_sys([flux_norm_param], pb_glass_b1_11.get_systematic_error_dict())
+                chi_stat1_11 = chi2_stat(pb_glass_b1_11, toy_model, [E, L1, delta_m_squared, sin_squared_2_theta_14, N_sm_at_baseline1], [flux_norm_param])
+                chi_stat2_11 = chi2_stat(pb_glass_b2_11, toy_model, [E, L2, delta_m_squared, sin_squared_2_theta_14, N_sm_at_baseline2], [flux_norm_param])
+                chi_sys_11 = chi2_sys([flux_norm_param], pb_glass_b1_11.get_systematic_error_dict())
 
-    #             chi2_total_arr_combined_11[i, j, k] = chi_stat1_11 + chi_stat2_11 + chi_sys_11
+                chi2_total_arr_combined_11[i, j, k] = chi_stat1_11 + chi_stat2_11 + chi_sys_11
 
-    #             # 10:1 Background Ratio
+                # 10:1 Background Ratio
 
-    #             chi_stat1_101 = chi2_stat(pb_glass_b1_101, toy_model, [E, L1, delta_m_squared, sin_squared_2_theta_14, N_sm_at_baseline1], [flux_norm_param])
-    #             chi_stat2_101 = chi2_stat(pb_glass_b2_101, toy_model, [E, L2, delta_m_squared, sin_squared_2_theta_14, N_sm_at_baseline2], [flux_norm_param])
-    #             chi_sys_101 = chi2_sys([flux_norm_param], pb_glass_b1_101.get_systematic_error_dict())
+                chi_stat1_101 = chi2_stat(pb_glass_b1_101, toy_model, [E, L1, delta_m_squared, sin_squared_2_theta_14, N_sm_at_baseline1], [flux_norm_param])
+                chi_stat2_101 = chi2_stat(pb_glass_b2_101, toy_model, [E, L2, delta_m_squared, sin_squared_2_theta_14, N_sm_at_baseline2], [flux_norm_param])
+                chi_sys_101 = chi2_sys([flux_norm_param], pb_glass_b1_101.get_systematic_error_dict())
 
-    #             chi2_total_arr_combined_101[i, j, k] = chi_stat1_101 + chi_stat2_101 + chi_sys_101
+                chi2_total_arr_combined_101[i, j, k] = chi_stat1_101 + chi_stat2_101 + chi_sys_101
 
             
 
@@ -134,6 +134,13 @@ def main():
     denton_sin_squared = data1[:, 0]
     denton_delta_m_squared = data1[:, 1]
 
+    data2 = np.loadtxt("data/bad_data_thief/best_sage_gallex_pt1.csv", delimiter=",", skiprows=1)
+    sage_sin_squared_pt1 = data2[:, 0]
+    sage_delta_m_squared_pt1 = data2[:, 1]
+
+    data3 = np.loadtxt("data/bad_data_thief/best_sage_gallex_pt2.csv", delimiter=",", skiprows=1)
+    sage_sin_squared_pt2 = data3[:, 0]
+    sage_delta_m_squared_pt2 = data3[:, 1]
     
 
 
@@ -148,6 +155,11 @@ def main():
     plt.contourf(sin_squared_arr, delta_m_squared_arr, chi2_2d_projection_101, levels=[7.7,7.9], cmap="cividis")
 
     plt.plot(denton_sin_squared, denton_delta_m_squared, "orange", label=r"Denton 2022, 2$\sigma$")
+    plt.plot(0.35, 1.25, "darkorange", marker="o", markersize=10, label="Denton uboone best fit")
+
+    plt.plot(sage_sin_squared_pt1, sage_delta_m_squared_pt1, "purple", label=r"BEST 2022, 2$\sigma$")
+    plt.plot(sage_sin_squared_pt2, sage_delta_m_squared_pt2, "purple")
+    plt.plot(0.34, 1.25, "black", marker="o", markersize=10, label="BEST best fit")
 
     # at coordinates 0.01, 0.1 make an annotation that will act as a legend
     # because contourf does not have labels
@@ -156,21 +168,8 @@ def main():
     plt.plot(0, 0, "green", markersize=10, label="1:1 Background Ratio")
     plt.plot(0, 0, "gray", markersize=10, label="10:1 Background Ratio")
 
-    # make a box for the "BEST" best fit parameters
-    best_sin = 0.34
-    best_sin_low = 0.34 - 0.09
-    best_sin_high = 0.34 + 0.14
 
-    best_m = 1.25
-    best_m_low = 1.25 - 0.25
-    best_m_high = 1.25 + 9.75
 
-    plt.plot([best_sin_low, best_sin_high], [best_m_low, best_m_low], "black")
-    plt.plot([best_sin_low, best_sin_high], [best_m_high, best_m_high], "black")
-    plt.plot([best_sin_low, best_sin_low], [best_m_low, best_m_high], "black")
-    plt.plot([best_sin_high, best_sin_high], [best_m_low, best_m_high], "black")
-
-    plt.plot(best_sin, best_m, "black", marker="o", markersize=10, label="BEST")
 
     plt.yscale("log")
     plt.xscale("log")
