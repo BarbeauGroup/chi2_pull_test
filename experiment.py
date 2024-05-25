@@ -8,6 +8,9 @@ class Experiment:
     def set_distance(self, distance):
         self.distance = distance
 
+    def set_mass(self, mass):
+        self.mass = mass
+
     def set_n_observed(self, n_observed):
         self.n_observed = n_observed
     
@@ -19,6 +22,13 @@ class Experiment:
 
     def set_systematic_error_dict(self, systematic_error_dict):
         self.systematic_error_dict = systematic_error_dict
+
+    def set_flux_transfer_matrix(self, flux_transfer_matrix):
+        self.flux_transfer_matrix = flux_transfer_matrix
+
+    def set_exposure(self, exposure):
+        self.exposure = exposure
+
 
     def get_distance(self):
         return self.distance
@@ -37,3 +47,9 @@ class Experiment:
     
     def get_systematic_error_dict(self):
         return self.systematic_error_dict
+    
+    def get_flux_transfer_matrix(self):
+        return self.flux_transfer_matrix
+    
+    def get_mass(self):
+        return self.mass

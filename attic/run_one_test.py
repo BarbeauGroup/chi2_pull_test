@@ -1,5 +1,5 @@
 import numpy as np
-from utils import P_nue_nue, chi2_stat, chi2_sys, chi2_total, toy_model
+from utils.utils import P_nue_nue, chi2_stat, chi2_sys, chi2_total, toy_model
 from experiment import Experiment
 import matplotlib.pyplot as plt
 

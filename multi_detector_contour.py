@@ -74,7 +74,7 @@ def main():
 
 
 
-    flux_norm_param_arr = np.linspace(-0.1, 0.1, 20)
+    flux_norm_param_arr = np.linspace(-0.1, 0.1, 10)
     delta_m_squared_arr = np.linspace(0.1, 10, 300)
     sin_squared_arr = np.linspace(0.01, 0.5, 300)
 
@@ -147,39 +147,40 @@ def main():
     
     # Plot the chi2_total contour
     plt.style.use("science")
-    plt.figure(figsize=(12, 10))
+    plt.figure(figsize=(8, 6))
 
 
-    plt.contourf(sin_squared_arr, delta_m_squared_arr, chi2_2d_projection_bkd_free, levels=[5.9,6.1], cmap="plasma")
-    plt.contourf(sin_squared_arr, delta_m_squared_arr, chi2_2d_projection_11, levels=[5.9,6.1], cmap="viridis")
+    # plt.contourf(sin_squared_arr, delta_m_squared_arr, chi2_2d_projection_bkd_free, levels=[5.9,6.1], cmap="plasma")
+    # plt.contourf(sin_squared_arr, delta_m_squared_arr, chi2_2d_projection_11, levels=[5.9,6.1], cmap="viridis")
     plt.contourf(sin_squared_arr, delta_m_squared_arr, chi2_2d_projection_101, levels=[5.9,6.1], cmap="cividis")
 
-    plt.plot(denton_sin_squared, denton_delta_m_squared, "orange", label=r"Denton 2022, 2$\sigma$")
+    plt.fill(denton_sin_squared, denton_delta_m_squared, "orange", alpha=0.2, label=r"Denton 2022, 2$\sigma$")
     plt.plot(0.35, 1.25, "darkorange", marker="o", markersize=10, label="Denton uboone best fit")
 
-    plt.plot(sage_sin_squared_pt1, sage_delta_m_squared_pt1, "purple", label=r"BEST 2022, 2$\sigma$")
-    plt.plot(sage_sin_squared_pt2, sage_delta_m_squared_pt2, "purple")
+    plt.fill(sage_sin_squared_pt1, sage_delta_m_squared_pt1, "purple", alpha=0.2, label=r"BEST 2022, 2$\sigma$")
+    plt.fill(sage_sin_squared_pt2, sage_delta_m_squared_pt2, "purple", alpha=0.2)
     plt.plot(0.34, 1.25, "black", marker="o", markersize=10, label="BEST best fit")
 
     # at coordinates 0.01, 0.1 make an annotation that will act as a legend
     # because contourf does not have labels
     # so plot a small horizontal red line for bkd free, green for 1:1, and blue for 10:1
-    plt.plot(0, 0, "red", markersize=10, label="Background Free")
-    plt.plot(0, 0, "green", markersize=10, label="1:1 Background Ratio")
-    plt.plot(0, 0, "gray", markersize=10, label="10:1 Background Ratio")
+    # plt.plot(0, 0, "red", markersize=10, label="Background Free")
+    # plt.plot(0, 0, "green", markersize=10, label="1:1 Background Ratio")
+    plt.plot(0, 0, "gray", markersize=10, label="1:10 S/B Ratio")
 
 
 
 
     plt.yscale("log")
     plt.xscale("log")
-    plt.xlabel(r"$\sin^2(2\theta_{14})$")
-    plt.ylabel(r"$\Delta m^2_{14}$")
+    plt.xlabel(r"$\sin^2(2\theta_{14})$", fontsize=18)
+    plt.ylabel(r"$\Delta m^2_{14}$", fontsize=18)
 
+    plt.title("20t Pb Glass at Two Baselines (Still Buggy)", fontsize=15)
     plt.xlim(0.01, 0.5)
     plt.ylim(0.1, 10)
 
-    plt.legend(fontsize=15)
+    plt.legend(fontsize=18)
 
 
     # plt.legend()

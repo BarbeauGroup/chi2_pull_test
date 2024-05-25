@@ -3,9 +3,9 @@
     "Detectors": {
         "pb_glass_1":{
             "Distance": 20,
-            "Exposure": 1,
+            "Exposure": 3,
             "Mass": 765,
-            "N observed": 1639.52,
+            "N observed": 4917,
             "Steady state background": 1,
             "Number of background windows": 1,
 
@@ -17,9 +17,9 @@
 
         "pb_glass_2":{
             "Distance": 70,
-            "Exposure": 1,
+            "Exposure": 3,
             "Mass": 9435,
-            "N observed": 1650.66,
+            "N observed": 4917,
             "Steady state background": 1,
             "Number of background windows": 1,
 

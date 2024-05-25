@@ -4,9 +4,9 @@
         "pb_glass_1":{
             "Distance": 20,
             "Exposure": 1,
-            "Mass": 765,
-            "N observed": 1639.52,
-            "Steady state background": 1,
+            "Mass": 10200,
+            "N observed": 21860.18,
+            "Steady state background": 10,
             "Number of background windows": 1,
 
             "Flux Transfer Matrix": "data/flux_transfer_matrices/pb_CC_normed.npy",
@@ -16,11 +16,11 @@
         },
 
         "pb_glass_2":{
-            "Distance": 70,
+            "Distance": 30,
             "Exposure": 1,
-            "Mass": 9435,
-            "N observed": 1650.66,
-            "Steady state background": 1,
+            "Mass": 10200,
+            "N observed": 9715.63,
+            "Steady state background": 10,
             "Number of background windows": 1,
 
             "Flux Transfer Matrix": "data/flux_transfer_matrices/pb_CC_normed.npy",

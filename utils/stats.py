@@ -1,27 +1,27 @@
 import numpy as np
-from predictions import P_nue_nue, toy_model, flux_dependent_prediction
 
 
-def chi2_stat(experiment, toy_model, prediction_parameters, sytematic_error_arr):
+def chi2_stat(experiment, model, model_parameters, systematic_error_arr):
     
     # get the set observed value
     observed = experiment.get_n_observed()
     
     # set steady state background to a ratio of observed for now
     background = experiment.get_steady_state_background()*observed
+    predicted = model(*model_parameters)
 
-    predicted = toy_model(*prediction_parameters)
-
-    num = (observed - predicted*(1 + np.sum(sytematic_error_arr)))**2
-    denom = np.sqrt(observed + 2*background)
+    num = (observed - predicted*(1 + np.sum(systematic_error_arr)))**2
+    denom = np.power(np.sqrt(observed + 1*background),2)
 
     return num/denom
 
 
-def chi2_sys(systematic_error_arr, systematic_error_dict):
+def chi2_sys(experiment, systematic_error_arr):
+
+
+    systematic_error_dict = experiment.get_systematic_error_dict()
 
     chi2 = 0
-
     i = 0
     for key in systematic_error_dict:
         
