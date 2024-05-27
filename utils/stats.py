@@ -16,6 +16,35 @@ def chi2_stat(experiment, model, model_parameters, systematic_error_arr):
     return num/denom
 
 
+def chi2_stat_ratio(experiment1, experiment2, model, model_parameters):
+
+    # get the set observed value
+    s1 = experiment1.get_n_observed()
+    s2 = experiment2.get_n_observed()
+
+    # set steady state background to a ratio of observed for now
+    b1 = experiment1.get_steady_state_background()
+    b2 = experiment2.get_steady_state_background()
+
+    p1 = model(experiment1, *model_parameters)
+    p2 = model(experiment2, *model_parameters)
+
+    # ratio
+    ratio_observed = s1/s2
+    ratio_predicted = p1/p2
+
+    sigma_stat = np.sqrt( (s1 + s2)/(s2 + b2)**2 + (s1 + b1)*(s2 + b2)/(s2 + b2)**4)
+
+    print("Ratio observed: ", ratio_observed)
+    print("Ratio predicted: ", ratio_predicted)
+    print("Sigma stat: ", sigma_stat)
+
+    num = (ratio_observed - ratio_predicted)**2
+    denom = sigma_stat**2
+
+    return num/denom
+
+
 def chi2_sys(experiment, systematic_error_arr):
 
 

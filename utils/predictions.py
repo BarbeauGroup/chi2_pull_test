@@ -36,6 +36,8 @@ def truth_level_prediction(experiment, delta_m14_squared, sin_squared_2_theta_14
     # Integrate the differential xs
     flux_avgd_cross_section = np.sum(em_spectrum)*(energy_arr[1] - energy_arr[0])
 
+    flux_avgd_cross_section *= 1.0 # g_A fudge factor
+
     # 2.906×10^24 atoms of lead in 1 kg
     mass = experiment.get_mass()
     n_pb = 2.906e24 * mass

@@ -5,8 +5,8 @@
             "Distance": 20,
             "Exposure": 1,
             "Mass": 10200,
-            "N observed": 21860.18,
-            "Steady state background": 0,
+            "N observed": 12212,
+            "Steady state background": 10,
             "Number of background windows": 1,
 
             "Flux Transfer Matrix": "data/flux_transfer_matrices/pb_CC_normed.npy",
@@ -19,8 +19,8 @@
             "Distance": 30,
             "Exposure": 1,
             "Mass": 10200,
-            "N observed": 9715.63,
-            "Steady state background": 0,
+            "N observed": 6025,
+            "Steady state background": 10,
             "Number of background windows": 1,
 
             "Flux Transfer Matrix": "data/flux_transfer_matrices/pb_CC_normed.npy",

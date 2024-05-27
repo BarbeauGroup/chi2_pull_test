@@ -14,7 +14,7 @@ import json
 
 def main():
 
-    with open("config/pb_glasses_20m_30m_1y_each.json", "r") as f:
+    with open("config/pb_glasses_fake_sterile.json", "r") as f:
         config = json.load(f)
 
     detector_dict = config["Detectors"]
@@ -36,8 +36,10 @@ def main():
 
     
     # Let's do a verbose call of truth_level_prediction
-    truth_level_prediction(experiments[0], 0, 0, verbose = True)
-    truth_level_prediction(experiments[1], 0, 0, verbose = True)
+    truth_level_prediction(experiments[0], 2.0, 0.5, verbose = True)
+    truth_level_prediction(experiments[1], 2.0, 0.5, verbose = True)
+
+    # return 0
     
 
     print(chi2_stat(experiments[0], 
@@ -88,16 +90,35 @@ def main():
 
         return stat1 + stat2 + sys
     
-    res1 = minimize(f1, [0,0,0], method='nelder-mead', options={'xatol': 1e-6, 'disp': True})
-    res2 = minimize(f2, [0,0,0], method='nelder-mead', options={'xatol': 1e-6, 'disp': True})
-    res3 = minimize(f3, [0,0,0], method='nelder-mead', options={'xatol': 1e-6, 'disp': True})
+    res1 = minimize(f1, [1,.1,0], method='nelder-mead', options={'xatol': 1e-9, 'disp': True, 'maxiter': 1000},
+                                                        bounds=[(0., 5.), (.0, 0.8), (-1, 1)])
+    res2 = minimize(f2, [1,.1,0], method='nelder-mead', options={'xatol': 1e-9, 'disp': True, 'maxiter': 1000},
+                                                        bounds=[(0., 5.), (.0, 0.8), (-1, 1)])
+    res3 = minimize(f3, [1,.1,0], method='nelder-mead', options={'xatol': 1e-9, 'disp': True, 'maxiter': 1000},
+                                                        bounds=[(0., 5.), (.0, 0.8), (-1, 1)])
 
     
+
+    print(res1.x)
+    print("Chi2: ", f1(res1.x))
+    print("\tPredicted: ", truth_level_prediction(experiments[0], res1.x[0], res1.x[1], verbose = True))
+
+    print(res2.x)
+    print("Chi2: ", f2(res2.x))
+    print("\tPredicted: ", truth_level_prediction(experiments[1], res2.x[0], res2.x[1], verbose = True))
+
+    print(res3.x)
+    print("Chi2: ", f3(res3.x))
+    print("\tPredicted 1: ", truth_level_prediction(experiments[0], res3.x[0], res3.x[1], verbose = True))
+    print("\tPredicted 2: ", truth_level_prediction(experiments[1], res3.x[0], res3.x[1], verbose = True))
+
+
+    # return 0
     # Using the optimal parameters for the nuisance parameters,
     # Let's make our chi2 grid over the model parameters
 
-    delta_m14_squared = np.linspace(.01, 10, 300)
-    sin_squared_2_theta_14 = np.linspace(0.01, 1.0, 300)
+    delta_m14_squared = np.linspace(.01, 100, 100)
+    sin_squared_2_theta_14 = np.linspace(0.01, 1.0, 100)
 
     chi2_2d_arr_list = []
 
@@ -172,7 +193,7 @@ def main():
     plt.style.use("science")
     plt.figure(figsize=(8, 6))
 
-    plt.title("90\%CI, 1:10 S/B Ratio, Infinite Bkd Windows, 1 Standard SNS Year Each", fontsize=18)
+    plt.title("90\%CI, 1:10 S/B Ratio, Infinite Bkd Windows, 1yr 20m, 1yr 30m", fontsize=18)
 
     plt.plot(0, 0, "red", markersize=10, label="10,200kg at 20m")
     plt.plot(0, 0, "green", markersize=10, label="10,200kg at 30m")
@@ -187,16 +208,20 @@ def main():
     plt.xscale("log")
     plt.yscale("log")
 
-    plt.contourf(sin_squared_2_theta_14, delta_m14_squared, chi2_2d_arr_list[0], levels = [4.45, 4.75], cmap="inferno")
-    plt.contourf(sin_squared_2_theta_14, delta_m14_squared, chi2_2d_arr_list[1], levels = [4.45, 4.75], cmap="viridis")
-    plt.contourf(sin_squared_2_theta_14, delta_m14_squared, chi2_2d_arr, levels = [4.45, 4.75], cmap="cividis")
+    plt.plot(res1.x[1], res1.x[0], "ro", markersize=10, label="10,200kg at 20m")
+    plt.plot(res2.x[1], res2.x[0], "go", markersize=10, label="10,200kg at 30m")
+    plt.plot(res3.x[1], res3.x[0], "ko", markersize=10, label="Combined")
+
+    # plt.contourf(sin_squared_2_theta_14, delta_m14_squared, chi2_2d_arr_list[0], levels = [0, 6.18], cmap="inferno", alpha=0.5)
+    plt.contourf(sin_squared_2_theta_14, delta_m14_squared, chi2_2d_arr_list[1], levels = [0, 6.18], cmap="viridis", alpha=0.5)
+    plt.contourf(sin_squared_2_theta_14, delta_m14_squared, chi2_2d_arr, levels = [0, 6.18], cmap="cividis", alpha=0.5)
 
 
     plt.xlabel(r"$\sin^2(2\theta_{14})$", fontsize=18)
     plt.ylabel(r"$\Delta m^2_{14}$", fontsize=18)
 
-    plt.xlim(0.01, 1)
-    plt.ylim(0.1, 10)
+    plt.xlim(0.005, 1)
+    plt.ylim(0.01, 100)
 
     plt.legend(fontsize=18)
 
