@@ -1,6 +1,7 @@
 *.png
 *.npy
 data/*.npy
+flux/*.root
 
 .DS_Store
 data/.DS_Store
