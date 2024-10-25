@@ -11,11 +11,16 @@ def sns_nue_spectrum(E):
     f[f < 0] = 0
     return f 
 
-def sns_numu_spectrum(E):
+def sns_numubar_spectrum(E):
 
     m_mu = 105 # MeV
-    
-    return 16. * pow(E, 2) * pow(m_mu,4) * (3*m_mu - 4*E)
+
+    f = 16. * pow(E, 2) * pow(m_mu,4) * (3*m_mu - 4*E)
+
+    f[E > m_mu/2] = 0
+
+    return f
+
 
 def toy_model(E, L, delta_m14_squared, sin_squared_2_theta_14, SM_prediction):
     return SM_prediction * P_nue_nue(E, L, delta_m14_squared, sin_squared_2_theta_14)
