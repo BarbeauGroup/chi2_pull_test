@@ -53,6 +53,14 @@ def rebin_histogram(counts, bin_edges, new_bin_edges):
 
 def main():
 
+    use_root = True
+
+    # define energy array
+    energy_arr = np.arange(1,60,1)
+
+    # define time array 
+    time_arr = np.linspace(0, 20_000, 161)
+
     mass = 14.6 # kg
     A = (133 + 127) / 2
     Da = 1.66e-27 # kg
@@ -63,7 +71,6 @@ def main():
     csi_flux_smearing_matrix = np.load("data/flux_transfer_matrices/csi_flux_smearing_matrix.npy")
     csi_quenching_detector_matrix = np.load("data/flux_transfer_matrices/csi_quenching_detector_matrix.npy")
 
-    energy_arr = np.arange(1,60,1)
 
     # Define SNS Flux Analytically
     sns_nuMu_flux = np.zeros_like(energy_arr)
@@ -71,49 +78,79 @@ def main():
     sns_nuMuBar_flux = sns_numubar_spectrum(energy_arr) / np.sum(sns_numubar_spectrum(energy_arr))
     sns_nuE_flux = sns_nue_spectrum(energy_arr) / np.sum(sns_nue_spectrum(energy_arr))
 
-    # read in SNS flux from root sim
-    rf = uproot.open("flux/nuEnergyAndTime.root")
-    keNuE = rf["keNuE"]
-    keNuE_bin_edges = keNuE.axis().edges()
-    keNuE_values = keNuE.values() 
+    if use_root:
+        # read in SNS flux from root sim
+        rf = uproot.open("flux/nuEnergyAndTime.root")
+        keNuE = rf["keNuE"]
+        keNuE_bin_edges = keNuE.axis().edges()
+        keNuE_values = keNuE.values() 
 
-    keNuMu = rf["keNuMu"]
-    keNuMu_bin_edges = keNuMu.axis().edges()
-    keNuMu_values = keNuMu.values()
+        keNuMu = rf["keNuMu"]
+        keNuMu_bin_edges = keNuMu.axis().edges()
+        keNuMu_values = keNuMu.values()
 
-    keNuMuBar = rf["keAntiNuMu"]
-    keNuMuBar_bin_edges = keNuMuBar.axis().edges()
-    keNuMuBar_values = keNuMuBar.values()
+        keNuMuBar = rf["keAntiNuMu"]
+        keNuMuBar_bin_edges = keNuMuBar.axis().edges()
+        keNuMuBar_values = keNuMuBar.values()
+
+        tNuE = rf["tNuE"]
+        tNuE_bin_edges = tNuE.axis().edges()
+        tNuE_values = tNuE.values()
+
+        tNuMu = rf["tNuMu"]
+        tNuMu_bin_edges = tNuMu.axis().edges()
+        tNuMu_values = tNuMu.values()
+
+        tNuMuBar = rf["tAntiNuMu"]
+        tNuMuBar_bin_edges = tNuMuBar.axis().edges()
+        tNuMuBar_values = tNuMuBar.values()
 
 
+        # Need to rebin the root sim to match the energy array
+        keNuE_rebinned_values = rebin_histogram(keNuE_values, keNuE_bin_edges, energy_arr)
+        keNuE_rebinned_values = keNuE_rebinned_values / np.sum(keNuE_rebinned_values)
 
+        keNuMu_rebinned_values = rebin_histogram(keNuMu_values, keNuMu_bin_edges, energy_arr)
+        keNuMu_rebinned_values = keNuMu_rebinned_values / np.sum(keNuMu_rebinned_values)
 
-    # Need to rebin the root sim to match the energy array
-    keNuE_rebinned_values = rebin_histogram(keNuE_values, keNuE_bin_edges, energy_arr)
-    keNuE_rebinned_values = keNuE_rebinned_values / np.sum(keNuE_rebinned_values)
+        keNuMuBar_rebinned_values = rebin_histogram(keNuMuBar_values, keNuMuBar_bin_edges, energy_arr)
+        keNuMuBar_rebinned_values = keNuMuBar_rebinned_values / np.sum(keNuMuBar_rebinned_values)
 
-    keNuMu_rebinned_values = rebin_histogram(keNuMu_values, keNuMu_bin_edges, energy_arr)
-    keNuMu_rebinned_values = keNuMu_rebinned_values / np.sum(keNuMu_rebinned_values)
+        tNuE_rebinned_values = rebin_histogram(tNuE_values, tNuE_bin_edges, time_arr)
+        tNuE_rebinned_values /= np.sum(tNuE_rebinned_values)
 
-    keNuMuBar_rebinned_values = rebin_histogram(keNuMuBar_values, keNuMuBar_bin_edges, energy_arr)
-    keNuMuBar_rebinned_values = keNuMuBar_rebinned_values / np.sum(keNuMuBar_rebinned_values)
+        tNuMu_rebinned_values = rebin_histogram(tNuMu_values, tNuMu_bin_edges, time_arr)
+        tNuMu_rebinned_values /= np.sum(tNuMu_rebinned_values)
+
+        tNuMuBar_rebinned_values = rebin_histogram(tNuMuBar_values, tNuMuBar_bin_edges, time_arr)
+        tNuMuBar_rebinned_values /= np.sum(tNuMuBar_rebinned_values)
 
 
 
     energy_arr_centered = (energy_arr[1:] + energy_arr[:-1]) / 2
+    time_arr_centered = (time_arr[1:] + time_arr[:-1]) / 2
 
 
-    # plot just the fluxes
-    plt.figure(figsize=(10,7))
-    plt.step(energy_arr, sns_nuE_flux, label = "ve")
-    plt.step(energy_arr_centered, keNuE_rebinned_values, label = "ve (root)")
-    plt.step(energy_arr, sns_nuMuBar_flux, label = "vu")
-    plt.step(energy_arr_centered, keNuMu_rebinned_values, label = "vu (root)")
-    plt.step(energy_arr, sns_nuMuBar_flux, label = "vuBar")
-    plt.step(energy_arr_centered, keNuMuBar_rebinned_values, label = "vuBar (root)")
-    plt.yscale('linear')
-    plt.ylim(0, 0.04)
-    plt.legend()
+    # plot just the fluxes in energy and time
+    fig, ax = plt.subplots(2, 1, figsize=(10, 8))
+    ax[0].step(energy_arr_centered, keNuE_rebinned_values, label="NuE")
+    ax[0].step(energy_arr_centered, keNuMu_rebinned_values, label="NuMu")
+    ax[0].step(energy_arr_centered, keNuMuBar_rebinned_values, label="NuMuBar")
+    ax[0].set_xlabel("Energy (MeV)")
+    ax[0].set_ylabel("Flux")
+    ax[0].set_ylim(0, 0.04)
+    ax[0].legend()
+
+    ax[1].step(time_arr_centered, tNuE_rebinned_values, label="NuE (rebinned)")
+    ax[1].step(time_arr_centered, tNuMu_rebinned_values, label="NuMu (rebinned)")
+    ax[1].step(time_arr_centered, tNuMuBar_rebinned_values, label="NuMuBar (rebinned)")
+    ax[1].set_xlabel("Time (ns)")
+    ax[1].set_ylabel("Flux")
+    ax[1].set_yscale("linear")
+    ax[1].set_ylim(0, 0.06)
+    ax[1].set_xlim(0, 6_000)
+    ax[1].legend()
+
     plt.show()
 
     return
