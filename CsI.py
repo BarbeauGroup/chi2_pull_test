@@ -76,13 +76,29 @@ def main():
     keNuE = rf["keNuE"]
     keNuE_bin_edges = keNuE.axis().edges()
     keNuE_values = keNuE.values() 
-    keNuE_values = keNuE_values
 
-    
+    keNuMu = rf["keNuMu"]
+    keNuMu_bin_edges = keNuMu.axis().edges()
+    keNuMu_values = keNuMu.values()
+
+    keNuMuBar = rf["keAntiNuMu"]
+    keNuMuBar_bin_edges = keNuMuBar.axis().edges()
+    keNuMuBar_values = keNuMuBar.values()
+
+
+
 
     # Need to rebin the root sim to match the energy array
     keNuE_rebinned_values = rebin_histogram(keNuE_values, keNuE_bin_edges, energy_arr)
     keNuE_rebinned_values = keNuE_rebinned_values / np.sum(keNuE_rebinned_values)
+
+    keNuMu_rebinned_values = rebin_histogram(keNuMu_values, keNuMu_bin_edges, energy_arr)
+    keNuMu_rebinned_values = keNuMu_rebinned_values / np.sum(keNuMu_rebinned_values)
+
+    keNuMuBar_rebinned_values = rebin_histogram(keNuMuBar_values, keNuMuBar_bin_edges, energy_arr)
+    keNuMuBar_rebinned_values = keNuMuBar_rebinned_values / np.sum(keNuMuBar_rebinned_values)
+
+
 
     energy_arr_centered = (energy_arr[1:] + energy_arr[:-1]) / 2
 
@@ -91,9 +107,12 @@ def main():
     plt.figure(figsize=(10,7))
     plt.step(energy_arr, sns_nuE_flux, label = "ve")
     plt.step(energy_arr_centered, keNuE_rebinned_values, label = "ve (root)")
-    # plt.step(energy_arr, sns_nuMuBar_flux, label = "vu")
-    # plt.step(energy_arr, sns_nuMu_flux, label = "vuBar")
+    plt.step(energy_arr, sns_nuMuBar_flux, label = "vu")
+    plt.step(energy_arr_centered, keNuMu_rebinned_values, label = "vu (root)")
+    plt.step(energy_arr, sns_nuMuBar_flux, label = "vuBar")
+    plt.step(energy_arr_centered, keNuMuBar_rebinned_values, label = "vuBar (root)")
     plt.yscale('linear')
+    plt.ylim(0, 0.04)
     plt.legend()
     plt.show()
 
