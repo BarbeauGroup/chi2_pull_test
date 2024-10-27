@@ -27,7 +27,6 @@ def csi_efficiency(x):
     return eps
 
 
-
 def rebin_histogram(counts, bin_edges, new_bin_edges):
 
     new_counts = np.zeros(len(new_bin_edges) - 1)
@@ -69,12 +68,11 @@ def main():
 
     # define time array 
     time_arr = np.linspace(0, 20_000, 161)
-    # time_arr = 1000*np.asarray([0, 0.125, 0.25, .375, .5, .625, .75, .875, 1, 2, 4, 6, 20])
 
     # CsI Detector Parameters and Normalizations
     if use_csi:
         mass = 14.6 # kg
-        A = (133 + 127) / 2
+        A = (132.91 + 126.90) / 2
         Da = 1.66e-27 # kg
         n_atoms = mass / (A * Da)
         number_of_neutrinos = (0.0848*3.198e23) / (4*np.pi*(19.3*100)**2)
@@ -82,12 +80,6 @@ def main():
         csi_flux_smearing_matrix = np.load("data/flux_transfer_matrices/csi_flux_smearing_matrix.npy")
         csi_quenching_detector_matrix = np.load("data/flux_transfer_matrices/csi_quenching_detector_matrix.npy")
 
-
-    # Define SNS Flux Analytically
-    sns_nuMu_flux = np.zeros_like(energy_arr)
-    sns_nuMu_flux[30] = 1
-    sns_nuMuBar_flux = sns_numubar_spectrum(energy_arr) / np.sum(sns_numubar_spectrum(energy_arr))
-    sns_nuE_flux = sns_nue_spectrum(energy_arr) / np.sum(sns_nue_spectrum(energy_arr))
 
     if use_root:
 
@@ -125,77 +117,18 @@ def main():
         anc_tNuE_values = anc_tNuE_values / np.sum(anc_tNuE_values)
 
 
-        if use_nuEnergyAndTime:
-            print("Using nuEnergyAndTime.root")
-
-            # # read in SNS flux from root sim
-            # rf = uproot.open("flux/nuEnergyAndTime.root")
-            # keNuE = rf["keNuE"]
-            # keNuE_bin_edges = keNuE.axis().edges()
-            # keNuE_values = keNuE.values() 
-
-            # keNuMu = rf["keNuMu"]
-            # keNuMu_bin_edges = keNuMu.axis().edges()
-            # keNuMu_values = keNuMu.values()
-
-            # keNuMuBar = rf["keAntiNuMu"]
-            # keNuMuBar_bin_edges = keNuMuBar.axis().edges()
-            # keNuMuBar_values = keNuMuBar.values()
-
-            # tNuE = rf["tNuE"]
-            # tNuE_bin_edges = tNuE.axis().edges()
-            # tNuE_values = tNuE.values()
-
-            # tNuMu = rf["tNuMu"]
-            # tNuMu_bin_edges = tNuMu.axis().edges()
-            # tNuMu_values = tNuMu.values()
-
-            # tNuMuBar = rf["tAntiNuMu"]
-            # tNuMuBar_bin_edges = tNuMuBar.axis().edges()
-            # tNuMuBar_values = tNuMuBar.values()
-
-
-            # # Need to rebin the root sim to match the energy array
-            # keNuE_rebinned_values = rebin_histogram(keNuE_values, keNuE_bin_edges, energy_arr)
-            # keNuE_rebinned_values = keNuE_rebinned_values / np.sum(keNuE_rebinned_values)
-
-            # keNuMu_rebinned_values = rebin_histogram(keNuMu_values, keNuMu_bin_edges, energy_arr)
-            # keNuMu_rebinned_values = keNuMu_rebinned_values / np.sum(keNuMu_rebinned_values)
-
-            # keNuMuBar_rebinned_values = rebin_histogram(keNuMuBar_values, keNuMuBar_bin_edges, energy_arr)
-            # keNuMuBar_rebinned_values = keNuMuBar_rebinned_values / np.sum(keNuMuBar_rebinned_values)
-
-            # tNuE_rebinned_values = rebin_histogram(tNuE_values, tNuE_bin_edges, time_arr)
-            # tNuE_rebinned_values /= np.sum(tNuE_rebinned_values)
-
-            # tNuMu_rebinned_values = rebin_histogram(tNuMu_values, tNuMu_bin_edges, time_arr)
-            # tNuMu_rebinned_values /= np.sum(tNuMu_rebinned_values)
-
-            # tNuMuBar_rebinned_values = rebin_histogram(tNuMuBar_values, tNuMuBar_bin_edges, time_arr)
-            # tNuMuBar_rebinned_values /= np.sum(tNuMuBar_rebinned_values)
-
-
 
 
 
     anc_energy_centered = (anc_keNuE_edges[1:] + anc_keNuE_edges[:-1]) / 2
     anc_time_centered = (anc_tNuE_edges[1:] + anc_tNuE_edges[:-1]) / 2
 
-    energy_arr_centered = (energy_arr[1:] + energy_arr[:-1]) / 2
-    time_arr_centered = (time_arr[1:] + time_arr[:-1]) / 2
-
-
 
     if plot_fluxes == True: 
         # plot just the fluxes in energy and time
         fig, ax = plt.subplots(2, 1, figsize=(10, 8))
-        # ax[0].step(energy_arr_centered, keNuE_rebinned_values, label="NuE")
         ax[0].step(anc_energy_centered, anc_keNuE_values, label="NuE (paper)")
-
-        # ax[0].step(energy_arr_centered, keNuMu_rebinned_values, label="NuMu")
         ax[0].step(anc_energy_centered, anc_keNuMu_values, label="NuMu (paper)")
-
-        # ax[0].step(energy_arr_centered, keNuMuBar_rebinned_values, label="NuMuBar")
         ax[0].step(anc_energy_centered, anc_keNuMuBar_values, label="NuMuBar (paper)")
 
         ax[0].set_xlabel("Energy (MeV)")
@@ -204,13 +137,8 @@ def main():
         ax[0].set_xlim(0, 60)
         ax[0].legend()
 
-        # ax[1].step(time_arr_centered, tNuE_rebinned_values, label="NuE (rebinned)")
         ax[1].step(anc_tNuE_edges[1:], anc_tNuE_values, label="NuE (paper)")
-
-        # ax[1].step(time_arr_centered, tNuMu_rebinned_values, label="NuMu (rebinned)")
         ax[1].step(anc_tNuMu_edges[1:], anc_tNuMu_values, label="NuMu (paper)")
-
-        # ax[1].step(time_arr_centered, tNuMuBar_rebinned_values, label="NuMuBar (rebinned)")
         ax[1].step(anc_tNuMuBar_edges[1:], anc_tNuMuBar_values, label="NuMuBar (paper)")
         ax[1].set_xlabel("Time (ns)")
         ax[1].set_ylabel("Flux")
@@ -225,13 +153,13 @@ def main():
 
     # This is the linear algebra step: flux -> true -> reconstructed
 
-    nuMu_truth_level_energy = np.dot(csi_flux_smearing_matrix, anc_keNuMu_values[:59])
+    nuMu_truth_level_energy = np.dot(csi_flux_smearing_matrix, anc_keNuMu_values[1:60])
     nuMu_observable_energy = np.dot(np.nan_to_num(csi_quenching_detector_matrix), nuMu_truth_level_energy)
 
-    nuE_truth_level_energy = np.dot(csi_flux_smearing_matrix, anc_keNuE_values[:59])
+    nuE_truth_level_energy = np.dot(csi_flux_smearing_matrix, anc_keNuE_values[1:60])
     nuE_observable_energy = np.dot(np.nan_to_num(csi_quenching_detector_matrix), nuE_truth_level_energy)
 
-    nuMuBar_truth_level_energy = np.dot(csi_flux_smearing_matrix, anc_keNuMuBar_values[:59])
+    nuMuBar_truth_level_energy = np.dot(csi_flux_smearing_matrix, anc_keNuMuBar_values[1:60])
     nuMuBar_observable_energy = np.dot(np.nan_to_num(csi_quenching_detector_matrix), nuMuBar_truth_level_energy)
 
     observable_bin_arr = np.arange(0, len(nuE_observable_energy), 1)
@@ -248,9 +176,16 @@ def main():
     tNuMu_frac = np.sum(anc_tNuMu_values[time_cut])
     tNuMuBar_frac = np.sum(anc_tNuMuBar_values[time_cut])
 
-    print(f"Total number of events (time cut): {tNuE_frac*nuE_integral + tNuMuBar_frac*nuMuBar_integral + tNuMu_frac*nuMu_integral}")
+    energy_cut = np.where(observable_bin_arr < 60)[0]
+    eNuE_frac = np.sum(anc_keNuE_values[energy_cut])
+    eNuMu_frac = np.sum(anc_keNuMu_values[energy_cut])
+    eNuMuBar_frac = np.sum(anc_keNuMuBar_values[energy_cut])
 
-    return
+    only_time_cut = tNuE_frac*nuE_integral + tNuMuBar_frac*nuMuBar_integral + tNuMu_frac*nuMu_integral
+    time_and_energy_cut = tNuE_frac*nuE_integral*eNuE_frac + tNuMuBar_frac*nuMuBar_integral*eNuMuBar_frac + tNuMu_frac*nuMu_integral*eNuMu_frac
+
+    print(f"only time cut: {only_time_cut}")
+    print(f"time and energy cut: {time_and_energy_cut}")
 
 
     # plt.plot(truth_level_energy, label = "Truth Level Energy Spectrum")
