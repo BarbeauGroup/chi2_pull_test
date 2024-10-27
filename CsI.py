@@ -57,17 +57,13 @@ def rebin_histogram(counts, bin_edges, new_bin_edges):
 
 def main():
 
+    # Debugging flags
+    use_csi = True
     use_root = True
     use_nuEnergyAndTime = False
     plot_fluxes = False
+    plot_efficiency = False
 
-    use_csi = True
-
-    # define energy array
-    energy_arr = np.arange(1,60,1)
-
-    # define time array 
-    time_arr = np.linspace(0, 20_000, 161)
 
     # CsI Detector Parameters and Normalizations
     if use_csi:
@@ -115,9 +111,6 @@ def main():
         anc_tNuE_edges = convolved_energy_and_time_of_nu_e.axis(0).edges()
         anc_tNuE_values = np.sum(NuE, axis=1)
         anc_tNuE_values = anc_tNuE_values / np.sum(anc_tNuE_values)
-
-
-
 
 
     anc_energy_centered = (anc_keNuE_edges[1:] + anc_keNuE_edges[:-1]) / 2
@@ -171,6 +164,16 @@ def main():
     print(f"Total number of events: {nuE_integral + nuMuBar_integral + nuMu_integral}")
 
 
+    if plot_efficiency == True:
+        plt.plot(observable_bin_arr, csi_efficiency(observable_bin_arr))
+        # put a tick every PE from 0 to 20
+        plt.xticks(np.arange(0, 60, 1))
+        plt.xlim(0, 20)
+        plt.show()
+
+        return
+
+
     time_cut = np.where(anc_time_centered < 6000)[0]
     tNuE_frac = np.sum(anc_tNuE_values[time_cut])
     tNuMu_frac = np.sum(anc_tNuMu_values[time_cut])
@@ -187,26 +190,35 @@ def main():
     print(f"only time cut: {only_time_cut}")
     print(f"time and energy cut: {time_and_energy_cut}")
 
+    nuE_counts = csi_efficiency(observable_bin_arr)*nuE_observable_energy*number_of_neutrinos*n_atoms
+    nuMuBar_counts = csi_efficiency(observable_bin_arr)*nuMuBar_observable_energy*number_of_neutrinos*n_atoms
+    nuMu_counts = csi_efficiency(observable_bin_arr)*nuMu_observable_energy*number_of_neutrinos*n_atoms
+
 
     # plt.plot(truth_level_energy, label = "Truth Level Energy Spectrum")
     # plt.step(observable_bin_arr, observable_energy, label = "Observable Energy Spectrum")
-    plt.step(observable_bin_arr, csi_efficiency(observable_bin_arr)*nuE_observable_energy, label = "ve")
-    plt.step(observable_bin_arr, csi_efficiency(observable_bin_arr)*nuMuBar_observable_energy, label = "vmubar")
-    plt.step(observable_bin_arr, csi_efficiency(observable_bin_arr)*nuMu_observable_energy, label = "vmu")
+    # plt.step(observable_bin_arr, csi_efficiency(observable_bin_arr)*nuE_observable_energy*number_of_neutrinos*n_atoms, label = "ve", stacked=True)
+    # plt.step(observable_bin_arr, csi_efficiency(observable_bin_arr)*nuMuBar_observable_energy*number_of_neutrinos*n_atoms, label = "vubar", stacked=True)
+    # plt.step(observable_bin_arr, csi_efficiency(observable_bin_arr)*nuMu_observable_energy*number_of_neutrinos*n_atoms, label = "vu", stacked=True)
 
-    plt.annotate(f"ve: {round(nuE_integral,2)}", (0, 0), (0, -20), xycoords='axes fraction', textcoords='offset points', va='top', fontsize=16)
-    plt.annotate(f"vubar: {round(nuMuBar_integral,2)}", (0, 0), (90, -20), xycoords='axes fraction', textcoords='offset points', va='top', fontsize=16)
-    plt.annotate(f"vu: {round(nuMu_integral,2)}", (0, 0), (210, -20), xycoords='axes fraction', textcoords='offset points', va='top', fontsize=16)
+    # make a stacked histogram plot
+    plt.style.use(["science", "muted"])
+    plt.figure(figsize=(12, 6))
+    plt.hist([observable_bin_arr[:-1], observable_bin_arr[:-1], observable_bin_arr[:-1]], bins=observable_bin_arr, 
+             weights=[nuMu_counts[:-1], nuMuBar_counts[:-1], nuE_counts[:-1]], 
+             stacked=True, 
+             label=[r'$\nu_\mu$', r'$\bar{\nu}_\mu$', r'$\nu_e$'], 
+             alpha=0.75,
+             color=["#AA4499", "#DDCC77", "#CC6677"])
+             
+
     # make the yticks font size larger
     plt.yticks(fontsize=20)
-    plt.ylim(0, 1.5*np.max(csi_efficiency(observable_bin_arr)*nuE_observable_energy))
-    plt.legend()
+    # plt.ylim(0, 1.5*np.max(csi_efficiency(observable_bin_arr)*nuE_observable_energy))
+    plt.legend(fontsize=20)
+    plt.xlabel("Energy (PE)", fontsize=20) 
+    plt.ylabel("Counts/PE", fontsize=20)
     plt.show()
-
-
-
-
-
     
 
 
