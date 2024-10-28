@@ -1,6 +1,3 @@
-from utils.stats import chi2_stat, chi2_sys
-from experiment import Experiment
-from utils.predictions import truth_level_prediction, P_nue_nue, sns_nue_spectrum, sns_numubar_spectrum
 
 import matplotlib.pyplot as plt
 import scienceplots
@@ -8,12 +5,12 @@ import seaborn as sns
 import pandas as pd
 
 from numpy import heaviside
-from scipy.optimize import minimize
 
 import numpy as np
-import json
 
 import uproot
+
+from flux.nuflux import NeutrinoFlux
 
 def csi_efficiency(x):
     a = 0.6655
@@ -57,12 +54,18 @@ def rebin_histogram(counts, bin_edges, new_bin_edges):
 
 def main():
 
+    # flux = NeutrinoFlux("flux/snsFlux2D.root")
+
+    # return 0
+
     # Debugging flags
     use_csi = True
     use_root = True
     use_nuEnergyAndTime = False
     plot_fluxes = False
     plot_efficiency = False
+    use_paper_binning = True
+    plot_final_histogram = True
 
 
     # CsI Detector Parameters and Normalizations
@@ -116,7 +119,6 @@ def main():
     anc_energy_centered = (anc_keNuE_edges[1:] + anc_keNuE_edges[:-1]) / 2
     anc_time_centered = (anc_tNuE_edges[1:] + anc_tNuE_edges[:-1]) / 2
 
-
     if plot_fluxes == True: 
         # plot just the fluxes in energy and time
         fig, ax = plt.subplots(2, 1, figsize=(10, 8))
@@ -146,6 +148,7 @@ def main():
 
     # This is the linear algebra step: flux -> true -> reconstructed
 
+
     nuMu_truth_level_energy = np.dot(csi_flux_smearing_matrix, anc_keNuMu_values[1:60])
     nuMu_observable_energy = np.dot(np.nan_to_num(csi_quenching_detector_matrix), nuMu_truth_level_energy)
 
@@ -155,13 +158,15 @@ def main():
     nuMuBar_truth_level_energy = np.dot(csi_flux_smearing_matrix, anc_keNuMuBar_values[1:60])
     nuMuBar_observable_energy = np.dot(np.nan_to_num(csi_quenching_detector_matrix), nuMuBar_truth_level_energy)
 
-    observable_bin_arr = np.arange(0, len(nuE_observable_energy), 1)
+    observable_bin_arr = np.arange(0, len(nuE_observable_energy)/10, .1)
+
+    # print(csi_quenching_detector_matrix.shape)
+    # # print(csi_efficiency(observable_bin_arr)*nuE_observable_energy)
+    # return
 
     nuE_integral = np.sum(csi_efficiency(observable_bin_arr)*nuE_observable_energy)*number_of_neutrinos*n_atoms
     nuMuBar_integral = np.sum(csi_efficiency(observable_bin_arr)*nuMuBar_observable_energy)*number_of_neutrinos*n_atoms
     nuMu_integral = np.sum(csi_efficiency(observable_bin_arr)*nuMu_observable_energy)*number_of_neutrinos*n_atoms
-
-    print(f"Total number of events: {nuE_integral + nuMuBar_integral + nuMu_integral}")
 
 
     if plot_efficiency == True:
@@ -184,41 +189,90 @@ def main():
     eNuMu_frac = np.sum(anc_keNuMu_values[energy_cut])
     eNuMuBar_frac = np.sum(anc_keNuMuBar_values[energy_cut])
 
-    only_time_cut = tNuE_frac*nuE_integral + tNuMuBar_frac*nuMuBar_integral + tNuMu_frac*nuMu_integral
-    time_and_energy_cut = tNuE_frac*nuE_integral*eNuE_frac + tNuMuBar_frac*nuMuBar_integral*eNuMuBar_frac + tNuMu_frac*nuMu_integral*eNuMu_frac
-
-    print(f"only time cut: {only_time_cut}")
-    print(f"time and energy cut: {time_and_energy_cut}")
-
     nuE_counts = csi_efficiency(observable_bin_arr)*nuE_observable_energy*number_of_neutrinos*n_atoms
     nuMuBar_counts = csi_efficiency(observable_bin_arr)*nuMuBar_observable_energy*number_of_neutrinos*n_atoms
     nuMu_counts = csi_efficiency(observable_bin_arr)*nuMu_observable_energy*number_of_neutrinos*n_atoms
 
+    # ####################
+    # # Load in BRN Data #
+    # ####################
+    brn_pe = np.loadtxt("data/csi_anc/brnPE.txt")
+    brn_pe_bins_centers = brn_pe[:60,0]
+    brn_pe_counts = brn_pe[:60,1]
 
-    # plt.plot(truth_level_energy, label = "Truth Level Energy Spectrum")
-    # plt.step(observable_bin_arr, observable_energy, label = "Observable Energy Spectrum")
-    # plt.step(observable_bin_arr, csi_efficiency(observable_bin_arr)*nuE_observable_energy*number_of_neutrinos*n_atoms, label = "ve", stacked=True)
-    # plt.step(observable_bin_arr, csi_efficiency(observable_bin_arr)*nuMuBar_observable_energy*number_of_neutrinos*n_atoms, label = "vubar", stacked=True)
-    # plt.step(observable_bin_arr, csi_efficiency(observable_bin_arr)*nuMu_observable_energy*number_of_neutrinos*n_atoms, label = "vu", stacked=True)
+    nin_pe = np.loadtxt("data/csi_anc/ninPE.txt")
+    nin_pe_bins_centers = nin_pe[:60,0]
+    nin_pe_counts = nin_pe[:60,1]
 
-    # make a stacked histogram plot
-    plt.style.use(["science", "muted"])
-    plt.figure(figsize=(12, 6))
-    plt.hist([observable_bin_arr[:-1], observable_bin_arr[:-1], observable_bin_arr[:-1]], bins=observable_bin_arr, 
-             weights=[nuMu_counts[:-1], nuMuBar_counts[:-1], nuE_counts[:-1]], 
-             stacked=True, 
-             label=[r'$\nu_\mu$', r'$\bar{\nu}_\mu$', r'$\nu_e$'], 
-             alpha=0.75,
-             color=["#AA4499", "#DDCC77", "#CC6677"])
-             
+    rebinned_observable_bin_arr = np.asarray([0,8,12,16,20,24,32,40,50,60])
+    rebin_weights_brn = np.ones(len(rebinned_observable_bin_arr) - 1)*(brn_pe_bins_centers[1] - brn_pe_bins_centers[0])/np.diff(rebinned_observable_bin_arr)
+    rebin_weights_nin = np.ones(len(rebinned_observable_bin_arr) - 1)*(nin_pe_bins_centers[1] - nin_pe_bins_centers[0])/np.diff(rebinned_observable_bin_arr)
 
-    # make the yticks font size larger
-    plt.yticks(fontsize=20)
-    # plt.ylim(0, 1.5*np.max(csi_efficiency(observable_bin_arr)*nuE_observable_energy))
-    plt.legend(fontsize=20)
-    plt.xlabel("Energy (PE)", fontsize=20) 
-    plt.ylabel("Counts/PE", fontsize=20)
-    plt.show()
+    rebinned_brn_counts = rebin_histogram(brn_pe_counts, brn_pe_bins_centers, rebinned_observable_bin_arr) * rebin_weights_brn * 18.4
+    rebinned_nin_counts = rebin_histogram(nin_pe_counts, nin_pe_bins_centers, rebinned_observable_bin_arr) * rebin_weights_nin * 5.6
+
+    rebinned_brn_nin_counts = rebinned_brn_counts + rebinned_nin_counts
+
+
+
+    # ########################################
+    # # Rebin the observable energy spectrum #
+    # ########################################
+    if use_paper_binning == True:
+
+        # rebin the observable energy spectrum
+        rebinned_observable_bin_arr = np.asarray([0,8,12,16,20,24,32,40,50,60])
+        rebin_weights = np.ones(len(rebinned_observable_bin_arr) - 1)
+        rebin_weights[0] = 1 / (rebinned_observable_bin_arr[1] -rebinned_observable_bin_arr[0])
+        rebin_weights[1] = 1 / (rebinned_observable_bin_arr[2] -rebinned_observable_bin_arr[1])
+        rebin_weights[2] = 1 / (rebinned_observable_bin_arr[3] -rebinned_observable_bin_arr[2])
+        rebin_weights[3] = 1 / (rebinned_observable_bin_arr[4] -rebinned_observable_bin_arr[3])
+        rebin_weights[4] = 1 / (rebinned_observable_bin_arr[5] -rebinned_observable_bin_arr[4])
+        rebin_weights[5] = 1 / (rebinned_observable_bin_arr[6] -rebinned_observable_bin_arr[5])
+        rebin_weights[6] = 1 / (rebinned_observable_bin_arr[7] -rebinned_observable_bin_arr[6])
+        rebin_weights[7] = 1 / (rebinned_observable_bin_arr[8] -rebinned_observable_bin_arr[7])
+        rebin_weights[8] = 1 / (rebinned_observable_bin_arr[9] -rebinned_observable_bin_arr[8])
+
+        rebinned_nuE_counts = rebin_histogram(nuE_counts, observable_bin_arr, rebinned_observable_bin_arr) * rebin_weights
+        rebinned_nuMuBar_counts = rebin_histogram(nuMuBar_counts, observable_bin_arr, rebinned_observable_bin_arr) * rebin_weights
+        rebinned_nuMu_counts = rebin_histogram(nuMu_counts, observable_bin_arr, rebinned_observable_bin_arr) * rebin_weights
+
+
+    time_and_energy_cut = tNuE_frac*nuE_integral*eNuE_frac + tNuMuBar_frac*nuMuBar_integral*eNuMuBar_frac + tNuMu_frac*nuMu_integral*eNuMu_frac
+    print(f"time and energy cut: {time_and_energy_cut}")
+
+
+    if plot_final_histogram == True:
+        # make a stacked histogram plot
+        plt.style.use(["science", "vibrant"])
+        plt.figure(figsize=(12, 6))
+        plt.hist([rebinned_observable_bin_arr[:-1], rebinned_observable_bin_arr[:-1], rebinned_observable_bin_arr[:-1], rebinned_observable_bin_arr[:-1]], 
+                    
+                    bins=rebinned_observable_bin_arr, 
+
+                    weights=    [ rebinned_brn_nin_counts,
+                                rebinned_nuMu_counts, 
+                                rebinned_nuMuBar_counts, 
+                                rebinned_nuE_counts],
+                stacked=True, 
+                label=['BRN+NIN', r'$\nu_\mu$', r'$\bar{\nu}_\mu$', r'$\nu_e$'],
+                alpha=0.75,
+                color=["#009988", "#EE3377", "#EE7733", "#CC3311"])
+        
+        plt.annotate("Paper prediction: 341 +- 11 +- 42", xy=(0.5, 0.5), xycoords='axes fraction', fontsize=20)
+        plt.annotate(f"I'm getting: {round(time_and_energy_cut,2)}", xy=(0.5, 0.45), xycoords='axes fraction', fontsize=20)
+                
+
+        # make the yticks font size larger
+        plt.yticks(fontsize=20)
+        plt.legend(fontsize=20)
+        plt.xlabel("Energy (PE)", fontsize=20) 
+        plt.ylabel("Counts/PE", fontsize=20)
+
+        plt.xlim(0, 60)
+        plt.ylim(0, 30)
+
+        plt.show()
     
 
 
