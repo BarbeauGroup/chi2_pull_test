@@ -13,15 +13,26 @@ import uproot
 from flux.nuflux import NeutrinoFlux
 
 def csi_efficiency(x):
-    a = 0.6655
-    k = 0.4942
-    xzero = 10.8507
+    # a = 0.6655
+    # k = 0.4942
+    # xzero = 10.8507
 
     # return (a / (1 + np.exp(-k*(x - xzero))))*heaviside(x - 5, 0.5)
     eps = (1.32045 / (1 + np.exp(-0.285979*(x - 10.8646)))) - 0.333322
     eps[eps < 0] = 0
 
     return eps
+
+def csi_time_efficiency(t):
+    a = 520
+    b = 0.0494 / 1000
+
+    if t < a:
+        return 1
+    elif t < 6000:
+        return np.exp(-b*(t - a))
+    else:
+        return 0
 
 
 def rebin_histogram(counts, bin_edges, new_bin_edges):
@@ -160,10 +171,6 @@ def main():
 
     observable_bin_arr = np.arange(0, len(nuE_observable_energy)/10, .1)
 
-    # print(csi_quenching_detector_matrix.shape)
-    # # print(csi_efficiency(observable_bin_arr)*nuE_observable_energy)
-    # return
-
     nuE_integral = np.sum(csi_efficiency(observable_bin_arr)*nuE_observable_energy)*number_of_neutrinos*n_atoms
     nuMuBar_integral = np.sum(csi_efficiency(observable_bin_arr)*nuMuBar_observable_energy)*number_of_neutrinos*n_atoms
     nuMu_integral = np.sum(csi_efficiency(observable_bin_arr)*nuMu_observable_energy)*number_of_neutrinos*n_atoms
@@ -178,11 +185,13 @@ def main():
 
         return
 
-
-    time_cut = np.where(anc_time_centered < 6000)[0]
-    tNuE_frac = np.sum(anc_tNuE_values[time_cut])
-    tNuMu_frac = np.sum(anc_tNuMu_values[time_cut])
-    tNuMuBar_frac = np.sum(anc_tNuMuBar_values[time_cut])
+    eps_t = np.ones_like(anc_time_centered)
+    for i, t in enumerate(anc_time_centered):
+        eps_t[i] = csi_time_efficiency(t)
+    
+    tNuE_frac = np.sum(anc_tNuE_values*eps_t)
+    tNuMuBar_frac = np.sum(anc_tNuMuBar_values*eps_t)
+    tNuMu_frac = np.sum(anc_tNuMu_values*eps_t)
 
     energy_cut = np.where(observable_bin_arr < 60)[0]
     eNuE_frac = np.sum(anc_keNuE_values[energy_cut])
@@ -237,10 +246,13 @@ def main():
         rebinned_nuMuBar_counts = rebin_histogram(nuMuBar_counts, observable_bin_arr, rebinned_observable_bin_arr) * rebin_weights
         rebinned_nuMu_counts = rebin_histogram(nuMu_counts, observable_bin_arr, rebinned_observable_bin_arr) * rebin_weights
 
-
+    print(f"Events before cuts: {nuE_integral + nuMuBar_integral + nuMu_integral}")
     time_and_energy_cut = tNuE_frac*nuE_integral*eNuE_frac + tNuMuBar_frac*nuMuBar_integral*eNuMuBar_frac + tNuMu_frac*nuMu_integral*eNuMu_frac
     print(f"time and energy cut: {time_and_energy_cut}")
 
+    print(  rebinned_nuE_counts[1], rebinned_nuMuBar_counts[1], rebinned_nuMu_counts[1], rebinned_brn_nin_counts[1])
+    print(rebinned_nuE_counts[4], rebinned_nuMuBar_counts[4], rebinned_nuMu_counts[4], rebinned_brn_nin_counts[4])
+    # return
 
     if plot_final_histogram == True:
         # make a stacked histogram plot
