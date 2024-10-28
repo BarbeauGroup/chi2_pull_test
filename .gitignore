@@ -6,5 +6,7 @@ flux/*.root
 
 data/csi_anc
 
+*.pyc
+
 .DS_Store
 data/.DS_Store
