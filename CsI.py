@@ -171,14 +171,18 @@ def main():
 
     observable_bin_arr = np.arange(0, len(nuE_observable_energy)/10, .1)
 
+    nuE_true_counts = np.sum(nuE_observable_energy)*number_of_neutrinos*n_atoms
+    nuMuBar_true_counts = np.sum(nuMuBar_observable_energy)*number_of_neutrinos*n_atoms
+    nuMu_true_counts = np.sum(nuMu_observable_energy)*number_of_neutrinos*n_atoms
+
     nuE_integral = np.sum(csi_efficiency(observable_bin_arr)*nuE_observable_energy)*number_of_neutrinos*n_atoms
     nuMuBar_integral = np.sum(csi_efficiency(observable_bin_arr)*nuMuBar_observable_energy)*number_of_neutrinos*n_atoms
     nuMu_integral = np.sum(csi_efficiency(observable_bin_arr)*nuMu_observable_energy)*number_of_neutrinos*n_atoms
 
-    anc_tNuE_values = anc_tNuE_values * nuE_integral
-    anc_tNuMuBar_values = anc_tNuMuBar_values * nuMuBar_integral
-    anc_tNuMu_values = anc_tNuMu_values * nuMu_integral
-
+    # Time-averaged efficiencies
+    nuE_e_frac = np.sum(csi_efficiency(observable_bin_arr)*nuE_observable_energy)/np.sum(nuE_observable_energy)
+    nuMuBar_e_frac = np.sum(csi_efficiency(observable_bin_arr)*nuMuBar_observable_energy)/np.sum(nuMuBar_observable_energy)
+    nuMu_e_frac = np.sum(csi_efficiency(observable_bin_arr)*nuMu_observable_energy)/np.sum(nuMu_observable_energy)
 
     if plot_efficiency == True:
         plt.plot(observable_bin_arr, csi_efficiency(observable_bin_arr))
@@ -202,9 +206,12 @@ def main():
     eNuMu_frac = np.sum(anc_keNuMu_values[energy_cut])
     eNuMuBar_frac = np.sum(anc_keNuMuBar_values[energy_cut])
 
-    nuE_counts = csi_efficiency(observable_bin_arr)*nuE_observable_energy*number_of_neutrinos*n_atoms
-    nuMuBar_counts = csi_efficiency(observable_bin_arr)*nuMuBar_observable_energy*number_of_neutrinos*n_atoms
-    nuMu_counts = csi_efficiency(observable_bin_arr)*nuMu_observable_energy*number_of_neutrinos*n_atoms
+    # print t fracs:
+    print(f"tNuE_frac: {tNuE_frac}, tNuMuBar_frac: {tNuMuBar_frac}, tNuMu_frac: {tNuMu_frac}")
+
+    nuE_counts = csi_efficiency(observable_bin_arr)*nuE_observable_energy*number_of_neutrinos*n_atoms*tNuE_frac
+    nuMuBar_counts = csi_efficiency(observable_bin_arr)*nuMuBar_observable_energy*number_of_neutrinos*n_atoms*tNuMuBar_frac
+    nuMu_counts = csi_efficiency(observable_bin_arr)*nuMu_observable_energy*number_of_neutrinos*n_atoms*tNuMu_frac
 
     # ####################
     # # Load in BRN Data #
@@ -234,7 +241,7 @@ def main():
     nin_t_bins_centers = nin_t[:,0]
     nin_t_counts = nin_t[:,1]
 
-    t_binning = np.asarray([0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1.0, 2.0, 4.0, 6.0])
+    t_binning = np.asarray([0, 1./9., 2./9., 3./9., 4./9., 5./9., 6./9., 7./9., 8./9., 1.0, 2.0, 4.0, 6.0])
 
     rebin_weights_brn = np.ones(len(t_binning) - 1)*(brn_t_bins_centers[1] - brn_t_bins_centers[0])/np.diff(t_binning)
     rebin_weights_nin = np.ones(len(t_binning) - 1)*(nin_t_bins_centers[1] - nin_t_bins_centers[0])/np.diff(t_binning)
@@ -302,24 +309,30 @@ def main():
 
 
         # rebin the observable t spectrum
-        t_binning = np.asarray([0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1.0, 2.0, 4.0, 6.0])
         rebin_weights = np.ones(len(t_binning) - 1)/(np.diff(t_binning))
 
-        rebinned_tnuE_counts = rebin_histogram(anc_tNuE_values, anc_tNuE_edges/1000, t_binning) #* rebin_weights
-        rebinned_tnuMuBar_counts = rebin_histogram(anc_tNuMuBar_values, anc_tNuMuBar_edges/1000, t_binning) #* rebin_weights
-        rebinned_tnuMu_counts = rebin_histogram(anc_tNuMu_values, anc_tNuMu_edges/1000, t_binning) #* rebin_weights
+        # Applied eps cut
+        anc_tNuE_values_cut = (anc_tNuE_values * eps_t) * nuE_true_counts * nuE_e_frac
+        anc_tNuMuBar_values_cut = (anc_tNuMuBar_values * eps_t) * nuMuBar_true_counts * nuMuBar_e_frac
+        anc_tNuMu_values_cut = (anc_tNuMu_values * eps_t) * nuMu_true_counts * nuMu_e_frac
+
+        print("Total counts in energy plot ", np.sum(nuE_counts), np.sum(nuMuBar_counts), np.sum(nuMu_counts))
+        print("Total counts in time plot ", np.sum(anc_tNuE_values_cut), np.sum(anc_tNuMuBar_values_cut), np.sum(anc_tNuMu_values_cut))
+
+        rebinned_tnuE_counts = rebin_histogram(anc_tNuE_values_cut, anc_tNuE_edges/1000, t_binning) * rebin_weights
+        rebinned_tnuMuBar_counts = rebin_histogram(anc_tNuMuBar_values_cut, anc_tNuMuBar_edges/1000, t_binning) * rebin_weights
+        rebinned_tnuMu_counts = rebin_histogram(anc_tNuMu_values_cut, anc_tNuMu_edges/1000, t_binning) * rebin_weights
 
         print(np.sum(rebinned_nuE_counts), np.sum(rebinned_nuMuBar_counts), np.sum(rebinned_nuMu_counts))
         print(np.sum(rebinned_tnuE_counts), np.sum(rebinned_tnuMuBar_counts), np.sum(rebinned_tnuMu_counts))
 
-        return
-
-
+    # print fractions
+    print(f"Fractions: {tNuE_frac}, {tNuMuBar_frac}, {tNuMu_frac}, {eNuE_frac}, {eNuMuBar_frac}, {eNuMu_frac}")
     print(f"Events before cuts: {nuE_integral + nuMuBar_integral + nuMu_integral}")
-    time_and_energy_cut = tNuE_frac*nuE_integral*eNuE_frac + tNuMuBar_frac*nuMuBar_integral*eNuMuBar_frac + tNuMu_frac*nuMu_integral*eNuMu_frac
+    time_and_energy_cut = tNuE_frac*eNuE_frac + tNuMuBar_frac*eNuMuBar_frac + tNuMu_frac*eNuMu_frac # was multiplying by integral twice
     print(f"time and energy cut: {time_and_energy_cut}")
 
-    print(  rebinned_nuE_counts[1], rebinned_nuMuBar_counts[1], rebinned_nuMu_counts[1], rebinned_brn_nin_counts[1])
+    print(rebinned_nuE_counts[1], rebinned_nuMuBar_counts[1], rebinned_nuMu_counts[1], rebinned_brn_nin_counts[1])
     print(rebinned_nuE_counts[4], rebinned_nuMuBar_counts[4], rebinned_nuMu_counts[4], rebinned_brn_nin_counts[4])
 
 
@@ -327,7 +340,6 @@ def main():
     # # Bin the data in the same binning #
     # ####################################
 
-    t_binning = np.asarray([0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1.0, 2.0, 4.0, 6.0])
     rebinned_observable_bin_arr = np.asarray([0,8,12,16,20,24,32,40,50,60])
 
     ac_pe_counts, ac_pe_edges = np.histogram(AC_PE, bins=rebinned_observable_bin_arr) 
@@ -373,14 +385,24 @@ def main():
                         rebinned_nuE_counts],
         stacked=True, 
         label=['BRN+NIN', r'$\nu_\mu$', r'$\bar{\nu}_\mu$', r'$\nu_e$'],
-        alpha=0.75,
-        color=["#009988", "#EE3377", "#EE7733", "#CC3311"])
+        alpha=1,
+        color=["#bb27f6", "#8f7252", "#f0995c", "#f9dc81"])
+    
+    ax[0].hist([rebinned_observable_bin_arr[:-1], rebinned_observable_bin_arr[:-1], rebinned_observable_bin_arr[:-1], rebinned_observable_bin_arr[:-1]], 
+           bins=rebinned_observable_bin_arr, 
+           weights=[rebinned_brn_nin_counts,
+                    rebinned_nuMu_counts, 
+                    rebinned_nuMuBar_counts, 
+                    rebinned_nuE_counts],
+           stacked=True, 
+           histtype='step',
+           edgecolor='black')
     
 
     ax[0].set_xlabel("Energy (PE)")
     ax[0].set_ylabel("Counts/PE")
     ax[0].set_xlim(0, 60)
-    ax[0].set_ylim(0, 65)
+    ax[0].set_ylim(0, 25)
     ax[0].legend()
 
     ax[1].errorbar(ac_t_edges_centered,
@@ -403,17 +425,30 @@ def main():
             bins=t_binning, 
 
             weights=    [ rebinned_brn_nin_t_counts,
-                        rebinned_tnuMu_counts*np.sum(rebinned_nuMu_counts),
-                        rebinned_tnuMuBar_counts*np.sum(rebinned_nuMuBar_counts),
-                        rebinned_tnuE_counts*np.sum(rebinned_nuE_counts)],
+                        rebinned_tnuMu_counts,
+                        rebinned_tnuMuBar_counts,
+                        rebinned_tnuE_counts],
         stacked=True, 
         label=[r'BRN+NIN', r'$\nu_\mu$', r'$\bar{\nu}_\mu$', r'$\nu_e$'],
-        alpha=0.75,
-        color=["#009988", "#EE3377", "#EE7733", "#CC3311"])
+        alpha=1,
+        color=["#bb27f6", "#8f7252", "#f0995c", "#f9dc81"])
+    
+    print("rebinned_brn_nin_t_counts: ", rebinned_brn_nin_t_counts)
+    
+    ax[1].hist([t_binning[:-1], t_binning[:-1], t_binning[:-1], t_binning[:-1]], 
+           bins=t_binning, 
+           weights=[rebinned_brn_nin_t_counts,
+                    rebinned_tnuMu_counts,
+                    rebinned_tnuMuBar_counts,
+                    rebinned_tnuE_counts],
+           stacked=True, 
+           histtype='step',
+           edgecolor='black')
 
     ax[1].set_xlabel(r"Time ($\mu$s)")
     ax[1].set_ylabel(r"Counts/$\mu$s")
     ax[1].set_xlim(0, 6)
+    ax[1].set_ylim(0, 300)
     ax[1].legend()
 
 
