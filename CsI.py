@@ -139,7 +139,7 @@ def main():
 
         ax[0].set_xlabel("Energy (MeV)")
         ax[0].set_ylabel("Flux")
-        ax[0].set_ylim(0, 0.04)
+        ax[0].set_ylim(0.04)
         ax[0].set_xlim(0, 60)
         ax[0].legend()
 
@@ -149,7 +149,7 @@ def main():
         ax[1].set_xlabel("Time (ns)")
         ax[1].set_ylabel("Flux")
         ax[1].set_yscale("linear")
-        ax[1].set_ylim(0, 0.01)
+        ax[1].set_ylim(0.01)
         ax[1].set_xlim(0, 6_000)
         ax[1].legend()
 
@@ -179,7 +179,7 @@ def main():
     if plot_efficiency == True:
         plt.plot(observable_bin_arr, csi_efficiency(observable_bin_arr))
         # put a tick every PE from 0 to 20
-        plt.xticks(np.arange(0, 60, 1))
+        plt.xticks(np.arange(0, 61))
         plt.xlim(0, 20)
         plt.show()
 
@@ -222,6 +222,36 @@ def main():
 
     rebinned_brn_nin_counts = rebinned_brn_counts + rebinned_nin_counts
 
+    # ###############################
+    # # Load in the Ancillary Data  #
+    # ###############################
+
+    dataBeamOnAC = np.loadtxt("data/csi_anc/dataBeamOnAC.txt")
+    AC_PE = dataBeamOnAC[:,0]
+    AC_t = dataBeamOnAC[:,1]
+
+    dataBeamOnC = np.loadtxt("data/csi_anc/dataBeamOnC.txt")
+    C_PE = dataBeamOnC[:,0]
+    C_t = dataBeamOnC[:,1]
+
+    # must filter the events that have t > 6 
+    AC_high_time_idx = np.where(AC_t > 6)[0]
+    AC_PE = np.delete(AC_PE, AC_high_time_idx)
+    AC_t = np.delete(AC_t, AC_high_time_idx)
+
+    C_high_time_idx = np.where(C_t > 6)[0]
+    C_PE = np.delete(C_PE, C_high_time_idx)
+    C_t = np.delete(C_t, C_high_time_idx)
+
+    # and energy > 60
+    AC_high_energy_idx = np.where(AC_PE > 60)[0]
+    AC_PE = np.delete(AC_PE, AC_high_energy_idx)
+    AC_t = np.delete(AC_t, AC_high_energy_idx)
+
+    C_high_energy_idx = np.where(C_PE > 60)[0]
+    C_PE = np.delete(C_PE, C_high_energy_idx)
+    C_t = np.delete(C_t, C_high_energy_idx)
+
 
 
     # ########################################
@@ -252,13 +282,111 @@ def main():
 
     print(  rebinned_nuE_counts[1], rebinned_nuMuBar_counts[1], rebinned_nuMu_counts[1], rebinned_brn_nin_counts[1])
     print(rebinned_nuE_counts[4], rebinned_nuMuBar_counts[4], rebinned_nuMu_counts[4], rebinned_brn_nin_counts[4])
-    # return
+
+
+    # ####################################
+    # # Bin the data in the same binning #
+    # ####################################
+
+    t_binning = np.asarray([0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1.0, 2.0, 4.0, 6.0])
+    rebinned_observable_bin_arr = np.asarray([0,8,12,16,20,24,32,40,50,60])
+
+    ac_pe_counts, ac_pe_edges = np.histogram(AC_PE, bins=rebinned_observable_bin_arr) 
+    ac_pe_edges_centered = (ac_pe_edges[1:] + ac_pe_edges[:-1]) / 2
+    ac_pe_counts = ac_pe_counts/np.diff(rebinned_observable_bin_arr)
+
+    ac_t_counts, ac_t_edges = np.histogram(AC_t, bins=t_binning)
+    ac_t_counts = ac_t_counts/np.diff(t_binning)
+    ac_t_edges_centered = (ac_t_edges[1:] + ac_t_edges[:-1]) / 2
+
+    c_pe_counts, c_pe_edges = np.histogram(C_PE, bins=rebinned_observable_bin_arr)
+    c_pe_edges_centered = (c_pe_edges[1:] + c_pe_edges[:-1]) / 2
+    c_pe_counts = c_pe_counts/np.diff(rebinned_observable_bin_arr)
+
+    c_t_counts, c_t_edges = np.histogram(C_t, bins=t_binning)
+    c_t_counts = c_t_counts/np.diff(t_binning)
+    c_t_edges_centered = (c_t_edges[1:] + c_t_edges[:-1]) / 2
+
+    plt.style.use(["science", "vibrant"])
+    fig, ax = plt.subplots(1, 2, figsize=(16, 6))
+    ax[0].errorbar(ac_pe_edges_centered, 
+                      ac_pe_counts, 
+                      yerr=np.sqrt(ac_pe_counts), 
+                      xerr=np.diff(rebinned_observable_bin_arr)/2, 
+                      fmt="o", 
+                      markersize=0.5,
+                      label="AC")
+    ax[0].errorbar(c_pe_edges_centered,
+                        c_pe_counts,
+                        yerr=np.sqrt(c_pe_counts),
+                        xerr=np.diff(rebinned_observable_bin_arr)/2,
+                        fmt="o",
+                        markersize=0.5,
+                        label="C")
+    
+    ax[0].hist([rebinned_observable_bin_arr[:-1], rebinned_observable_bin_arr[:-1], rebinned_observable_bin_arr[:-1], rebinned_observable_bin_arr[:-1]], 
+            
+            bins=rebinned_observable_bin_arr, 
+
+            weights=    [ rebinned_brn_nin_counts,
+                        rebinned_nuMu_counts, 
+                        rebinned_nuMuBar_counts, 
+                        rebinned_nuE_counts],
+        stacked=True, 
+        label=['BRN+NIN', r'$\nu_\mu$', r'$\bar{\nu}_\mu$', r'$\nu_e$'],
+        alpha=0.75,
+        color=["#009988", "#EE3377", "#EE7733", "#CC3311"])
+    
+
+    ax[0].set_xlabel("Energy (PE)")
+    ax[0].set_ylabel("Counts/PE")
+    ax[0].set_xlim(0, 60)
+    ax[0].set_ylim(0, 65)
+    ax[0].legend()
+
+    ax[1].errorbar(ac_t_edges_centered,
+                        ac_t_counts,
+                        yerr=np.sqrt(ac_t_counts),
+                        xerr=np.diff(t_binning)/2,
+                        fmt="o",
+                        markersize=0.5,
+                        label="AC")
+    ax[1].errorbar(c_t_edges_centered,
+                        c_t_counts,
+                        yerr=np.sqrt(c_t_counts),
+                        xerr=np.diff(t_binning)/2,
+                        fmt="o",
+                        markersize=0.5,
+                        label="C")
+    
+    ax[1].plot(anc_time_centered/1000, 100000*anc_tNuE_values, label="NuE (paper)")
+    ax[1].plot(anc_time_centered/1000, 100000*anc_tNuMu_values, label="NuMu (paper)")
+    ax[1].plot(anc_time_centered/1000, 100000*anc_tNuMuBar_values, label="NuMuBar (paper)")
+
+    ax[1].set_xlabel(r"Time ($\mu$s)")
+    ax[1].set_ylabel("Counts/ns")
+    ax[1].set_xlim(0, 6)
+    ax[1].legend()
+
+
+
+
+
+
+    plt.show()
+    return
+
+
+
+    # ############################
+    # # Plot the final histogram #
+    # ############################
 
     if plot_final_histogram == True:
         # make a stacked histogram plot
         plt.style.use(["science", "vibrant"])
-        plt.figure(figsize=(12, 6))
-        plt.hist([rebinned_observable_bin_arr[:-1], rebinned_observable_bin_arr[:-1], rebinned_observable_bin_arr[:-1], rebinned_observable_bin_arr[:-1]], 
+        fig, ax = plt.subplots(1, 2, figsize=(16, 6))
+        ax[0].hist([rebinned_observable_bin_arr[:-1], rebinned_observable_bin_arr[:-1], rebinned_observable_bin_arr[:-1], rebinned_observable_bin_arr[:-1]], 
                     
                     bins=rebinned_observable_bin_arr, 
 
@@ -271,18 +399,26 @@ def main():
                 alpha=0.75,
                 color=["#009988", "#EE3377", "#EE7733", "#CC3311"])
         
-        plt.annotate("Paper prediction: 341 +- 11 +- 42", xy=(0.5, 0.5), xycoords='axes fraction', fontsize=20)
-        plt.annotate(f"I'm getting: {round(time_and_energy_cut,2)}", xy=(0.5, 0.45), xycoords='axes fraction', fontsize=20)
+        ax[0].annotate("Paper prediction: 341 +- 11 +- 42", xy=(0.5, 0.5), xycoords='axes fraction', fontsize=20)
+        ax[0].annotate(f"I'm getting: {round(time_and_energy_cut,2)}", xy=(0.5, 0.45), xycoords='axes fraction', fontsize=20)
                 
 
         # make the yticks font size larger
-        plt.yticks(fontsize=20)
-        plt.legend(fontsize=20)
-        plt.xlabel("Energy (PE)", fontsize=20) 
-        plt.ylabel("Counts/PE", fontsize=20)
+        # ax[0].set_yticks(fontsize=20)
+        ax[0].legend(fontsize=20)
+        ax[0].set_xlabel("Energy (PE)", fontsize=20) 
+        ax[0].set_ylabel("Counts/PE", fontsize=20)
 
-        plt.xlim(0, 60)
-        plt.ylim(0, 30)
+        ax[0].set_xlim(0, 60)
+        ax[0].set_ylim(0, 25)
+
+        # timing plot
+        ax[1].plot(anc_time_centered, anc_tNuE_values, label="NuE (paper)")
+        ax[1].plot(anc_time_centered, anc_tNuMu_values, label="NuMu (paper)")
+        ax[1].plot(anc_time_centered, anc_tNuMuBar_values, label="NuMuBar (paper)")
+
+        ax[1].set_xlim(0, 6_000)
+
 
         plt.show()
     
