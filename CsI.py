@@ -175,6 +175,10 @@ def main():
     nuMuBar_integral = np.sum(csi_efficiency(observable_bin_arr)*nuMuBar_observable_energy)*number_of_neutrinos*n_atoms
     nuMu_integral = np.sum(csi_efficiency(observable_bin_arr)*nuMu_observable_energy)*number_of_neutrinos*n_atoms
 
+    anc_tNuE_values = anc_tNuE_values * nuE_integral
+    anc_tNuMuBar_values = anc_tNuMuBar_values * nuMuBar_integral
+    anc_tNuMu_values = anc_tNuMu_values * nuMu_integral
+
 
     if plot_efficiency == True:
         plt.plot(observable_bin_arr, csi_efficiency(observable_bin_arr))
@@ -221,6 +225,26 @@ def main():
     rebinned_nin_counts = rebin_histogram(nin_pe_counts, nin_pe_bins_centers, rebinned_observable_bin_arr) * rebin_weights_nin * 5.6
 
     rebinned_brn_nin_counts = rebinned_brn_counts + rebinned_nin_counts
+
+    brn_t = np.loadtxt("data/csi_anc/brnTrec.txt")
+    brn_t_bins_centers = brn_t[:,0]  
+    brn_t_counts = brn_t[:,1]
+
+    nin_t = np.loadtxt("data/csi_anc/ninTrec.txt")
+    nin_t_bins_centers = nin_t[:,0]
+    nin_t_counts = nin_t[:,1]
+
+    t_binning = np.asarray([0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1.0, 2.0, 4.0, 6.0])
+
+    rebin_weights_brn = np.ones(len(t_binning) - 1)*(brn_t_bins_centers[1] - brn_t_bins_centers[0])/np.diff(t_binning)
+    rebin_weights_nin = np.ones(len(t_binning) - 1)*(nin_t_bins_centers[1] - nin_t_bins_centers[0])/np.diff(t_binning)
+
+    rebinned_brn_t_counts = rebin_histogram(brn_t_counts, brn_t_bins_centers, t_binning) * rebin_weights_brn * 18.4
+    rebinned_nin_t_counts = rebin_histogram(nin_t_counts, nin_t_bins_centers, t_binning) * rebin_weights_nin * 5.6
+
+    rebinned_brn_nin_t_counts = rebinned_brn_t_counts + rebinned_nin_t_counts
+
+      
 
     # ###############################
     # # Load in the Ancillary Data  #
@@ -275,6 +299,21 @@ def main():
         rebinned_nuE_counts = rebin_histogram(nuE_counts, observable_bin_arr, rebinned_observable_bin_arr) * rebin_weights
         rebinned_nuMuBar_counts = rebin_histogram(nuMuBar_counts, observable_bin_arr, rebinned_observable_bin_arr) * rebin_weights
         rebinned_nuMu_counts = rebin_histogram(nuMu_counts, observable_bin_arr, rebinned_observable_bin_arr) * rebin_weights
+
+
+        # rebin the observable t spectrum
+        t_binning = np.asarray([0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1.0, 2.0, 4.0, 6.0])
+        rebin_weights = np.ones(len(t_binning) - 1)/(np.diff(t_binning))
+
+        rebinned_tnuE_counts = rebin_histogram(anc_tNuE_values, anc_tNuE_edges/1000, t_binning) #* rebin_weights
+        rebinned_tnuMuBar_counts = rebin_histogram(anc_tNuMuBar_values, anc_tNuMuBar_edges/1000, t_binning) #* rebin_weights
+        rebinned_tnuMu_counts = rebin_histogram(anc_tNuMu_values, anc_tNuMu_edges/1000, t_binning) #* rebin_weights
+
+        print(np.sum(rebinned_nuE_counts), np.sum(rebinned_nuMuBar_counts), np.sum(rebinned_nuMu_counts))
+        print(np.sum(rebinned_tnuE_counts), np.sum(rebinned_tnuMuBar_counts), np.sum(rebinned_tnuMu_counts))
+
+        return
+
 
     print(f"Events before cuts: {nuE_integral + nuMuBar_integral + nuMu_integral}")
     time_and_energy_cut = tNuE_frac*nuE_integral*eNuE_frac + tNuMuBar_frac*nuMuBar_integral*eNuMuBar_frac + tNuMu_frac*nuMu_integral*eNuMu_frac
@@ -359,12 +398,21 @@ def main():
                         markersize=0.5,
                         label="C")
     
-    ax[1].plot(anc_time_centered/1000, 100000*anc_tNuE_values, label="NuE (paper)")
-    ax[1].plot(anc_time_centered/1000, 100000*anc_tNuMu_values, label="NuMu (paper)")
-    ax[1].plot(anc_time_centered/1000, 100000*anc_tNuMuBar_values, label="NuMuBar (paper)")
+    ax[1].hist([t_binning[:-1], t_binning[:-1], t_binning[:-1], t_binning[:-1]], 
+            
+            bins=t_binning, 
+
+            weights=    [ rebinned_brn_nin_t_counts,
+                        rebinned_tnuMu_counts*np.sum(rebinned_nuMu_counts),
+                        rebinned_tnuMuBar_counts*np.sum(rebinned_nuMuBar_counts),
+                        rebinned_tnuE_counts*np.sum(rebinned_nuE_counts)],
+        stacked=True, 
+        label=[r'BRN+NIN', r'$\nu_\mu$', r'$\bar{\nu}_\mu$', r'$\nu_e$'],
+        alpha=0.75,
+        color=["#009988", "#EE3377", "#EE7733", "#CC3311"])
 
     ax[1].set_xlabel(r"Time ($\mu$s)")
-    ax[1].set_ylabel("Counts/ns")
+    ax[1].set_ylabel(r"Counts/$\mu$s")
     ax[1].set_xlim(0, 6)
     ax[1].legend()
 
