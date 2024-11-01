@@ -224,12 +224,19 @@ def main():
     nin_pe_bins_centers = nin_pe[:60,0]
     nin_pe_counts = nin_pe[:60,1]
 
+    bin_arr = np.ones(len(brn_pe_counts))*(brn_pe_bins_centers[1] - brn_pe_bins_centers[0])
+    brn_pe_norm = np.sum(brn_pe_counts*bin_arr)
+    print("brn pe raw counts: ", brn_pe_norm)
+    bin_arr = np.ones(len(nin_pe_counts))*(nin_pe_bins_centers[1] - nin_pe_bins_centers[0])
+    nin_pe_norm = np.sum(nin_pe_counts*bin_arr)
+    print("nin pe raw counts: ", nin_pe_norm)
+
     rebinned_observable_bin_arr = np.asarray([0,8,12,16,20,24,32,40,50,60])
     rebin_weights_brn = np.ones(len(rebinned_observable_bin_arr) - 1)*(brn_pe_bins_centers[1] - brn_pe_bins_centers[0])/np.diff(rebinned_observable_bin_arr)
     rebin_weights_nin = np.ones(len(rebinned_observable_bin_arr) - 1)*(nin_pe_bins_centers[1] - nin_pe_bins_centers[0])/np.diff(rebinned_observable_bin_arr)
 
-    rebinned_brn_counts = rebin_histogram(brn_pe_counts, brn_pe_bins_centers, rebinned_observable_bin_arr) * rebin_weights_brn * 18.4
-    rebinned_nin_counts = rebin_histogram(nin_pe_counts, nin_pe_bins_centers, rebinned_observable_bin_arr) * rebin_weights_nin * 5.6
+    rebinned_brn_counts = rebin_histogram(brn_pe_counts, brn_pe_bins_centers, rebinned_observable_bin_arr) * rebin_weights_brn * 18.4 / brn_pe_norm
+    rebinned_nin_counts = rebin_histogram(nin_pe_counts, nin_pe_bins_centers, rebinned_observable_bin_arr) * rebin_weights_nin * 5.6 / nin_pe_norm
 
     rebinned_brn_nin_counts = rebinned_brn_counts + rebinned_nin_counts
 
@@ -241,13 +248,20 @@ def main():
     nin_t_bins_centers = nin_t[:,0]
     nin_t_counts = nin_t[:,1]
 
-    t_binning = np.asarray([0, 1./9., 2./9., 3./9., 4./9., 5./9., 6./9., 7./9., 8./9., 1.0, 2.0, 4.0, 6.0])
+    bin_arr = np.ones(len(brn_t_counts))*(brn_t_bins_centers[1] - brn_t_bins_centers[0])
+    brn_t_norm = np.sum(brn_t_counts*bin_arr)
+    print("brn t raw counts: ", brn_t_norm)
+    bin_arr = np.ones(len(nin_t_counts))*(nin_t_bins_centers[1] - nin_t_bins_centers[0])
+    nin_t_norm = np.sum(nin_t_counts*bin_arr)
+    print("nin t raw counts: ", nin_t_norm)
+
+    t_binning = np.asarray([0, 1./8., 2./8., 3./8., 4./8.,  5./8., 6./8., 7./8., 1.0, 2.0, 4.0, 6.0])
 
     rebin_weights_brn = np.ones(len(t_binning) - 1)*(brn_t_bins_centers[1] - brn_t_bins_centers[0])/np.diff(t_binning)
     rebin_weights_nin = np.ones(len(t_binning) - 1)*(nin_t_bins_centers[1] - nin_t_bins_centers[0])/np.diff(t_binning)
 
-    rebinned_brn_t_counts = rebin_histogram(brn_t_counts, brn_t_bins_centers, t_binning) * rebin_weights_brn * 18.4
-    rebinned_nin_t_counts = rebin_histogram(nin_t_counts, nin_t_bins_centers, t_binning) * rebin_weights_nin * 5.6
+    rebinned_brn_t_counts = rebin_histogram(brn_t_counts, brn_t_bins_centers, t_binning) * rebin_weights_brn * 18.4 / brn_t_norm
+    rebinned_nin_t_counts = rebin_histogram(nin_t_counts, nin_t_bins_centers, t_binning) * rebin_weights_nin * 5.6 / nin_t_norm
 
     rebinned_brn_nin_t_counts = rebinned_brn_t_counts + rebinned_nin_t_counts
 
@@ -451,8 +465,8 @@ def main():
     ax[1].set_ylim(0, 300)
     ax[1].legend()
 
-
-
+    print("brn+nin counts ", np.sum(rebinned_brn_nin_counts*np.diff(rebinned_observable_bin_arr)))
+    print("brn+nin t counts ", np.sum(rebinned_brn_nin_t_counts*np.diff(t_binning)))
 
 
 
