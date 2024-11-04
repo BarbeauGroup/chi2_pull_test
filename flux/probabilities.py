@@ -62,4 +62,4 @@ def Pab(Enu, L, deltam41, alpha, beta, Ue4, Umu4, Utau4):
     delta = (1 if alpha == beta else 0)
     return np.abs(delta
                   - sin2theta(alpha, beta, Ue4, Umu4, Utau4)
-                    * np.sin(1.27 * deltam41 * L / Enu)**2)
+                    * np.sin(1.27 * deltam41**2 * L / Enu)**2)
