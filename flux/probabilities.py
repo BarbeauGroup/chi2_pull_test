@@ -7,9 +7,9 @@ def sin2theta(alpha, beta, Ue4, Umu4, Utau4):
     Parameters
     ----------
     alpha : int
-        +1 for e, +2 for mu, +3 for tau
+        +1 for e, +2 for mu, +3 for tau, +4 for sterile
     beta : int
-        +1 for e, +2 for mu, +3 for tau
+        +1 for e, +2 for mu, +3 for tau, +4 for sterile
     Ue4 : complex
         Mixing matrix element Ue4.
     Umu4 : complex
@@ -22,11 +22,12 @@ def sin2theta(alpha, beta, Ue4, Umu4, Utau4):
     float
         The sin^2(2theta(ab)).
     """
-    if (alpha != 1 and alpha != 2 and alpha != 3) or (beta != 1 and beta != 2 and beta != 3):
-        raise ValueError("alpha and beta must be 1, 2, or 3.")
+    if (alpha != 1 and alpha != 2 and alpha != 3 and alpha != 4) or (beta != 1 and beta != 2 and beta != 3 and beta != 4):
+        raise ValueError("alpha and beta must be 1, 2, 3 or 4.")
+    Us4 = 1 - np.abs(Ue4)**2 - np.abs(Umu4)**2 - np.abs(Utau4)**2
     delta = (1 if alpha == beta else 0)
-    Ua4 = (Ue4 if alpha == 1 else Umu4 if alpha == 2 else Utau4)
-    Ub4 = (Ue4 if beta == 1 else Umu4 if beta == 2 else Utau4)
+    Ua4 = (Ue4 if alpha == 1 else Umu4 if alpha == 2 else Utau4 if alpha == 3 else Us4)
+    Ub4 = (Ue4 if beta == 1 else Umu4 if beta == 2 else Utau4 if beta == 3 else Us4)
     return 4 * np.abs(
         delta*Ua4*np.conjugate(Ub4)
         - (np.abs(Ua4)*np.abs(Ub4))**2)
@@ -44,9 +45,9 @@ def Pab(Enu, L, deltam41, alpha, beta, Ue4, Umu4, Utau4):
     deltam41 : float
         Mass squared difference in eV^2.
     alpha : int
-        +1 for e, +2 for mu, +3 for tau
+        +1 for e, +2 for mu, +3 for tau, +4 for sterile
     beta : int
-        +1 for e, +2 for mu, +3 for tau
+        +1 for e, +2 for mu, +3 for tau, +4 for sterile
     Ue4 : complex
         Mixing matrix element Ue4.
     Umu4 : complex
