@@ -10,8 +10,6 @@ import numpy as np
 
 import uproot
 
-from flux.nuflux import NeutrinoFlux
-
 def csi_efficiency(x):
     # a = 0.6655
     # k = 0.4942
@@ -89,6 +87,8 @@ def main():
 
         csi_flux_smearing_matrix = np.load("data/flux_transfer_matrices/csi_flux_smearing_matrix.npy")
         csi_quenching_detector_matrix = np.load("data/flux_transfer_matrices/csi_quenching_detector_matrix.npy")
+        csi_energy_efficiency_matrix = np.load("data/flux_transfer_matrices/csi_energy_efficiency_matrix.npy")
+        csi_time_efficiency_matrix = np.load("data/flux_transfer_matrices/csi_time_efficiency_matrix.npy")
 
 
     if use_root:
@@ -175,14 +175,14 @@ def main():
     nuMuBar_true_counts = np.sum(nuMuBar_observable_energy)*number_of_neutrinos*n_atoms
     nuMu_true_counts = np.sum(nuMu_observable_energy)*number_of_neutrinos*n_atoms
 
-    nuE_integral = np.sum(csi_efficiency(observable_bin_arr)*nuE_observable_energy)*number_of_neutrinos*n_atoms
-    nuMuBar_integral = np.sum(csi_efficiency(observable_bin_arr)*nuMuBar_observable_energy)*number_of_neutrinos*n_atoms
-    nuMu_integral = np.sum(csi_efficiency(observable_bin_arr)*nuMu_observable_energy)*number_of_neutrinos*n_atoms
+    nuE_integral = np.sum(csi_energy_efficiency_matrix*nuE_observable_energy)*number_of_neutrinos*n_atoms
+    nuMuBar_integral = np.sum(csi_energy_efficiency_matrix*nuMuBar_observable_energy)*number_of_neutrinos*n_atoms
+    nuMu_integral = np.sum(csi_energy_efficiency_matrix*nuMu_observable_energy)*number_of_neutrinos*n_atoms
 
     # Time-averaged efficiencies
-    nuE_e_frac = np.sum(csi_efficiency(observable_bin_arr)*nuE_observable_energy)/np.sum(nuE_observable_energy)
-    nuMuBar_e_frac = np.sum(csi_efficiency(observable_bin_arr)*nuMuBar_observable_energy)/np.sum(nuMuBar_observable_energy)
-    nuMu_e_frac = np.sum(csi_efficiency(observable_bin_arr)*nuMu_observable_energy)/np.sum(nuMu_observable_energy)
+    nuE_e_frac = np.sum(csi_energy_efficiency_matrix*nuE_observable_energy)/np.sum(nuE_observable_energy)
+    nuMuBar_e_frac = np.sum(csi_energy_efficiency_matrix*nuMuBar_observable_energy)/np.sum(nuMuBar_observable_energy)
+    nuMu_e_frac = np.sum(csi_energy_efficiency_matrix*nuMu_observable_energy)/np.sum(nuMu_observable_energy)
 
     if plot_efficiency == True:
         plt.plot(observable_bin_arr, csi_efficiency(observable_bin_arr))
@@ -197,9 +197,11 @@ def main():
     for i, t in enumerate(anc_time_centered):
         eps_t[i] = csi_time_efficiency(t)
     
-    tNuE_frac = np.sum(anc_tNuE_values*eps_t)
-    tNuMuBar_frac = np.sum(anc_tNuMuBar_values*eps_t)
-    tNuMu_frac = np.sum(anc_tNuMu_values*eps_t)
+    tNuE_frac = np.sum(csi_time_efficiency_matrix * anc_tNuE_values)
+    tNuMuBar_frac = np.sum(csi_time_efficiency_matrix * anc_tNuMuBar_values)
+    tNuMu_frac = np.sum(csi_time_efficiency_matrix * anc_tNuMu_values)
+
+    print("t array shapes: ", anc_tNuE_values.shape, anc_tNuMuBar_values.shape, anc_tNuMu_values.shape, eps_t.shape)
 
     energy_cut = np.where(observable_bin_arr < 60)[0]
     eNuE_frac = np.sum(anc_keNuE_values[energy_cut])
@@ -209,9 +211,11 @@ def main():
     # print t fracs:
     print(f"tNuE_frac: {tNuE_frac}, tNuMuBar_frac: {tNuMuBar_frac}, tNuMu_frac: {tNuMu_frac}")
 
-    nuE_counts = csi_efficiency(observable_bin_arr)*nuE_observable_energy*number_of_neutrinos*n_atoms*tNuE_frac
-    nuMuBar_counts = csi_efficiency(observable_bin_arr)*nuMuBar_observable_energy*number_of_neutrinos*n_atoms*tNuMuBar_frac
-    nuMu_counts = csi_efficiency(observable_bin_arr)*nuMu_observable_energy*number_of_neutrinos*n_atoms*tNuMu_frac
+    nuE_counts = np.dot(csi_energy_efficiency_matrix, nuE_observable_energy)*number_of_neutrinos*n_atoms*tNuE_frac
+    nuMuBar_counts = np.dot(csi_energy_efficiency_matrix, nuMuBar_observable_energy)*number_of_neutrinos*n_atoms*tNuMuBar_frac
+    nuMu_counts = np.dot(csi_energy_efficiency_matrix,nuMu_observable_energy)*number_of_neutrinos*n_atoms*tNuMu_frac
+
+    print("counts shapes: ", nuE_counts.shape, nuMuBar_counts.shape, nuMu_counts.shape)
 
     # ####################
     # # Load in BRN Data #
@@ -326,9 +330,9 @@ def main():
         rebin_weights = np.ones(len(t_binning) - 1)/(np.diff(t_binning))
 
         # Applied eps cut
-        anc_tNuE_values_cut = (anc_tNuE_values * eps_t) * nuE_true_counts * nuE_e_frac
-        anc_tNuMuBar_values_cut = (anc_tNuMuBar_values * eps_t) * nuMuBar_true_counts * nuMuBar_e_frac
-        anc_tNuMu_values_cut = (anc_tNuMu_values * eps_t) * nuMu_true_counts * nuMu_e_frac
+        anc_tNuE_values_cut = np.dot(csi_time_efficiency_matrix, anc_tNuE_values) * nuE_true_counts * nuE_e_frac
+        anc_tNuMuBar_values_cut = np.dot(csi_time_efficiency_matrix, anc_tNuMuBar_values) * nuMuBar_true_counts * nuMuBar_e_frac
+        anc_tNuMu_values_cut = np.dot(csi_time_efficiency_matrix, anc_tNuMu_values) * nuMu_true_counts * nuMu_e_frac
 
         print("Total counts in energy plot ", np.sum(nuE_counts), np.sum(nuMuBar_counts), np.sum(nuMu_counts))
         print("Total counts in time plot ", np.sum(anc_tNuE_values_cut), np.sum(anc_tNuMuBar_values_cut), np.sum(anc_tNuMu_values_cut))
