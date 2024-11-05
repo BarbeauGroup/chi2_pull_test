@@ -93,77 +93,49 @@ def main():
 
 
 
-
-    if use_root:
-
-        paper_rf = uproot.open("flux/snsFlux2D.root")
-        convolved_energy_and_time_of_nu_mu = paper_rf["convolved_energy_time_of_nu_mu;1"]
-        convolved_energy_and_time_of_nu_mu_bar = paper_rf["convolved_energy_time_of_anti_nu_mu;1"]
-        convolved_energy_and_time_of_nu_e = paper_rf["convolved_energy_time_of_nu_e;1"]
-        convolved_energy_and_time_of_nu_e_bar = paper_rf["convolved_energy_time_of_anti_nu_e;1"]
-
-        # project onto x axis
-        # nu mu
-        NuMu = convolved_energy_and_time_of_nu_mu.values()
-        anc_keNuMu_edges = convolved_energy_and_time_of_nu_mu.axis(1).edges()
-        anc_keNuMu_values = np.sum(NuMu, axis=0)
-        anc_keNuMu_values = anc_keNuMu_values / np.sum(anc_keNuMu_values)
-        anc_tNuMu_edges = convolved_energy_and_time_of_nu_mu.axis(0).edges()
-        anc_tNuMu_values = np.sum(NuMu, axis=1)
-        anc_tNuMu_values = anc_tNuMu_values / np.sum(anc_tNuMu_values)
-
-        # nu mu bar
-        NuMuBar = convolved_energy_and_time_of_nu_mu_bar.values()
-        anc_keNuMuBar_edges = convolved_energy_and_time_of_nu_mu_bar.axis(1).edges()
-        anc_keNuMuBar_values = np.sum(NuMuBar, axis=0)
-        anc_keNuMuBar_values = anc_keNuMuBar_values / np.sum(anc_keNuMuBar_values)
-        anc_tNuMuBar_edges = convolved_energy_and_time_of_nu_mu_bar.axis(0).edges()
-        anc_tNuMuBar_values = np.sum(NuMuBar, axis=1)
-        anc_tNuMuBar_values = anc_tNuMuBar_values / np.sum(anc_tNuMuBar_values)
-
-        # nu e
-        NuE = convolved_energy_and_time_of_nu_e.values()
-        anc_keNuE_edges = convolved_energy_and_time_of_nu_e.axis(1).edges()
-        anc_keNuE_values = np.sum(NuE, axis=0)
-        anc_keNuE_values = anc_keNuE_values / np.sum(anc_keNuE_values)
-        anc_tNuE_edges = convolved_energy_and_time_of_nu_e.axis(0).edges()
-        anc_tNuE_values = np.sum(NuE, axis=1)
-        anc_tNuE_values = anc_tNuE_values / np.sum(anc_tNuE_values)
-
-        # nu e bar
-        NuEBar = convolved_energy_and_time_of_nu_e_bar.values()
-        anc_keNuEBar_edges = convolved_energy_and_time_of_nu_e_bar.axis(1).edges()
-        anc_keNuEBar_values = np.sum(NuEBar, axis=0)
-        anc_keNuEBar_values = anc_keNuEBar_values / np.sum(anc_keNuEBar_values) * 0.0001 / 0.0848
-        anc_tNuEBar_edges = convolved_energy_and_time_of_nu_e_bar.axis(0).edges()
-        anc_tNuEBar_values = np.sum(NuEBar, axis=1)
-        anc_tNuEBar_values = anc_tNuEBar_values / np.sum(anc_tNuEBar_values)  * 0.0001 / 0.0848
-
-    anc_energy_centered = (anc_keNuE_edges[1:] + anc_keNuE_edges[:-1]) / 2
-    anc_time_centered = (anc_tNuE_edges[1:] + anc_tNuE_edges[:-1]) / 2
+    flux = read_flux_from_root("flux/snsFlux2D.root")
+    
+    print("Total number of muon neutrinos: ", np.sum(flux['NuMuEnergy'][1]))
+    print("Total number of muon anti-neutrinos: ", np.sum(flux['NuMuBarEnergy'][1]))
+    print("\n")
+    print("Total number of electron neutrinos: ", np.sum(flux['NuEEnergy'][1]))
+    print("Total number of electron anti-neutrinos: ", np.sum(flux['NuEBarEnergy'][1]))
+    print("\n")
+    print("Total number of tau neutrinos: ", np.sum(flux['NuTauEnergy'][1]))
+    print("Total number of tau anti-neutrinos: ", np.sum(flux['NuTauBarEnergy'][1]))
 
 
-    flux_dict = read_flux_from_root("flux/snsFlux2D.root")
-    print(flux_dict.keys())
-
-    return 0
-
+    # Sterile Osc Parameters
     L = 19.3
     deltam41 = 1
     Ue4 = 0.3162
     Umu4 = 0.1778/3
     Utau4 = 0.0
-    oscillated_nu_e = Pab(anc_energy_centered, L, deltam41, 1, 1, Ue4, Umu4, Utau4)*anc_keNuE_values + Pab(anc_energy_centered, L, deltam41, 2, 1, Ue4, Umu4, Utau4)*anc_keNuMu_values
-    oscillated_nu_e_t_ratio = np.sum(oscillated_nu_e) / np.sum(anc_keNuE_values)
 
-    oscillated_nu_mu = Pab(anc_energy_centered, L, deltam41, 2, 2, Ue4, Umu4, Utau4)*anc_keNuMu_values + Pab(anc_energy_centered, L, deltam41, 1, 2, Ue4, Umu4, Utau4)*anc_keNuE_values
-    oscillated_nu_mu_t_ratio = np.sum(oscillated_nu_mu) / np.sum(anc_keNuMu_values)
+    # Oscillation
+    oscillated_nu_e = Pab(flux["NuEEnergy"][0], L, deltam41, 1, 1, Ue4, Umu4, Utau4)*flux["NuEEnergy"][1] + Pab(flux["NuMuEnergy"][0], L, deltam41, 2, 1, Ue4, Umu4, Utau4)*flux["NuEEnergy"][1]
+    oscillated_nu_e_t_ratio = np.sum(oscillated_nu_e) / np.sum(flux["NuEEnergy"][1])
 
-    oscillated_nu_mu_bar = Pab(anc_energy_centered, L, deltam41, 2, 2, Ue4, Umu4, Utau4)*anc_keNuMuBar_values + Pab(anc_energy_centered, L, deltam41, 1, 2, Ue4, Umu4, Utau4)*anc_keNuEBar_values
-    oscillated_nu_mu_bar_t_ratio = np.sum(oscillated_nu_mu_bar) / np.sum(anc_keNuMuBar_values)
+    oscillated_nu_mu = Pab(flux["NuMuEnergy"][0], L, deltam41, 2, 2, Ue4, Umu4, Utau4)*flux["NuMuEnergy"][1] + Pab(flux["NuEEnergy"][0], L, deltam41, 1, 2, Ue4, Umu4, Utau4)*flux["NuMuEnergy"][1]
+    oscillated_nu_mu_t_ratio = np.sum(oscillated_nu_mu) / np.sum(flux["NuMuEnergy"][1])
 
-    oscillated_nu_e_bar = Pab(anc_energy_centered, L, deltam41, 1, 1, Ue4, Umu4, Utau4)*anc_keNuEBar_values +  Pab(anc_energy_centered, L, deltam41, 2, 1, Ue4, Umu4, Utau4)*anc_keNuMuBar_values
-    oscillated_nu_e_bar_t_ratio = np.sum(oscillated_nu_e_bar) / np.sum(anc_keNuMuBar_values)
+    oscillated_nu_mu_bar = Pab(flux["NuMuBarEnergy"][0], L, deltam41, 2, 2, Ue4, Umu4, Utau4)*flux["NuMuBarEnergy"][1] + Pab(flux["NuEEnergy"][0], L, deltam41, 1, 2, Ue4, Umu4, Utau4)*flux["NuMuBarEnergy"][1]
+    oscillated_nu_mu_bar_t_ratio = np.sum(oscillated_nu_mu_bar) / np.sum(flux["NuMuBarEnergy"][1])
+
+    oscillated_nu_e_bar = Pab(flux["NuEEnergy"][0], L, deltam41, 1, 1, Ue4, Umu4, Utau4)*flux["NuEBarEnergy"][1] +  Pab(flux["NuMuBarEnergy"][0], L, deltam41, 2, 1, Ue4, Umu4, Utau4)*flux["NuEBarEnergy"][1]
+    oscillated_nu_e_bar_t_ratio = np.sum(oscillated_nu_e_bar) / np.sum(flux["NuEBarEnergy"][1])
+
+
+    print("Total number of oscillated muon neutrinos: ", np.sum(oscillated_nu_mu))
+    print("Total number of oscillated muon anti-neutrinos: ", np.sum(oscillated_nu_mu_bar))
+    print("\n")
+    print("Total number of oscillated electron neutrinos: ", np.sum(oscillated_nu_e))
+    print("Total number of oscillated electron anti-neutrinos: ", np.sum(oscillated_nu_e_bar))
+    print("\n")
+    print("Total number of tau neutrinos: ", np.sum(flux['NuTauEnergy'][1]))
+    print("Total number of tau anti-neutrinos: ", np.sum(flux['NuTauBarEnergy'][1]))
+
+    return
 
     if plot_fluxes == True: 
         # plot just the fluxes in energy and time
