@@ -94,15 +94,6 @@ def main():
 
 
     flux = read_flux_from_root("flux/snsFlux2D.root")
-    
-    print("Total number of muon neutrinos: ", np.sum(flux['NuMuEnergy'][1]))
-    print("Total number of muon anti-neutrinos: ", np.sum(flux['NuMuBarEnergy'][1]))
-    print("\n")
-    print("Total number of electron neutrinos: ", np.sum(flux['NuEEnergy'][1]))
-    print("Total number of electron anti-neutrinos: ", np.sum(flux['NuEBarEnergy'][1]))
-    print("\n")
-    print("Total number of tau neutrinos: ", np.sum(flux['NuTauEnergy'][1]))
-    print("Total number of tau anti-neutrinos: ", np.sum(flux['NuTauBarEnergy'][1]))
 
 
     # Sterile Osc Parameters

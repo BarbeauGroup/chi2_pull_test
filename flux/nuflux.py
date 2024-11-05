@@ -1,6 +1,8 @@
 import uproot
 import numpy as np
 
+from probabilities import Pab
+
 
 def read_flux_from_root(filename: str) -> dict:
     """
@@ -108,5 +110,42 @@ def oscillate_flux(flux: dict) -> dict:
     Utau4 = 0.0
     Us4 = 1 - np.abs(Ue4)**2 - np.abs(Umu4)**2 - np.abs(Utau4)**2
 
-    print(Ue4, Umu4, Utau4, Us4)
+    print("Total number of muon neutrinos: ", np.sum(flux['NuMuEnergy'][1]))
+    print("Total number of muon anti-neutrinos: ", np.sum(flux['NuMuBarEnergy'][1]))
+    print("\n")
+    print("Total number of electron neutrinos: ", np.sum(flux['NuEEnergy'][1]))
+    print("Total number of electron anti-neutrinos: ", np.sum(flux['NuEBarEnergy'][1]))
+    print("\n")
+    print("Total number of tau neutrinos: ", np.sum(flux['NuTauEnergy'][1]))
+    print("Total number of tau anti-neutrinos: ", np.sum(flux['NuTauBarEnergy'][1]))
+    print("\n")
+    print("Total number of sterile neutrinos: ", np.sum(flux['NuSEnergy'][1]))
+    print("Total number of sterile anti-neutrinos: ", np.sum(flux['NuSBarEnergy'][1]))
+    print("\n")
+    print("Total number of all neutrinos: ", np.sum(flux['NuMuEnergy'][1]) + np.sum(flux['NuEEnergy'][1]) + np.sum(flux['NuTauEnergy'][1]) + np.sum(flux['NuSEnergy'][1]))
+
+    # Make an empty dictionary to store the oscillated flux information
+    oscillated_flux = {}
+
+    P_nue_nue = Pab(flux["NuEEnergy"][0], L, deltam41, 1, 1, Ue4, Umu4, Utau4)
+    P_nue_numu = Pab(flux["NuMuEnergy"][0], L, deltam41, 2, 1, Ue4, Umu4, Utau4)
+    P_nue_nutau = Pab(flux["NuTauEnergy"][0], L, deltam41, 3, 1, Ue4, Umu4, Utau4)
+    P_nue_nus = Pab(flux["NuSEnergy"][0], L, deltam41, 4, 1, Ue4, Umu4, Utau4)
+
+    P_numu_nue = Pab(flux["NuMuEnergy"][0], L, deltam41, 2, 2, Ue4, Umu4, Utau4)
+    P_numu_numu = Pab(flux["NuEEnergy"][0], L, deltam41, 1, 2, Ue4, Umu4, Utau4)
+    P_numu_nutau = Pab(flux["NuTauEnergy"][0], L, deltam41, 3, 2, Ue4, Umu4, Utau4)
+    P_numu_nus = Pab(flux["NuSEnergy"][0], L, deltam41, 4, 2, Ue4, Umu4, Utau4)
+
+    P_nutau_nue = Pab(flux["NuTauEnergy"][0], L, deltam41, 3, 3, Ue4, Umu4, Utau4)
+    P_nutau_numu = Pab(flux["NuMuEnergy"][0], L, deltam41, 2, 3, Ue4, Umu4, Utau4)
+    P_nutau_nutau = Pab(flux["NuEEnergy"][0], L, deltam41, 1, 3, Ue4, Umu4, Utau4)
+    P_nutau_nus = Pab(flux["NuSEnergy"][0], L, deltam41, 4, 3, Ue4, Umu4, Utau4)
+
+    P_nus_nue = Pab(flux["NuSEnergy"][0], L, deltam41, 4, 4, Ue4, Umu4, Utau4)
+    P_nus_numu = Pab(flux["NuMuEnergy"][0], L, deltam41, 2, 4, Ue4, Umu4, Utau4)
+    P_nus_nutau = Pab(flux["NuTauEnergy"][0], L, deltam41, 3, 4, Ue4, Umu4, Utau4)
+    P_nus_nus = Pab(flux["NuEEnergy"][0], L, deltam41, 1, 4, Ue4, Umu4, Utau4)
+
+    print(P_nue_nue )
 
