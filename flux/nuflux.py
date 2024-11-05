@@ -65,25 +65,25 @@ def read_flux_from_root(filename: str) -> dict:
         'NuMuTime': (anc_time_centered, anc_tNuMu_values),
 
         'NuMuBarEnergy': (anc_energy_centered, anc_keNuMuBar_values),
-        'NuMuBarTime': (anc_tNuMuBar_edges, anc_tNuMuBar_values),
+        'NuMuBarTime': (anc_time_centered, anc_tNuMuBar_values),
 
         'NuEEnergy': (anc_energy_centered, anc_keNuE_values),
-        'NuETime': (anc_tNuE_edges, anc_tNuE_values),
+        'NuETime': (anc_time_centered, anc_tNuE_values),
 
         'NuEBarEnergy': (anc_energy_centered, anc_keNuEBar_values),
-        'NuEBarTime': (anc_tNuEBar_edges, anc_tNuEBar_values),
+        'NuEBarTime': (anc_time_centered, anc_tNuEBar_values),
 
-        'NuTauEnergy': (anc_energy_centered, np.zeros(anc_keNuE_edges.shape)),
-        'NuTauTime': (anc_tNuE_edges, np.zeros(anc_tNuE_edges.shape)),
+        'NuTauEnergy': (anc_energy_centered, np.zeros(anc_keNuE_values.shape)),
+        'NuTauTime': (anc_time_centered, np.zeros(anc_tNuE_values.shape)),
 
-        'NuTauBarEnergy': (anc_energy_centered, np.zeros(anc_keNuEBar_edges.shape)),
-        'NuTauBarTime': (anc_tNuEBar_edges, np.zeros(anc_tNuEBar_edges.shape)),
+        'NuTauBarEnergy': (anc_energy_centered, np.zeros(anc_keNuE_values.shape)),
+        'NuTauBarTime': (anc_time_centered, np.zeros(anc_tNuE_values.shape)),
 
-        'NuSEnergy': (anc_energy_centered, np.zeros(anc_keNuEBar_edges.shape)),
-        'NuSTime': (anc_tNuEBar_edges, np.zeros(anc_tNuEBar_edges.shape)),
+        'NuSEnergy': (anc_energy_centered, np.zeros(anc_keNuE_values.shape)),
+        'NuSTime': (anc_time_centered, np.zeros(anc_tNuE_values.shape)),
 
-        'NuSEnergy': (anc_energy_centered, np.zeros(anc_keNuEBar_edges.shape)),
-        'NuSBarTime': (anc_tNuEBar_edges, np.zeros(anc_tNuEBar_edges.shape))
+        'NuSBarEnergy': (anc_energy_centered, np.zeros(anc_keNuE_values.shape)),
+        'NuSBarTime': (anc_time_centered, np.zeros(anc_tNuE_values.shape))
     }
 
     return flux_info
@@ -106,7 +106,7 @@ def oscillate_flux(flux: dict) -> dict:
     Ue4 = 0.3162
     Umu4 = 0.1778/3
     Utau4 = 0.0
-    Us4 = 1 - Ue4**2 - Umu4**2 - Utau4**2
+    Us4 = 1 - np.abs(Ue4)**2 - np.abs(Umu4)**2 - np.abs(Utau4)**2
 
     print(Ue4, Umu4, Utau4, Us4)
 
