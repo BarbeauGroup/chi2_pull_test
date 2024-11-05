@@ -24,7 +24,7 @@ def sin2theta(alpha, beta, Ue4, Umu4, Utau4):
     """
     if (alpha != 1 and alpha != 2 and alpha != 3 and alpha != 4) or (beta != 1 and beta != 2 and beta != 3 and beta != 4):
         raise ValueError("alpha and beta must be 1, 2, 3 or 4.")
-    Us4 = 1 - np.abs(Ue4)**2 - np.abs(Umu4)**2 - np.abs(Utau4)**2
+    Us4 = np.sqrt(1 - np.abs(Ue4)**2 - np.abs(Umu4)**2 - np.abs(Utau4)**2)
     delta = (1 if alpha == beta else 0)
     Ua4 = (Ue4 if alpha == 1 else Umu4 if alpha == 2 else Utau4 if alpha == 3 else Us4)
     Ub4 = (Ue4 if beta == 1 else Umu4 if beta == 2 else Utau4 if beta == 3 else Us4)
@@ -63,4 +63,4 @@ def Pab(Enu, L, deltam41, alpha, beta, Ue4, Umu4, Utau4):
     delta = (1 if alpha == beta else 0)
     return np.abs(delta
                   - sin2theta(alpha, beta, Ue4, Umu4, Utau4)
-                    * np.sin(1.27 * deltam41**2 * L / Enu)**2)
+                    * np.sin(1.267 * deltam41**2 * L / Enu)**2)

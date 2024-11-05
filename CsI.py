@@ -85,6 +85,8 @@ def main():
         n_atoms = mass / (A * Da)
         number_of_neutrinos = (0.0848*3.198e23) / (4*np.pi*(19.3*100)**2)
 
+        print("n_neutrinos: ", n_atoms)
+
         csi_flux_smearing_matrix = np.load("data/flux_transfer_matrices/csi_flux_smearing_matrix.npy")
         csi_quenching_detector_matrix = np.load("data/flux_transfer_matrices/csi_quenching_detector_matrix.npy")
         csi_energy_efficiency_matrix = np.load("data/flux_transfer_matrices/csi_energy_efficiency_matrix.npy")
