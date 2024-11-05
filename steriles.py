@@ -10,9 +10,8 @@ import numpy as np
 
 import uproot
 
-from flux.nuflux import NeutrinoFlux
-
 from flux.probabilities import Pab, sin2theta
+from flux.nuflux import read_flux_from_root
 
 def csi_efficiency(x):
     # a = 0.6655
@@ -93,6 +92,8 @@ def main():
         csi_quenching_detector_matrix = np.load("data/flux_transfer_matrices/csi_quenching_detector_matrix.npy")
 
 
+
+
     if use_root:
 
         paper_rf = uproot.open("flux/snsFlux2D.root")
@@ -140,6 +141,12 @@ def main():
 
     anc_energy_centered = (anc_keNuE_edges[1:] + anc_keNuE_edges[:-1]) / 2
     anc_time_centered = (anc_tNuE_edges[1:] + anc_tNuE_edges[:-1]) / 2
+
+
+    flux_dict = read_flux_from_root("flux/snsFlux2D.root")
+    print(flux_dict.keys())
+
+    return 0
 
     L = 19.3
     deltam41 = 1
