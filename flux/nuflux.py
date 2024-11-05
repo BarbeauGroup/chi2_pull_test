@@ -77,10 +77,36 @@ def read_flux_from_root(filename: str) -> dict:
         'NuTauTime': (anc_tNuE_edges, np.zeros(anc_tNuE_edges.shape)),
 
         'NuTauBarEnergy': (anc_energy_centered, np.zeros(anc_keNuEBar_edges.shape)),
-        'NuTauBarTime': (anc_tNuEBar_edges, np.zeros(anc_tNuEBar_edges.shape))
+        'NuTauBarTime': (anc_tNuEBar_edges, np.zeros(anc_tNuEBar_edges.shape)),
+
+        'NuSEnergy': (anc_energy_centered, np.zeros(anc_keNuEBar_edges.shape)),
+        'NuSTime': (anc_tNuEBar_edges, np.zeros(anc_tNuEBar_edges.shape)),
+
+        'NuSEnergy': (anc_energy_centered, np.zeros(anc_keNuEBar_edges.shape)),
+        'NuSBarTime': (anc_tNuEBar_edges, np.zeros(anc_tNuEBar_edges.shape))
     }
 
     return flux_info
 
 
+
+def oscillate_flux(flux: dict) -> dict:
+    """
+    flux: dictionary with SNS flux information
+
+    returns: dictionary with oscillated SNS flux information
+    """
+
+    ###
+
+    # Oscillation Parameters
+
+    L = 19.3
+    deltam41 = 1
+    Ue4 = 0.3162
+    Umu4 = 0.1778/3
+    Utau4 = 0.0
+    Us4 = 1 - Ue4**2 - Umu4**2 - Utau4**2
+
+    print(Ue4, Umu4, Utau4, Us4)
 

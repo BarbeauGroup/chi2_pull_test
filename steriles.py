@@ -11,7 +11,7 @@ import numpy as np
 import uproot
 
 from flux.probabilities import Pab, sin2theta
-from flux.nuflux import read_flux_from_root
+from flux.nuflux import read_flux_from_root, oscillate_flux
 
 def csi_efficiency(x):
     # a = 0.6655
@@ -111,6 +111,9 @@ def main():
     Ue4 = 0.3162
     Umu4 = 0.1778/3
     Utau4 = 0.0
+
+    oscillate_flux(flux=flux)
+    return
 
     # Oscillation
     oscillated_nu_e = Pab(flux["NuEEnergy"][0], L, deltam41, 1, 1, Ue4, Umu4, Utau4)*flux["NuEEnergy"][1] + Pab(flux["NuMuEnergy"][0], L, deltam41, 2, 1, Ue4, Umu4, Utau4)*flux["NuEEnergy"][1]
