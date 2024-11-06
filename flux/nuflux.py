@@ -123,7 +123,6 @@ def oscillate_flux(flux: dict) -> dict:
     Ue4 = 0.3162
     Umu4 = 0
     Utau4 = 0.0
-    Us4 = 1 - np.abs(Ue4)**2 - np.abs(Umu4)**2 - np.abs(Utau4)**2
 
     # Make an empty dictionary to store the oscillated flux information
     oscillated_flux = {}
@@ -132,14 +131,22 @@ def oscillate_flux(flux: dict) -> dict:
     anti_flavors = ["nuEBar", "nuMuBar", "nuTauBar", "nuSBar"]
 
     for initial_i, (initial_flavor, initial_antiflavor) in enumerate(zip(flavors, anti_flavors)):
-        temp = 0
-        anti_temp = 0
-        prob = 0
+        oscillated_energy_flux = 0
+        anti_oscillated_energy_flux = 0
         for final_i, (final_flavor, final_antiflavor) in enumerate(zip(flavors, anti_flavors)):
-            temp += Pab(flux[final_flavor]["energy"][0], L, deltam41, initial_i+1, final_i+1, Ue4, Umu4, Utau4) * flux[final_flavor]["energy"][1]
-            prob += Pab(flux[final_flavor]["energy"][0], L, deltam41, initial_i+1, final_i+1, Ue4, Umu4, Utau4)
-            anti_temp += Pab(flux[final_antiflavor]["energy"][0], L, deltam41, initial_i+1,  final_i+1, Ue4, Umu4, Utau4) * flux[final_antiflavor]["energy"][1]
-        oscillated_flux[initial_flavor] = temp
-        oscillated_flux[initial_antiflavor] = anti_temp
+            oscillated_energy_flux += Pab(flux[final_flavor]["energy"][0], L, deltam41, initial_i+1, final_i+1, Ue4, Umu4, Utau4) * flux[final_flavor]["energy"][1]
+            anti_oscillated_energy_flux += Pab(flux[final_antiflavor]["energy"][0], L, deltam41, initial_i+1,  final_i+1, Ue4, Umu4, Utau4) * flux[final_antiflavor]["energy"][1]
+
+        time_ratio = np.sum(oscillated_energy_flux) / np.sum(flux[initial_flavor]["energy"][1])
+        anti_time_ratio = np.sum(anti_oscillated_energy_flux) / np.sum(flux[initial_antiflavor]["energy"][1])
+
+        oscillated_flux[initial_flavor] = {
+            "energy" : (flux[initial_flavor]["energy"][0], oscillated_energy_flux),
+            "time" : (flux[initial_flavor]["time"][0], flux[initial_flavor]["time"][1] * time_ratio)
+        }
+        oscillated_flux[initial_antiflavor] = {
+            "energy" : (flux[initial_antiflavor]["energy"][0], anti_oscillated_energy_flux),
+            "time" : (flux[initial_antiflavor]["time"][0], flux[initial_antiflavor]["time"][1] * anti_time_ratio)
+        }
 
     return oscillated_flux
