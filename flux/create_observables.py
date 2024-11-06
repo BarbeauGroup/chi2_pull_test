@@ -68,6 +68,6 @@ def create_observables(flux, params) -> dict:
             "time": (flux[flavor]["time"][0], np.dot(time_matrix, truth_level_time) * N_true * e_frac)
         }
 
-        print("Observed counts for ", flavor, ":", np.sum(observables[flavor]["energy"][1]), np.sum(observables[flavor]["time"][1]))
+        # print("Observed counts for ", flavor, ":", np.sum(observables[flavor]["energy"][1]), np.sum(observables[flavor]["time"][1]))
     
     return observables
