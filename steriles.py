@@ -28,7 +28,8 @@ def main():
     Umu4 = 0.1778/3
     Utau4 = 0.0
 
-    oscillate_flux(flux=flux)
+    oscillated_flux = oscillate_flux(flux=flux)
+    print(oscillated_flux)
     return
     
 if __name__ == "__main__":
