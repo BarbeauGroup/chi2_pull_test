@@ -11,7 +11,7 @@ def plot_observables(unosc: dict, osc: dict) -> None:
     labels = []
 
     for flavor in unosc.keys():
-        x.append(unosc[flavor]["energy"][0])
+        x.append(unosc[flavor]["energy"][0][:-1])
         weights.append(unosc[flavor]["energy"][1])
         labels.append(flavor)
     
@@ -32,7 +32,7 @@ def plot_observables(unosc: dict, osc: dict) -> None:
             continue
         weights += osc[flavor]["energy"][1]
     
-    ax[0].plot(osc["nuE"]["energy"][0], weights, label="Oscillated", color="black", ls="none", marker="o", markersize=1)
+    ax[0].plot(osc["nuE"]["energy"][0][:-1], weights, label="Oscillated", color="black", ls="none", marker="o", markersize=1)
 
     ax[0].legend()
 

@@ -43,7 +43,7 @@ def create_observables(flux, params) -> dict:
         truth_level_energy = np.dot(flux_matrix, flux[flavor]["energy"][1])
         observable_energy = np.dot(np.nan_to_num(detector_matrix), truth_level_energy)
         dx = params["detector"]["detector_matrix_dx"]
-        observable_bin_arr = np.arange(0, len(observable_energy) * dx, dx)
+        observable_bin_arr = np.arange(0, (len(observable_energy) + 1) * dx, dx)
 
         # Load in time information
         truth_level_time = flux[flavor]["time"][1]

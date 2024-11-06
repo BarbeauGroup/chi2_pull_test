@@ -54,48 +54,46 @@ def read_flux_from_root(params: dict) -> dict:
     anc_tNuMuBar_values = np.sum(NuMuBar, axis=1)
     anc_tNuMuBar_values = anc_tNuMuBar_values / np.sum(anc_tNuMuBar_values)
 
-    anc_time_centered = (anc_tNuE_edges[1:] + anc_tNuE_edges[:-1]) / 2
-
     # Make a tuple of the flux information for each neutrino type
     flux_info = {
         'nuE': {
             'energy': (anc_keNuE_edges, anc_keNuE_values),
-            'time': (anc_time_centered, anc_tNuE_values)
+            'time': (anc_tNuE_edges, anc_tNuE_values)
         },
 
         'nuEBar': {
             'energy': (anc_keNuEBar_edges, anc_keNuEBar_values),
-            'time': (anc_time_centered, anc_tNuEBar_values)
+            'time': (anc_tNuEBar_edges, anc_tNuEBar_values)
         },
 
         'nuMu': {
             'energy': (anc_keNuMu_edges, anc_keNuMu_values),
-            'time': (anc_time_centered, anc_tNuMu_values)
+            'time': (anc_tNuMu_edges, anc_tNuMu_values)
         },
 
         'nuMuBar': {
             'energy': (anc_keNuMuBar_edges, anc_keNuMuBar_values),
-            'time': (anc_time_centered, anc_tNuMuBar_values)
+            'time': (anc_tNuMuBar_edges, anc_tNuMuBar_values)
         },
 
         'nuTau': {
             'energy': (anc_keNuMu_edges, np.zeros(anc_keNuE_values.shape)),
-            'time': (anc_time_centered, np.zeros(anc_tNuE_values.shape))
+            'time': (anc_tNuE_edges, np.zeros(anc_tNuE_values.shape))
         },
 
         'nuTauBar': {
             'energy': (anc_keNuMu_edges, np.zeros(anc_keNuE_values.shape)),
-            'time': (anc_time_centered, np.zeros(anc_tNuE_values.shape))
+            'time': (anc_tNuE_edges, np.zeros(anc_tNuE_values.shape))
         },
 
         'nuS': {
             'energy': (anc_keNuMu_edges, np.zeros(anc_keNuE_values.shape)),
-            'time': (anc_time_centered, np.zeros(anc_tNuE_values.shape))
+            'time': (anc_tNuE_edges, np.zeros(anc_tNuE_values.shape))
         },
 
         'nuSBar': {
             'energy': (anc_keNuMu_edges, np.zeros(anc_keNuE_values.shape)),
-            'time': (anc_time_centered, np.zeros(anc_tNuE_values.shape))
+            'time': (anc_tNuE_edges, np.zeros(anc_tNuE_values.shape))
         }
     }
 
