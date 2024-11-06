@@ -33,11 +33,14 @@ def create_observables(flux, params) -> dict:
     
     observables = {}
 
+    tmp = 0
     for flavor in flux.keys():
-        num_neutrinos = params["detector"]["nus_per_pot"][flavor] * params["detector"]["pot"] / (4 * np.pi * np.power(params["detector"]["distance"], 2))
+
+        # flux is normalized to number of neutrinos per POT so it's not counted here
+        num_neutrinos = params["detector"]["pot"] / (4 * np.pi * np.power(params["detector"]["distance"], 2))
 
         # Load in energy and calculate observable energy before efficiencies
-        truth_level_energy = np.dot(flux_matrix, flux[flavor]["energy"][1][1:60])
+        truth_level_energy = np.dot(flux_matrix, flux[flavor]["energy"][1])
         observable_energy = np.dot(np.nan_to_num(detector_matrix), truth_level_energy)
         dx = params["detector"]["detector_matrix_dx"]
         observable_bin_arr = np.arange(0, len(observable_energy) * dx, dx)
@@ -65,7 +68,6 @@ def create_observables(flux, params) -> dict:
             "time": (flux[flavor]["time"][0], np.dot(time_matrix, truth_level_time) * N_true * e_frac)
         }
 
-        print("num neutrinos: ")
         print("Observed counts for ", flavor, ":", np.sum(observables[flavor]["energy"][1]), np.sum(observables[flavor]["time"][1]))
     
     return observables

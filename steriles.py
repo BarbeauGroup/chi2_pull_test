@@ -17,20 +17,13 @@ from flux.create_observables import create_observables
 
 def main():
     params = load_params("config/csi.json")
-    flux = read_flux_from_root(params["flux_file"])
-
-    # create_observables(flux=flux, params=params)
-
-    # Sterile Osc Parameters (temp)
-    L = 19.3
-    deltam41 = 1
-    Ue4 = 0.3162
-    Umu4 = 0.1778/3
-    Utau4 = 0.0
-
+    flux = read_flux_from_root(params)
     oscillated_flux = oscillate_flux(flux=flux)
-    print(oscillated_flux)
-    return
+
+    un_osc_obs = create_observables(params=params, flux=flux)
+    osc_obs = create_observables(params=params, flux=oscillated_flux)
+
+
     
 if __name__ == "__main__":
     main()
