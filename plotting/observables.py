@@ -87,13 +87,18 @@ def plot_observables(unosc: dict, osc: dict) -> None:
                 label=labels,
                 alpha=1,
                 color=["#bb27f6", "#8f7252", "#f0995c", "#f9dc81", "green", "black", "blue", "red"])
+    
+    ax[1].set_xlabel(r"Time [$\mu$s]")
+    ax[1].set_ylabel(r"Counts / $\mu$s")
 
 
     e_weights = 0
+    t_weights = 0
     for flavor in osc.keys():
         if flavor == "nuS" or flavor == "nuSBar":
             continue
         e_weights += osc[flavor]["energy"][1]
+        t_weights += osc[flavor]["time"][1]
     
     ax[0].errorbar(x=(rebinned_observable_bin_arr[1:] + rebinned_observable_bin_arr[:-1])/2,
                y=rebin_histogram(e_weights, osc[flavor]["energy"][0], rebinned_observable_bin_arr)*rebin_weights,
@@ -101,8 +106,16 @@ def plot_observables(unosc: dict, osc: dict) -> None:
                label="Oscillated", 
                color="blue", ls="none", 
                marker="x", markersize=5)
+    
+    ax[1].errorbar(x=(rebinned_t_bin_arr[1:] + rebinned_t_bin_arr[:-1])/2,
+                y=rebin_histogram(t_weights, osc[flavor]["time"][0]/1000, rebinned_t_bin_arr)*rebin_t_weights,
+                xerr=np.diff(rebinned_t_bin_arr)/2, 
+                label="Oscillated", 
+                color="blue", ls="none", 
+                marker="x", markersize=5)
 
     ax[0].legend()
+    ax[1].legend()
 
     plt.plot()
     plt.show()
