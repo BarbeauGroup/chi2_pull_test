@@ -159,3 +159,49 @@ def read_brns_nins_from_txt(params: dict) -> dict:
                             "time": (nin_t_bins_edges, nin_t_counts) }
 
     return dictionary
+
+
+def read_data_from_txt(params: dict) -> dict:
+    """
+    
+    params: dictionary with hist_file key and other info
+
+    returns: dictionary with measurement data
+    
+    """
+
+    # TODO: put paths in config file
+    # TODO: put cuts in config file
+
+    dictionary = {}
+
+    dataBeamOnAC = np.loadtxt("data/csi_anc/dataBeamOnAC.txt")
+    AC_PE = dataBeamOnAC[:,0]
+    AC_t = dataBeamOnAC[:,1]
+
+    dataBeamOnC = np.loadtxt("data/csi_anc/dataBeamOnC.txt")
+    C_PE = dataBeamOnC[:,0]
+    C_t = dataBeamOnC[:,1]
+
+    # must filter the events that have t > 6 
+    AC_high_time_idx = np.where(AC_t > 6)[0]
+    AC_PE = np.delete(AC_PE, AC_high_time_idx)
+    AC_t = np.delete(AC_t, AC_high_time_idx)
+
+    C_high_time_idx = np.where(C_t > 6)[0]
+    C_PE = np.delete(C_PE, C_high_time_idx)
+    C_t = np.delete(C_t, C_high_time_idx)
+
+    # and energy > 60
+    AC_high_energy_idx = np.where(AC_PE > 60)[0]
+    AC_PE = np.delete(AC_PE, AC_high_energy_idx)
+    AC_t = np.delete(AC_t, AC_high_energy_idx)
+
+    C_high_energy_idx = np.where(C_PE > 60)[0]
+    C_PE = np.delete(C_PE, C_high_energy_idx)
+    C_t = np.delete(C_t, C_high_energy_idx)
+
+    dictionary["AC"] = { "energy": AC_PE, "time": AC_t }
+    dictionary["C"] = { "energy": C_PE, "time": C_t }
+
+    return dictionary

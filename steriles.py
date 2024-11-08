@@ -1,6 +1,6 @@
 from flux.nuflux import oscillate_flux
 from utils.loadparams import load_params
-from utils.data_loaders import read_flux_from_root, read_brns_nins_from_txt
+from utils.data_loaders import read_flux_from_root, read_brns_nins_from_txt, read_data_from_txt
 from flux.create_observables import create_observables
 from plotting.observables import plot_observables
 
@@ -9,8 +9,10 @@ def main():
 
     bkd_dict = read_brns_nins_from_txt(params)
 
-    # TODO : Read data from txt
-    # data_dict = read_data_from_txt(params)
+    data_dict = read_data_from_txt(params)
+
+    print(data_dict)
+    return
     
     flux = read_flux_from_root(params)
 
