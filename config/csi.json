@@ -31,5 +31,9 @@
         "time_matrix": "data/flux_transfer_matrices/csi_time_efficiency_matrix.npy",
         "detector_matrix_dx": 0.1
     },
-    "flux_file": "flux/snsFlux2D.root"
+    "flux_file": "flux/snsFlux2D.root",
+    "brn_energy_file": "data/csi_anc/brnPE.txt",
+    "brn_time_file": "data/csi_anc/brnTrec.txt",
+    "nin_energy_file": "data/csi_anc/ninPE.txt",
+    "nin_time_file": "data/csi_anc/ninTrec.txt"
 }

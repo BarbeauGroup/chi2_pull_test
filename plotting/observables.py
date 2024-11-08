@@ -2,39 +2,11 @@ import matplotlib.pyplot as plt
 import scienceplots
 import numpy as np
 
-
-def rebin_histogram(counts, bin_edges, new_bin_edges):
-
-    new_counts = np.zeros(len(new_bin_edges) - 1)
-
-    for i in range(len(new_bin_edges) - 1):
-        new_bin_start, new_bin_end = new_bin_edges[i], new_bin_edges[i+1]
-        
-        # Loop over each fine bin
-        for j in range(len(bin_edges) - 1):
-            fine_bin_start, fine_bin_end = bin_edges[j], bin_edges[j+1]
-            
-            # Check for overlap between fine bin and new bin
-            overlap_start = max(new_bin_start, fine_bin_start)
-            overlap_end = min(new_bin_end, fine_bin_end)
-            
-            if overlap_start < overlap_end:
-                # Calculate the overlap width
-                overlap_width = overlap_end - overlap_start
-                fine_bin_width = fine_bin_end - fine_bin_start
-                
-                # Proportion of the fine bin's count that goes into the new bin
-                contribution = (overlap_width / fine_bin_width) * counts[j]
-                
-                # Add the contribution to the new bin's count
-                new_counts[i] += contribution
-    
-    return new_counts
-
+from utils.histograms import rebin_histogram
 
 plt.style.use(['science', 'high-contrast'])
 
-def plot_observables(unosc: dict, osc: dict) -> None:
+def plot_observables(unosc: dict, osc: dict, bkd_dict: dict) -> None:
 
     # TODO: Make this a parameter
     rebinned_observable_bin_arr = np.asarray([0,8,12,16,20,24,32,40,50,60])
@@ -52,9 +24,17 @@ def plot_observables(unosc: dict, osc: dict) -> None:
     t_weights = []
     labels = []
 
+    for bkd in bkd_dict.keys():
+        if bkd == "brn": norm = 18.4
+        else: norm = 5.6
+        x.append(rebinned_observable_bin_arr[:-1])
+        t.append(rebinned_t_bin_arr[:-1])
+        e_weights.append(norm*rebin_histogram(bkd_dict[bkd]["energy"][1], bkd_dict[bkd]["energy"][0], rebinned_observable_bin_arr)*rebin_weights)
+        t_weights.append(norm*rebin_histogram(bkd_dict[bkd]["time"][1], bkd_dict[bkd]["time"][0], rebinned_t_bin_arr)*rebin_t_weights)
+
+        labels.append(bkd)
 
     for flavor in unosc.keys():
-
 
         x.append(rebinned_observable_bin_arr[:-1])
         t.append(rebinned_t_bin_arr[:-1])
@@ -72,7 +52,8 @@ def plot_observables(unosc: dict, osc: dict) -> None:
             stacked=True, 
             label=labels,
             alpha=1,
-            color=["#bb27f6", "#8f7252", "#f0995c", "#f9dc81", "green", "black", "blue", "red"])
+            # color=["#bb27f6", "#8f7252", "#f0995c", "#f9dc81", "green", "black", "blue", "red"])
+            color=["black", "red", "sienna", "darkorange", "gold", "greenyellow", "seagreen", "mediumturquoise", "dodgerblue", "mediumorchid"])            
     
     ax[0].set_xlabel("Energy [PE]")
     ax[0].set_ylabel("Counts / PE")
@@ -86,7 +67,8 @@ def plot_observables(unosc: dict, osc: dict) -> None:
                 stacked=True, 
                 label=labels,
                 alpha=1,
-                color=["#bb27f6", "#8f7252", "#f0995c", "#f9dc81", "green", "black", "blue", "red"])
+                # color=["#bb27f6", "#8f7252", "#f0995c", "#f9dc81", "green", "black", "blue", "red"])
+                color=["black", "red", "sienna", "darkorange", "gold", "greenyellow", "seagreen", "mediumturquoise", "dodgerblue", "mediumorchid"])
     
     ax[1].set_xlabel(r"Time [$\mu$s]")
     ax[1].set_ylabel(r"Counts / $\mu$s")
@@ -97,18 +79,30 @@ def plot_observables(unosc: dict, osc: dict) -> None:
     for flavor in osc.keys():
         if flavor == "nuS" or flavor == "nuSBar":
             continue
-        e_weights += osc[flavor]["energy"][1]
-        t_weights += osc[flavor]["time"][1]
+        # e_weights += osc[flavor]["energy"][1]
+        # t_weights += osc[flavor]["time"][1]
+        e_weights += rebin_histogram(e_weights, osc[flavor]["energy"][0], rebinned_observable_bin_arr)*rebin_weights
+        t_weights += rebin_histogram(t_weights, osc[flavor]["time"][0]/1000, rebinned_t_bin_arr)*rebin_t_weights
+
+    for bkd in bkd_dict.keys():
+        if bkd == "brn": norm = 18.4
+        else: norm = 5.6
+        x.append(rebinned_observable_bin_arr[:-1])
+        t.append(rebinned_t_bin_arr[:-1])
+        e_weights += norm*rebin_histogram(bkd_dict[bkd]["energy"][1], bkd_dict[bkd]["energy"][0], rebinned_observable_bin_arr)*rebin_weights
+        t_weights += norm*rebin_histogram(bkd_dict[bkd]["time"][1], bkd_dict[bkd]["time"][0], rebinned_t_bin_arr)*rebin_t_weights
     
     ax[0].errorbar(x=(rebinned_observable_bin_arr[1:] + rebinned_observable_bin_arr[:-1])/2,
-               y=rebin_histogram(e_weights, osc[flavor]["energy"][0], rebinned_observable_bin_arr)*rebin_weights,
+            #    y=rebin_histogram(e_weights, osc[flavor]["energy"][0], rebinned_observable_bin_arr)*rebin_weights,
+                y=e_weights,
                xerr=np.diff(rebinned_observable_bin_arr)/2, 
                label="Oscillated", 
                color="blue", ls="none", 
                marker="x", markersize=5)
     
     ax[1].errorbar(x=(rebinned_t_bin_arr[1:] + rebinned_t_bin_arr[:-1])/2,
-                y=rebin_histogram(t_weights, osc[flavor]["time"][0]/1000, rebinned_t_bin_arr)*rebin_t_weights,
+                # y=rebin_histogram(t_weights, osc[flavor]["time"][0]/1000, rebinned_t_bin_arr)*rebin_t_weights,
+                y=t_weights,
                 xerr=np.diff(rebinned_t_bin_arr)/2, 
                 label="Oscillated", 
                 color="blue", ls="none", 
