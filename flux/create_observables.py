@@ -38,7 +38,7 @@ def create_observables(flux, params) -> dict:
     for flavor in flux.keys():
 
         # flux is normalized to number of neutrinos per POT so it's not counted here
-        num_neutrinos = params["detector"]["pot"] / (4 * np.pi * np.power(params["detector"]["distance"], 2))
+        num_neutrinos = params["beam"]["pot"] / (4 * np.pi * np.power(params["detector"]["distance"], 2))
 
         # Load in energy and calculate observable energy before efficiencies
         truth_level_energy = np.dot(flux_matrix, flux[flavor]["energy"][1])

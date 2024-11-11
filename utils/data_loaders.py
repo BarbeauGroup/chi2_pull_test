@@ -14,7 +14,7 @@ def read_flux_from_root(params: dict) -> dict:
     
     """
 
-    filename = params["flux_file"]
+    filename = params["beam"]["flux_file"]
     paper_rf = uproot.open(filename)
 
     convolved_energy_and_time_of_nu_mu = paper_rf["convolved_energy_time_of_nu_mu;1"]
@@ -29,7 +29,7 @@ def read_flux_from_root(params: dict) -> dict:
     NuE = convolved_energy_and_time_of_nu_e.values()
     anc_keNuE_edges = convolved_energy_and_time_of_nu_e.axis(1).edges()[1:60]
     anc_keNuE_values = np.sum(NuE, axis=0)[1:60]
-    anc_keNuE_values = (anc_keNuE_values / np.sum(anc_keNuE_values))*params["detector"]["nus_per_pot"]["nuE"]
+    anc_keNuE_values = (anc_keNuE_values / np.sum(anc_keNuE_values))*params["beam"]["nus_per_pot"]["nuE"]
 
     anc_tNuE_edges = convolved_energy_and_time_of_nu_e.axis(0).edges()
     anc_tNuE_values = np.sum(NuE, axis=1)
@@ -40,7 +40,7 @@ def read_flux_from_root(params: dict) -> dict:
     NuEBar = convolved_energy_and_time_of_nu_e_bar.values()
     anc_keNuEBar_edges = convolved_energy_and_time_of_nu_e_bar.axis(1).edges()[1:60]
     anc_keNuEBar_values = np.sum(NuEBar, axis=0)[1:60]
-    anc_keNuEBar_values = (anc_keNuEBar_values / np.sum(anc_keNuEBar_values))*params["detector"]["nus_per_pot"]["nuEBar"]
+    anc_keNuEBar_values = (anc_keNuEBar_values / np.sum(anc_keNuEBar_values))*params["beam"]["nus_per_pot"]["nuEBar"]
 
     anc_tNuEBar_edges = convolved_energy_and_time_of_nu_e_bar.axis(0).edges()
     anc_tNuEBar_values = np.sum(NuEBar, axis=1)
@@ -51,7 +51,7 @@ def read_flux_from_root(params: dict) -> dict:
     NuMu = convolved_energy_and_time_of_nu_mu.values()
     anc_keNuMu_edges = convolved_energy_and_time_of_nu_mu.axis(1).edges()[1:60]
     anc_keNuMu_values = np.sum(NuMu, axis=0)[1:60]
-    anc_keNuMu_values = (anc_keNuMu_values / np.sum(anc_keNuMu_values))*params["detector"]["nus_per_pot"]["nuMu"]
+    anc_keNuMu_values = (anc_keNuMu_values / np.sum(anc_keNuMu_values))*params["beam"]["nus_per_pot"]["nuMu"]
 
     anc_tNuMu_edges = convolved_energy_and_time_of_nu_mu.axis(0).edges()
     anc_tNuMu_values = np.sum(NuMu, axis=1)
@@ -62,7 +62,7 @@ def read_flux_from_root(params: dict) -> dict:
     NuMuBar = convolved_energy_and_time_of_nu_mu_bar.values()
     anc_keNuMuBar_edges = convolved_energy_and_time_of_nu_mu_bar.axis(1).edges()[1:60]
     anc_keNuMuBar_values = np.sum(NuMuBar, axis=0)[1:60]
-    anc_keNuMuBar_values = (anc_keNuMuBar_values / np.sum(anc_keNuMuBar_values))*params["detector"]["nus_per_pot"]["nuMuBar"]
+    anc_keNuMuBar_values = (anc_keNuMuBar_values / np.sum(anc_keNuMuBar_values))*params["beam"]["nus_per_pot"]["nuMuBar"]
 
     anc_tNuMuBar_edges = convolved_energy_and_time_of_nu_mu_bar.axis(0).edges()
     anc_tNuMuBar_values = np.sum(NuMuBar, axis=1)
@@ -126,8 +126,8 @@ def read_brns_nins_from_txt(params: dict) -> dict:
     dictionary = {}
 
     # BRNs 
-    brn_pe = np.loadtxt(params["brn_energy_file"])
-    brn_t = np.loadtxt(params["brn_time_file"])
+    brn_pe = np.loadtxt(params["beam"]["brn_energy_file"])
+    brn_t = np.loadtxt(params["beam"]["brn_time_file"])
 
     brn_pe_bins_centers = brn_pe[:60,0]
     brn_pe_bins_edges = centers_to_edges(brn_pe_bins_centers)
@@ -142,8 +142,8 @@ def read_brns_nins_from_txt(params: dict) -> dict:
     dictionary["brn"] =  { "energy": (brn_pe_bins_edges, brn_pe_counts),
                             "time": (brn_t_bins_edges, brn_t_counts) }
 
-    nin_pe = np.loadtxt(params["nin_energy_file"])
-    nin_t = np.loadtxt(params["nin_time_file"])
+    nin_pe = np.loadtxt(params["beam"]["nin_energy_file"])
+    nin_t = np.loadtxt(params["beam"]["nin_time_file"])
 
     nin_pe_bins_centers = nin_pe[:60,0]
     nin_pe_bins_edges = centers_to_edges(nin_pe_bins_centers)
@@ -169,39 +169,33 @@ def read_data_from_txt(params: dict) -> dict:
     returns: dictionary with measurement data
     
     """
-
-    # TODO: put paths in config file
-    # TODO: put cuts in config file
-
-    dictionary = {}
-
-    dataBeamOnAC = np.loadtxt("data/csi_anc/dataBeamOnAC.txt")
+    dataBeamOnAC = np.loadtxt(params["detector"]["beam_ac_data_file"])
     AC_PE = dataBeamOnAC[:,0]
     AC_t = dataBeamOnAC[:,1]
 
-    dataBeamOnC = np.loadtxt("data/csi_anc/dataBeamOnC.txt")
+    dataBeamOnC = np.loadtxt(params["detector"]["beam_c_data_file"])
     C_PE = dataBeamOnC[:,0]
     C_t = dataBeamOnC[:,1]
 
-    # must filter the events that have t > 6 
-    AC_high_time_idx = np.where(AC_t > 6)[0]
+    # must filter the events that have t > time roi (e.g. 6)
+    AC_high_time_idx = np.where(AC_t > params["analysis"]["time_roi"][1])[0]
     AC_PE = np.delete(AC_PE, AC_high_time_idx)
     AC_t = np.delete(AC_t, AC_high_time_idx)
 
-    C_high_time_idx = np.where(C_t > 6)[0]
+    C_high_time_idx = np.where(C_t > params["analysis"]["time_roi"][1])[0]
     C_PE = np.delete(C_PE, C_high_time_idx)
     C_t = np.delete(C_t, C_high_time_idx)
 
-    # and energy > 60
-    AC_high_energy_idx = np.where(AC_PE > 60)[0]
+    # and energy > energy roi (e.g. 60)
+    AC_high_energy_idx = np.where(AC_PE > params["analysis"]["energy_roi"][1])[0]
     AC_PE = np.delete(AC_PE, AC_high_energy_idx)
     AC_t = np.delete(AC_t, AC_high_energy_idx)
 
-    C_high_energy_idx = np.where(C_PE > 60)[0]
+    C_high_energy_idx = np.where(C_PE > params["analysis"]["energy_roi"][1])[0]
     C_PE = np.delete(C_PE, C_high_energy_idx)
     C_t = np.delete(C_t, C_high_energy_idx)
 
-    dictionary["AC"] = { "energy": AC_PE, "time": AC_t }
-    dictionary["C"] = { "energy": C_PE, "time": C_t }
-
-    return dictionary
+    return {
+        "AC": { "energy": AC_PE, "time": AC_t },
+        "C": { "energy": C_PE, "time": C_t }
+    }
