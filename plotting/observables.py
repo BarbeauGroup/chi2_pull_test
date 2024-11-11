@@ -63,7 +63,7 @@ def analysis_bins(observable: dict, bkd_dict: dict, data: dict, params: dict, br
     return histograms
 
 
-def plot_observables(params: dict, histograms_unosc: dict, histograms_osc: dict) -> None:
+def plot_observables(params: dict, histograms_unosc: dict, histograms_osc: dict, alpha: float) -> None:
     fig, ax = plt.subplots(1, 2, figsize=(16, 6))
 
     # stacked histogram
@@ -77,10 +77,10 @@ def plot_observables(params: dict, histograms_unosc: dict, histograms_osc: dict)
     t_bin_arr = np.asarray(params["analysis"]["time_bins"])
 
     # beam state subtraction
-    pe_hist = histograms_unosc["beam_state"]["C"]["energy"] - histograms_unosc["beam_state"]["AC"]["energy"]
-    t_hist = histograms_unosc["beam_state"]["C"]["time"] - histograms_unosc["beam_state"]["AC"]["time"]
-    pe_err = np.sqrt(histograms_unosc["beam_state"]["C"]["energy"] + histograms_unosc["beam_state"]["AC"]["energy"])
-    t_err = np.sqrt(histograms_unosc["beam_state"]["C"]["time"] + histograms_unosc["beam_state"]["AC"]["time"])
+    pe_hist = histograms_unosc["beam_state"]["C"]["energy"] - histograms_unosc["beam_state"]["AC"]["energy"] * ( 1 + alpha)
+    t_hist = histograms_unosc["beam_state"]["C"]["time"] - histograms_unosc["beam_state"]["AC"]["time"] * ( 1 + alpha)
+    pe_err = np.sqrt(histograms_unosc["beam_state"]["C"]["energy"] + histograms_unosc["beam_state"]["AC"]["energy"] * ( 1 + alpha))
+    t_err = np.sqrt(histograms_unosc["beam_state"]["C"]["time"] + histograms_unosc["beam_state"]["AC"]["time"] * ( 1 + alpha))
 
     for bkd in histograms_unosc["backgrounds"].keys():
         x.append(observable_bin_arr[:-1])
@@ -98,7 +98,6 @@ def plot_observables(params: dict, histograms_unosc: dict, histograms_osc: dict)
 
         labels.append(flavor)
     
-    print(x[0].shape, e_weights[0].shape)
     ax[0].hist(x, bins=observable_bin_arr, weights=e_weights,
                 stacked=True, 
                 histtype='step',

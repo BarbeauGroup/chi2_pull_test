@@ -13,11 +13,11 @@ def oscillate_flux(flux: dict, oscillation_params: dict) -> dict:
 
     # Oscillation Parameters
 
-    L = oscillation_params["L"]
-    deltam41 = oscillation_params["deltam41"]
-    Ue4 = oscillation_params["Ue4"]
-    Umu4 = oscillation_params["Umu4"]
-    Utau4 = oscillation_params["Utau4"]
+    L = oscillation_params[0]
+    deltam41 = oscillation_params[1]
+    Ue4 = oscillation_params[2]
+    Umu4 = oscillation_params[3]
+    Utau4 = oscillation_params[4]
 
     # Make an empty dictionary to store the oscillated flux information
     oscillated_flux = {}

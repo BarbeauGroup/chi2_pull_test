@@ -15,10 +15,10 @@ def chi2_stat(histograms: dict, nuisance_params: dict) -> float:
         ssb = histograms["beam_state"]["AC"][hist]
         observed = histograms["beam_state"]["C"][hist]
 
-        predicted = (histograms["neutrinos"]["nuE"][hist] + histograms["neutrinos"]["nuMu"][hist] + histograms["neutrinos"]["nuTau"][hist]) * (1 + nuisance_params["flux"][0])
-        predicted += histograms["backgrounds"]["brn"][hist] * (1 + nuisance_params["brn"][0])
-        predicted += histograms["backgrounds"]["nin"][hist] * (1 + nuisance_params["nin"][0])
-        predicted += ssb * (1 + nuisance_params["ssb"][0])
+        predicted = (histograms["neutrinos"]["nuE"][hist] + histograms["neutrinos"]["nuMu"][hist] + histograms["neutrinos"]["nuTau"][hist]) * (1 + nuisance_params[0])
+        predicted += histograms["backgrounds"]["brn"][hist] * (1 + nuisance_params[1])
+        predicted += histograms["backgrounds"]["nin"][hist] * (1 + nuisance_params[2])
+        predicted += ssb * (1 + nuisance_params[3])
 
 
         num = (observed - predicted)**2
@@ -26,32 +26,12 @@ def chi2_stat(histograms: dict, nuisance_params: dict) -> float:
 
         chi2 += np.sum(num/denom)
 
-        for param in nuisance_params.keys():
-            chi2 += np.square(nuisance_params[param][0]/nuisance_params[param][1])
-
     return chi2
 
 
 
-def chi2_sys(experiment, systematic_error_arr):
-
-
-    systematic_error_dict = experiment.get_systematic_error_dict()
-
+def chi2_sys(nuisance_params: dict, nuisance_param_priors: dict) -> float:
     chi2 = 0
-    i = 0
-    for key in systematic_error_dict:
-        
-        nuisance_param_value = systematic_error_arr[i]
-        nuisance_param_error = systematic_error_dict[key]
-
-        chi2 += (nuisance_param_value/nuisance_param_error)**2
-
-        i += 1
-    
+    for i in range(len(nuisance_params)):
+        chi2 += (nuisance_params[i]/nuisance_param_priors[i])**2
     return chi2
-
-
-# def chi2_total(experiment, toy_model, prediction_parameters, systematic_error_arr, systematic_error_dict):
-
-#     return chi2_stat(experiment, toy_model, prediction_parameters, systematic_error_arr) + chi2_sys(systematic_error_arr, systematic_error_dict)
