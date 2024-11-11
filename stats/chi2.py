@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def chi2_stat(histograms: dict) -> float:
+def chi2_stat(histograms: dict, nuisance_params: dict) -> float:
     """
 
     histograms: dictionary with keys "beam_state", "neutrinos", "backgrounds"
@@ -15,15 +15,19 @@ def chi2_stat(histograms: dict) -> float:
         ssb = histograms["beam_state"]["AC"][hist]
         observed = histograms["beam_state"]["C"][hist]
 
-        predicted = histograms["neutrinos"]["nuE"][hist] + histograms["neutrinos"]["nuMu"][hist] + histograms["neutrinos"]["nuTau"][hist]
-        predicted += histograms["backgrounds"]["brn"][hist] + histograms["backgrounds"]["nin"][hist]
-        predicted += ssb
+        predicted = (histograms["neutrinos"]["nuE"][hist] + histograms["neutrinos"]["nuMu"][hist] + histograms["neutrinos"]["nuTau"][hist]) * (1 + nuisance_params["flux"][0])
+        predicted += histograms["backgrounds"]["brn"][hist] * (1 + nuisance_params["brn"][0])
+        predicted += histograms["backgrounds"]["nin"][hist] * (1 + nuisance_params["nin"][0])
+        predicted += ssb * (1 + nuisance_params["ssb"][0])
 
 
         num = (observed - predicted)**2
-        denom = np.abs((observed - ssb) + 2*ssb + histograms["backgrounds"]["brn"][hist])
+        denom = np.abs((observed - ssb) + 2*ssb + histograms["backgrounds"]["brn"][hist] + histograms["backgrounds"]["nin"][hist])
 
         chi2 += np.sum(num/denom)
+
+        for param in nuisance_params.keys():
+            chi2 += np.square(nuisance_params[param][0]/nuisance_params[param][1])
 
     return chi2
 

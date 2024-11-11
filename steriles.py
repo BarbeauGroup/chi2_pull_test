@@ -25,6 +25,12 @@ def main():
     osc_params["Umu4"] = 0
     osc_params["Utau4"] = 0.0
 
+    # Define nuisance parameters
+    nuisance_params = {}
+    nuisance_params["flux"] = [0.28, 0.28] # from csi aux data, old number since we're using new QF data?
+    nuisance_params["brn"] = [0.25, 0.25] # from csi aux data
+    nuisance_params["nin"] = [-0.7, 0.7] # 0.15-0.45 ? From NIN paper
+    nuisance_params["ssb"] = [0.04, 0.04] # from CsI error budget
 
     oscillated_flux = oscillate_flux(flux=flux, oscillation_params=osc_params)
 
@@ -34,7 +40,7 @@ def main():
     histograms_unosc = analysis_bins(observable=un_osc_obs, bkd_dict=bkd_dict, data=data_dict, params=params, brn_norm=18.4, nin_norm=5.6)
     histograms_osc = analysis_bins(observable=osc_obs, bkd_dict=bkd_dict, data=data_dict, params=params, brn_norm=18.4, nin_norm=5.6)
 
-    chi2 = chi2_stat(histograms=histograms_osc)
+    chi2 = chi2_stat(histograms=histograms_osc, nuisance_params=nuisance_params)
 
     print(chi2)
 
