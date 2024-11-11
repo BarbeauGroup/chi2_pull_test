@@ -2,7 +2,7 @@ import numpy as np
 
 from flux.probabilities import Pab
 
-def oscillate_flux(flux: dict) -> dict:
+def oscillate_flux(flux: dict, oscillation_params: dict) -> dict:
     """
     flux: dictionary with SNS flux information
 
@@ -13,11 +13,11 @@ def oscillate_flux(flux: dict) -> dict:
 
     # Oscillation Parameters
 
-    L = 19.3
-    deltam41 = 1
-    Ue4 = 0.3162
-    Umu4 = 0
-    Utau4 = 0.0
+    L = oscillation_params["L"]
+    deltam41 = oscillation_params["deltam41"]
+    Ue4 = oscillation_params["Ue4"]
+    Umu4 = oscillation_params["Umu4"]
+    Utau4 = oscillation_params["Utau4"]
 
     # Make an empty dictionary to store the oscillated flux information
     oscillated_flux = {}

@@ -17,7 +17,16 @@ def main():
     
     flux = read_flux_from_root(params)
 
-    oscillated_flux = oscillate_flux(flux=flux)
+    # Define flux parameters
+    osc_params = {}
+    osc_params["L"] = 19.3
+    osc_params["deltam41"] = 1
+    osc_params["Ue4"] = 0.3162
+    osc_params["Umu4"] = 0
+    osc_params["Utau4"] = 0.0
+
+
+    oscillated_flux = oscillate_flux(flux=flux, oscillation_params=osc_params)
 
     un_osc_obs = create_observables(params=params, flux=flux)
     osc_obs = create_observables(params=params, flux=oscillated_flux)
