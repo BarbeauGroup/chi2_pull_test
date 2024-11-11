@@ -42,11 +42,11 @@ def main():
     x = [1, 0.3162, 0, 0, 0.28, 0.25, 0.7, 0.04]
     args = (flux, params, bkd_dict, data_dict)
 
-    pos = x + 1e-4 * np.random.randn(30, len(x))
+    pos = x + 1e-4 * np.random.randn(20, len(x))
     nwalkers, ndim = pos.shape
 
     sampler = emcee.EnsembleSampler(nwalkers, ndim, cost_function, args=args)
-    sampler.run_mcmc(pos, 10000, progress=True)
+    sampler.run_mcmc(pos, 2500, progress=True)
 
     # print the best fit values
     samples = sampler.get_chain()
