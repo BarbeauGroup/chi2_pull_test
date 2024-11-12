@@ -2,6 +2,7 @@ import emcee
 import numpy as np
 import corner
 from multiprocessing import Pool
+import scipy.optimize as op
 
 from utils.loadparams import load_params
 from utils.histograms import rebin_histogram
@@ -11,6 +12,9 @@ from stats.fit import chi2_stat, chi2_sys
 from flux.nuflux import oscillate_flux
 from flux.create_observables import create_observables
 from plotting.observables import analysis_bins, plot_observables
+from stats.marginalize import marginalize
+
+import matplotlib.pyplot as plt
 
 import time
 
@@ -49,20 +53,22 @@ new_bkd_dict["nin"] = {
 
 def cost_function_global(x: np.ndarray) -> float:
     """
-    x: (deltam41, Ue4, Umu4, Utau4, a_flux, a_brn, a_nin, a_ssb)
+    # x: (deltam41, Ue4, Umu4, Utau4, a_flux, a_brn, a_nin, a_ssb)
+    x: (deltam41, Ue4, Umu4, a_flux, a_brn, a_nin, a_ssb)
+
 
     returns: chi2 value
     """
-    osc_params = x[0:4]
+    osc_params = x[0:3]
 
-    if(osc_params[0] < 0 or osc_params[1] < 0 or osc_params[2] < 0 or osc_params[3] < 0):
+    if(osc_params[0] < 0 or osc_params[1] < 0 or osc_params[2] < 0):
         return np.inf
     
-    if(np.sum(np.square(osc_params[1:4])) > 1):
+    if(np.sum(osc_params[1:3]) > 1):
         return np.inf
 
-    osc_params = [params["detector"]["distance"]/100., osc_params[0], osc_params[1], osc_params[2], osc_params[3]]   
-    nuisance_params = x[4:]
+    osc_params = [params["detector"]["distance"]/100., osc_params[0], osc_params[1], osc_params[2], 0.0] #osc_params[3]]   
+    nuisance_params = x[3:]
     nuisance_param_priors = [params["detector"]["systematics"]["flux"],
                             params["detector"]["systematics"]["brn"],
                             params["detector"]["systematics"]["nin"],
@@ -89,9 +95,12 @@ def plot():
         with open("flux/flux_dict.pkl", "rb") as f:
             flux = np.load(f, allow_pickle=True).item()
 
-    x = [1.10749, 0.33990, 0.33501, -0.00866, 0.06751, -0.02678, -0.00928, 0.02811]
-    osc_params = x[0:4]
-    osc_params = [params["detector"]["distance"]/100., osc_params[0], osc_params[1], osc_params[2], osc_params[3]]
+    x = [1.521e+00, 4.174e-01, 4.462e-01, 1.196e-02, -4.793e-03,
+                 -4.465e-03, -1.447e-02]
+    x1 = [2.633e-05, 1.285e-06, 1.668e-03, -3*6.110e-02, -1.442e-02,
+                  4.262e-03, 7.989e-02]
+    osc_params = x[0:3]
+    osc_params = [params["detector"]["distance"]/100., osc_params[0], osc_params[1], osc_params[2], 0.0] #osc_params[3]]
 
     oscillated_flux = oscillate_flux(flux=flux, oscillation_params=osc_params)
 
@@ -101,10 +110,12 @@ def plot():
     histograms_unosc = analysis_bins(observable=un_osc_obs, bkd_dict=new_bkd_dict, data=data_dict, params=params, brn_norm=18.4, nin_norm=5.6)
     histograms_osc = analysis_bins(observable=osc_obs, bkd_dict=new_bkd_dict, data=data_dict, params=params, brn_norm=18.4, nin_norm=5.6)
 
-    plot_observables(params, histograms_unosc, histograms_osc, x[-1])
+    print(cost_function_global(x))
+    print(cost_function_global(x1))
+
+    plot_observables(params, histograms_unosc, histograms_osc, x[3:])
 
 def main():
-
     global flux, params, bkd_dict, data_dict  # Declare globals for data
 
     params = load_params("config/csi.json")
@@ -120,36 +131,59 @@ def main():
         with open("flux/flux_dict.pkl", "rb") as f:
             flux = np.load(f, allow_pickle=True).item()
 
-    x = [np.sqrt(1.32), np.sqrt(0.116), np.sqrt(0.135), 0.0, 0.0, 0.0, 0.0, 0.0]  # Initial guess
+    x = [np.sqrt(1.32), np.sqrt(0.116), np.sqrt(0.135), 0.0, 0.0, 0.0, 0.0]  # Initial guess
 
-    pos = x + [1., 0.1, 0.1, 0.1, 0.2, 0.2, 0.2, 0.2] * np.random.randn(32, len(x))
-    if np.any(pos[0:4, 0] < 0):
-        pos[0:4, 0] = np.abs(pos[0:4, 0])
+    res = op.minimize(cost_function_global, x, method="Nelder-Mead")
+    print(res)
+    print(np.log10(res.x[0]**2), np.log10(res.x[1]))
+
+    x = res.x
+    deltam41 = np.linspace(0, 10, 10)
+    ue4square = np.linspace(0, 1, 10)
+
+    chi2_arr = marginalize(cost_function_global, x, 0, 1, deltam41, ue4square)
+    print(chi2_arr)
+
+    fig, ax = plt.subplots()
+    ax.imshow(chi2_arr, extent=[0, 10, 0, 1], aspect="auto", origin="lower")
+    # give me a colorbar
+    cbar = plt.colorbar(ax.imshow(chi2_arr, extent=[0, 10, 0, 1], aspect="auto", origin="lower"))
+    cbar.set_label(r"$\chi^2$")
+    ax.set_xlabel(r"$\Delta m^2_{41}$")
+    ax.set_ylabel(r"$U_{e4}^2$")
+    fig.savefig("marginalized.png")
+
+    # pos = x + [1., 0.1, 0.1, 0.2, 0.2, 0.2, 0.2] * np.random.randn(32, len(x))
+    # if np.any(pos[:, 0:3] < 0):
+    #     pos[:, 0:3] = np.abs(pos[:, 0:3])
+    # js = np.where(pos[:, 1] + pos[:, 2] > 1)[0]
+    # if js.size > 0:
+    #     pos[js, 1] /= 2
+    #     pos[js, 2] /= 2
         
-    nwalkers, ndim = pos.shape
-    backend = emcee.backends.HDFBackend("backend.h5")
-    backend.reset(nwalkers, ndim)
+    # nwalkers, ndim = pos.shape
+    # backend = emcee.backends.HDFBackend("backend2.h5")
+    # backend.reset(nwalkers, ndim)
 
-    # sampler = emcee.EnsembleSampler(nwalkers, ndim, cost_function_global)
-    # sampler.run_mcmc(pos, 2500, progress=True)
+    # # sampler = emcee.EnsembleSampler(nwalkers, ndim, cost_function_global)
+    # # sampler.run_mcmc(pos, 2500, progress=True)
 
-    with Pool() as pool:
-        sampler = emcee.EnsembleSampler(nwalkers, ndim, cost_function_global, pool=pool, backend=backend)#, moves=emcee.moves.StretchMove(a=2.0))
-        sampler.run_mcmc(pos, 60000, progress=True)
+    # with Pool() as pool:
+    #     sampler = emcee.EnsembleSampler(nwalkers, ndim, cost_function_global, pool=pool, backend=backend)#, moves=emcee.moves.StretchMove(a=2.0))
+    #     sampler.run_mcmc(pos, 1000, progress=True)
 
-    # print the best fit values
-    flat_samples = sampler.get_chain(discard=1000, flat=True)
+    # # print the best fit values
+    # flat_samples = sampler.get_chain(discard=100, flat=True)
 
-    for i in range(ndim):
-        mcmc = np.percentile(flat_samples[:, i], [16, 50, 84])
-        q = np.diff(mcmc)
-        print(f"{mcmc[1]:.5f} +{q[1]:.5f} -{q[0]:.5f}")
+    # for i in range(ndim):
+    #     mcmc = np.percentile(flat_samples[:, i], [16, 50, 84])
+    #     q = np.diff(mcmc)
+    #     print(f"{mcmc[1]:.5f} +{q[1]:.5f} -{q[0]:.5f}")
     
-    # corner plots
-    fig = corner.corner(flat_samples, labels=["deltam41", "Ue4", "Umu4", "Utau4", "a_flux", "a_brn", "a_nin", "a_ssb"])
-    fig.savefig("corner.png")
-
+    # # corner plots
+    # fig = corner.corner(flat_samples, labels=["deltam41", "Ue4_2", "Umu4_2", "a_flux", "a_brn", "a_nin", "a_ssb"])
+    # fig.savefig("corner.png")
 
 if __name__ == "__main__":
-    # main()
-    plot()
+    main()
+    # plot()

@@ -15,11 +15,14 @@ def chi2_stat(histograms: dict, nuisance_params: dict) -> float:
         ssb = histograms["beam_state"]["AC"][hist]
         observed = histograms["beam_state"]["C"][hist]
 
-        predicted = (histograms["neutrinos"]["nuE"][hist] + histograms["neutrinos"]["nuMu"][hist] + histograms["neutrinos"]["nuTau"][hist]) * (1 + nuisance_params[0])
+        predicted = 0
+        for flavor in histograms["neutrinos"].keys():
+            if flavor == "nuS" or flavor == "nuSBar":
+                continue
+            predicted += histograms["neutrinos"][flavor][hist] * (1 + nuisance_params[0])
         predicted += histograms["backgrounds"]["brn"][hist] * (1 + nuisance_params[1])
         predicted += histograms["backgrounds"]["nin"][hist] * (1 + nuisance_params[2])
         predicted += ssb * (1 + nuisance_params[3])
-
 
         num = (observed - predicted)**2
         denom = np.abs((observed - ssb) + 2*ssb + histograms["backgrounds"]["brn"][hist] + histograms["backgrounds"]["nin"][hist])
