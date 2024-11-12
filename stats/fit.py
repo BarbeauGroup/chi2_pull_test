@@ -21,7 +21,7 @@ def cost_function(x: np.ndarray, flux: dict, params: dict, bkd_dict: dict, data_
     if(osc_params[0] < 0 or osc_params[1] < 0 or osc_params[2] < 0 or osc_params[3] < 0):
         return np.inf
     
-    if(np.sum(np.square(osc_params[1:4])) > 1):
+    if(np.sum(osc_params[1:4]) > 1):
         return np.inf
 
     osc_params = [params["detector"]["distance"]/100., osc_params[0], osc_params[1], osc_params[2], osc_params[3]]   
