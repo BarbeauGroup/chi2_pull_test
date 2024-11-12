@@ -79,10 +79,17 @@ def plot():
     params = load_params("config/csi.json")
     bkd_dict = read_brns_nins_from_txt(params)
     data_dict = read_data_from_txt(params)
-    flux = read_flux_from_root(params)
 
-    x = [-5.20975558e-04, 5.56406371e-01, 5.71966714e-03, 4.57742461e-03,
-  1.34700734e-01, 5.90428294e-03, 1.36187423e-02, 8.57666835e-03]
+    no_pkl = False
+    if no_pkl:
+        flux = read_flux_from_root(params)
+        with open("flux/flux_dict.pkl", "wb") as f:
+            np.save(f, flux)
+    else:
+        with open("flux/flux_dict.pkl", "rb") as f:
+            flux = np.load(f, allow_pickle=True).item()
+
+    x = [1.10749, 0.33990, 0.33501, -0.00866, 0.06751, -0.02678, -0.00928, 0.02811]
     osc_params = x[0:4]
     osc_params = [params["detector"]["distance"]/100., osc_params[0], osc_params[1], osc_params[2], osc_params[3]]
 
@@ -91,8 +98,8 @@ def plot():
     un_osc_obs = create_observables(params=params, flux=flux)
     osc_obs = create_observables(params=params, flux=oscillated_flux)
 
-    histograms_unosc = analysis_bins(observable=un_osc_obs, bkd_dict=bkd_dict, data=data_dict, params=params, brn_norm=18.4, nin_norm=5.6)
-    histograms_osc = analysis_bins(observable=osc_obs, bkd_dict=bkd_dict, data=data_dict, params=params, brn_norm=18.4, nin_norm=5.6)
+    histograms_unosc = analysis_bins(observable=un_osc_obs, bkd_dict=new_bkd_dict, data=data_dict, params=params, brn_norm=18.4, nin_norm=5.6)
+    histograms_osc = analysis_bins(observable=osc_obs, bkd_dict=new_bkd_dict, data=data_dict, params=params, brn_norm=18.4, nin_norm=5.6)
 
     plot_observables(params, histograms_unosc, histograms_osc, x[-1])
 
@@ -144,5 +151,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
-    # plot()
+    # main()
+    plot()
