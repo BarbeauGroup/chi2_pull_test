@@ -113,22 +113,22 @@ def main():
         with open("flux/flux_dict.pkl", "rb") as f:
             flux = np.load(f, allow_pickle=True).item()
 
+    x = [np.sqrt(1.32), np.sqrt(0.116), np.sqrt(0.135), 0.0, 0.0, 0.0, 0.0, 0.0]  # Initial guess
 
-
+    pos = x + [1., 0.1, 0.1, 0.1, 0.2, 0.2, 0.2, 0.2] * np.random.randn(32, len(x))
+    if np.any(pos[0:4, 0] < 0):
+        pos[0:4, 0] = np.abs(pos[0:4, 0])
         
-
-    x = [.1, .1, .1, .1, .1, .1, .1, .1]  # Initial guess
-
-    pos = x + 1e-2 * np.random.randn(16, len(x))
     nwalkers, ndim = pos.shape
+    backend = emcee.backends.HDFBackend("backend.h5")
+    backend.reset(nwalkers, ndim)
 
     # sampler = emcee.EnsembleSampler(nwalkers, ndim, cost_function_global)
     # sampler.run_mcmc(pos, 2500, progress=True)
 
     with Pool() as pool:
-        sampler = emcee.EnsembleSampler(nwalkers, ndim, cost_function_global, pool=pool)#, moves=emcee.moves.StretchMove(a=2.0))
-        sampler.run_mcmc(pos, 50000, progress=True)
-
+        sampler = emcee.EnsembleSampler(nwalkers, ndim, cost_function_global, pool=pool, backend=backend)#, moves=emcee.moves.StretchMove(a=2.0))
+        sampler.run_mcmc(pos, 60000, progress=True)
 
     # print the best fit values
     flat_samples = sampler.get_chain(discard=1000, flat=True)
