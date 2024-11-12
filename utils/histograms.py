@@ -9,6 +9,9 @@ def rebin_histogram(counts, bin_edges, new_bin_edges):
         # Loop over each fine bin
         for j in range(len(bin_edges) - 1):
             fine_bin_start, fine_bin_end = bin_edges[j], bin_edges[j+1]
+
+            if fine_bin_end < new_bin_start or fine_bin_start > new_bin_end:
+                continue
             
             # Check for overlap between fine bin and new bin
             overlap_start = max(new_bin_start, fine_bin_start)

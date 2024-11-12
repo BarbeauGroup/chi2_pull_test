@@ -51,14 +51,19 @@ def analysis_bins(observable: dict, bkd_dict: dict, data: dict, params: dict, br
     for bkd in bkd_dict.keys():
         if bkd == "brn": norm = brn_norm
         else: norm = nin_norm
-        e_weights = norm*rebin_histogram(bkd_dict[bkd]["energy"][1], bkd_dict[bkd]["energy"][0], observable_bin_arr) / np.diff(observable_bin_arr)
-        t_weights = norm*rebin_histogram(bkd_dict[bkd]["time"][1], bkd_dict[bkd]["time"][0], t_bin_arr) / np.diff(t_bin_arr)
+
+        # e_weights = norm*rebin_histogram(bkd_dict[bkd]["energy"][1], bkd_dict[bkd]["energy"][0], observable_bin_arr) / np.diff(observable_bin_arr)
+        # t_weights = norm*rebin_histogram(bkd_dict[bkd]["time"][1], bkd_dict[bkd]["time"][0], t_bin_arr) / np.diff(t_bin_arr)
+
+        e_weights = norm*bkd_dict[bkd]["energy"]
+        t_weights = norm*bkd_dict[bkd]["time"]
 
         final_bkd_dict[bkd] = {
             "energy": e_weights,
             "time": t_weights
         }
     histograms["backgrounds"] = final_bkd_dict
+
     
     return histograms
 

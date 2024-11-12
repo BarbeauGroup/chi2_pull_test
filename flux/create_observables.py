@@ -42,7 +42,9 @@ def create_observables(flux, params) -> dict:
 
         # Load in energy and calculate observable energy before efficiencies
         truth_level_energy = np.dot(flux_matrix, flux[flavor]["energy"][1])
-        observable_energy = np.dot(np.nan_to_num(detector_matrix), truth_level_energy)
+        # observable_energy = np.dot(np.nan_to_num(detector_matrix), truth_level_energy)
+        observable_energy = np.dot(detector_matrix, truth_level_energy)
+
         dx = params["detector"]["detector_matrix_dx"]
         observable_bin_arr = np.arange(0, (len(observable_energy) + 1) * dx, dx)
 
