@@ -57,15 +57,15 @@ def cost_function_global(x: np.ndarray) -> float:
     x: (deltam41, Ue4, Umu4, a_flux, a_brn, a_nin, a_ssb)
 
 
-    returns: chi2 value
+    returns: negative chi2 value
     """
     osc_params = x[0:3]
 
     if(osc_params[0] < 0 or osc_params[1] < 0 or osc_params[2] < 0):
-        return np.inf
+        return -np.inf
     
     if(np.sum(osc_params[1:3]) > 1):
-        return np.inf
+        return -np.inf
 
     osc_params = [params["detector"]["distance"]/100., osc_params[0], osc_params[1], osc_params[2], 0.0] #osc_params[3]]   
     nuisance_params = x[3:]
@@ -78,7 +78,7 @@ def cost_function_global(x: np.ndarray) -> float:
     osc_obs = create_observables(params=params, flux=oscillated_flux)
     histograms_osc = analysis_bins(observable=osc_obs, bkd_dict=new_bkd_dict, data=data_dict, params=params, brn_norm=18.4, nin_norm=5.6)
     
-    return chi2_stat(histograms=histograms_osc, nuisance_params=nuisance_params) + chi2_sys(nuisance_params=nuisance_params, nuisance_param_priors=nuisance_param_priors)
+    return -(chi2_stat(histograms=histograms_osc, nuisance_params=nuisance_params) + chi2_sys(nuisance_params=nuisance_params, nuisance_param_priors=nuisance_param_priors))
 
 
 def plot():
@@ -131,58 +131,37 @@ def main():
         with open("flux/flux_dict.pkl", "rb") as f:
             flux = np.load(f, allow_pickle=True).item()
 
-    x = [np.sqrt(1.32), np.sqrt(0.116), np.sqrt(0.135), 0.0, 0.0, 0.0, 0.0]  # Initial guess
+    x = [1.32, np.sqrt(0.116), np.sqrt(0.135), 0.0, 0.0, 0.0, 0.0]  # Initial guess
 
-    res = op.minimize(cost_function_global, x, method="Nelder-Mead")
-    print(res)
-    print(np.log10(res.x[0]**2), np.log10(res.x[1]))
-
-    x = res.x
-    deltam41 = np.linspace(0, 10, 10)
-    ue4square = np.linspace(0, 1, 10)
-
-    chi2_arr = marginalize(cost_function_global, x, 0, 1, deltam41, ue4square)
-    print(chi2_arr)
-
-    fig, ax = plt.subplots()
-    ax.imshow(chi2_arr, extent=[0, 10, 0, 1], aspect="auto", origin="lower")
-    # give me a colorbar
-    cbar = plt.colorbar(ax.imshow(chi2_arr, extent=[0, 10, 0, 1], aspect="auto", origin="lower"))
-    cbar.set_label(r"$\chi^2$")
-    ax.set_xlabel(r"$\Delta m^2_{41}$")
-    ax.set_ylabel(r"$U_{e4}^2$")
-    fig.savefig("marginalized.png")
-
-    # pos = x + [1., 0.1, 0.1, 0.2, 0.2, 0.2, 0.2] * np.random.randn(32, len(x))
-    # if np.any(pos[:, 0:3] < 0):
-    #     pos[:, 0:3] = np.abs(pos[:, 0:3])
-    # js = np.where(pos[:, 1] + pos[:, 2] > 1)[0]
-    # if js.size > 0:
-    #     pos[js, 1] /= 2
-    #     pos[js, 2] /= 2
+    pos = x + [1., 0.1, 0.1, 0.2, 0.2, 0.2, 0.2] * np.random.randn(32, len(x))
+    if np.any(pos[:, 0:3] < 0):
+        pos[:, 0:3] = np.abs(pos[:, 0:3])
+    js = np.where(pos[:, 1] + pos[:, 2] > 1)[0]
+    if js.size > 0:
+        pos[js, 1] /= 2
+        pos[js, 2] /= 2
         
-    # nwalkers, ndim = pos.shape
-    # backend = emcee.backends.HDFBackend("backend2.h5")
-    # backend.reset(nwalkers, ndim)
+    nwalkers, ndim = pos.shape
+    backend = emcee.backends.HDFBackend("backend.h5")
+    backend.reset(nwalkers, ndim)
 
-    # # sampler = emcee.EnsembleSampler(nwalkers, ndim, cost_function_global)
-    # # sampler.run_mcmc(pos, 2500, progress=True)
+    with Pool() as pool:
+        sampler = emcee.EnsembleSampler(nwalkers, ndim, cost_function_global, pool=pool, backend=backend)#, moves=emcee.moves.StretchMove(a=2.0))
+        sampler.run_mcmc(pos, 10000, progress=True)
 
-    # with Pool() as pool:
-    #     sampler = emcee.EnsembleSampler(nwalkers, ndim, cost_function_global, pool=pool, backend=backend)#, moves=emcee.moves.StretchMove(a=2.0))
-    #     sampler.run_mcmc(pos, 1000, progress=True)
+    # print the best fit values
+    tau = sampler.get_autocorr_time()
+    print(tau)
+    flat_samples = sampler.get_chain(discard=300, thin=50, flat=True)
 
-    # # print the best fit values
-    # flat_samples = sampler.get_chain(discard=100, flat=True)
-
-    # for i in range(ndim):
-    #     mcmc = np.percentile(flat_samples[:, i], [16, 50, 84])
-    #     q = np.diff(mcmc)
-    #     print(f"{mcmc[1]:.5f} +{q[1]:.5f} -{q[0]:.5f}")
+    for i in range(ndim):
+        mcmc = np.percentile(flat_samples[:, i], [16, 50, 84])
+        q = np.diff(mcmc)
+        print(f"{mcmc[1]:.5f} +{q[1]:.5f} -{q[0]:.5f}")
     
-    # # corner plots
-    # fig = corner.corner(flat_samples, labels=["deltam41", "Ue4_2", "Umu4_2", "a_flux", "a_brn", "a_nin", "a_ssb"])
-    # fig.savefig("corner.png")
+    # corner plots
+    fig = corner.corner(flat_samples, labels=[r"$\Delta m^2_{41}$", r"$|U_{e4}|^2$", r"$|U_{\mu 4}|^2$", r"$\alpha_{flux}$", r"$\alpha_{brn}$", r"$\alpha_{nin}$", r"$\alpha_{ssb}$"])
+    fig.savefig("corner.png")
 
 if __name__ == "__main__":
     main()

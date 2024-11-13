@@ -14,10 +14,10 @@ def oscillate_flux(flux: dict, oscillation_params: dict) -> dict:
     # Oscillation Parameters
 
     L = oscillation_params[0]
-    deltam41 = oscillation_params[1]
-    Ue4 = oscillation_params[2]
-    Umu4 = oscillation_params[3]
-    Utau4 = oscillation_params[4]
+    deltam41_2 = oscillation_params[1]
+    Ue4_2 = oscillation_params[2]
+    Umu4_2 = oscillation_params[3]
+    Utau4_2 = oscillation_params[4]
 
     # Make an empty dictionary to store the oscillated flux information
     oscillated_flux = {}
@@ -35,14 +35,14 @@ def oscillate_flux(flux: dict, oscillation_params: dict) -> dict:
 
         # This for loop does the sum over initial flavors to calculate the oscillated flux
         for initial_i, (initial_flavor, initial_antiflavor) in enumerate(zip(flavors, anti_flavors)):
-            temp = Pab(flux[initial_flavor]["energy"][0], L, deltam41, final_i+1, initial_i+1, Ue4, Umu4, Utau4) * flux[initial_flavor]["energy"][1]
+            temp = Pab(flux[initial_flavor]["energy"][0], L, deltam41_2, final_i+1, initial_i+1, Ue4_2, Umu4_2, Utau4_2) * flux[initial_flavor]["energy"][1]
             oscillated_energy_flux += temp
             if np.sum(flux[initial_flavor]["energy"][1]) != 0:
                 oscillated_time_flux += np.sum(temp) / np.sum(flux[initial_flavor]["energy"][1]) * flux[initial_flavor]["time"][1]
             else:
                 oscillated_time_flux += 0
 
-            antitemp = Pab(flux[initial_antiflavor]["energy"][0], L, deltam41, final_i+1,  initial_i+1, Ue4, Umu4, Utau4) * flux[initial_antiflavor]["energy"][1]
+            antitemp = Pab(flux[initial_antiflavor]["energy"][0], L, deltam41_2, final_i+1,  initial_i+1, Ue4_2, Umu4_2, Utau4_2) * flux[initial_antiflavor]["energy"][1]
             anti_oscillated_energy_flux += antitemp
             if np.sum(flux[initial_antiflavor]["energy"][1]) != 0:
                 anti_oscillated_time_flux += np.sum(antitemp) / np.sum(flux[initial_antiflavor]["energy"][1]) * flux[initial_antiflavor]["time"][1]

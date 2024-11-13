@@ -18,7 +18,7 @@
             "flux": 0.28,
             "brn": 0.25,
             "nin": 0.7,
-            "ssb": 0.5
+            "ssb": 0.1
         },
         "flux_matrix": "data/flux_transfer_matrices/csi_flux_smearing_matrix.npy",
         "detector_matrix": "data/flux_transfer_matrices/csi_quenching_detector_matrix.npy",
