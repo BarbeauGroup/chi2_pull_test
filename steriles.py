@@ -56,10 +56,12 @@ def cost_function_global(x: np.ndarray) -> float:
     # x: (deltam41, Ue4, Umu4, Utau4, a_flux, a_brn, a_nin, a_ssb)
     x: (deltam41, Ue4, Umu4, a_flux, a_brn, a_nin, a_ssb)
 
-
     returns: negative chi2 value
     """
     osc_params = x[0:3]
+
+    if(osc_params[0] > 10):
+        return -np.inf
 
     if(osc_params[0] < 0 or osc_params[1] < 0 or osc_params[2] < 0):
         return -np.inf
@@ -83,7 +85,6 @@ def cost_function_global(x: np.ndarray) -> float:
 
 def plot():
     params = load_params("config/csi.json")
-    bkd_dict = read_brns_nins_from_txt(params)
     data_dict = read_data_from_txt(params)
 
     no_pkl = False
@@ -95,10 +96,18 @@ def plot():
         with open("flux/flux_dict.pkl", "rb") as f:
             flux = np.load(f, allow_pickle=True).item()
 
-    x = [1.521e+00, 4.174e-01, 4.462e-01, 1.196e-02, -4.793e-03,
+    use_backend = True
+    if use_backend:
+        x = []
+        sampler = emcee.backends.HDFBackend("backend.h5")
+        flat_samples = sampler.get_chain(discard=300, thin=50, flat=True)
+        for i in range(7):
+            mcmc = np.percentile(flat_samples[:, i], 50)
+            x.append(mcmc)
+    else:
+        x = [1.521e+00, 4.174e-01, 4.462e-01, 1.196e-02, -4.793e-03,
                  -4.465e-03, -1.447e-02]
-    x1 = [2.633e-05, 1.285e-06, 1.668e-03, -3*6.110e-02, -1.442e-02,
-                  4.262e-03, 7.989e-02]
+    
     osc_params = x[0:3]
     osc_params = [params["detector"]["distance"]/100., osc_params[0], osc_params[1], osc_params[2], 0.0] #osc_params[3]]
 
@@ -111,15 +120,13 @@ def plot():
     histograms_osc = analysis_bins(observable=osc_obs, bkd_dict=new_bkd_dict, data=data_dict, params=params, brn_norm=18.4, nin_norm=5.6)
 
     print(cost_function_global(x))
-    print(cost_function_global(x1))
 
     plot_observables(params, histograms_unosc, histograms_osc, x[3:])
 
 def main():
-    global flux, params, bkd_dict, data_dict  # Declare globals for data
+    global flux, params, new_bkd_dict, data_dict  # Declare globals for data
 
     params = load_params("config/csi.json")
-    bkd_dict = read_brns_nins_from_txt(params)
     data_dict = read_data_from_txt(params)
 
     no_pkl = False
@@ -142,17 +149,21 @@ def main():
         pos[js, 2] /= 2
         
     nwalkers, ndim = pos.shape
-    backend = emcee.backends.HDFBackend("backend.h5")
-    backend.reset(nwalkers, ndim)
 
-    with Pool() as pool:
-        sampler = emcee.EnsembleSampler(nwalkers, ndim, cost_function_global, pool=pool, backend=backend)#, moves=emcee.moves.StretchMove(a=2.0))
-        sampler.run_mcmc(pos, 10000, progress=True)
+    use_backend = False
+    if use_backend:
+        sampler = emcee.backends.HDFBackend("backend.h5")
+
+    else:
+        backend = emcee.backends.HDFBackend("backend.h5")
+        backend.reset(nwalkers, ndim)
+
+        with Pool() as pool:
+            sampler = emcee.EnsembleSampler(nwalkers, ndim, cost_function_global, pool=pool, backend=backend)#, moves=emcee.moves.StretchMove(a=2.0))
+            sampler.run_mcmc(pos, 1000, progress=True)
 
     # print the best fit values
-    tau = sampler.get_autocorr_time()
-    print(tau)
-    flat_samples = sampler.get_chain(discard=300, thin=50, flat=True)
+    flat_samples = sampler.get_chain(discard=100, flat=True)
 
     for i in range(ndim):
         mcmc = np.percentile(flat_samples[:, i], [16, 50, 84])
@@ -160,9 +171,12 @@ def main():
         print(f"{mcmc[1]:.5f} +{q[1]:.5f} -{q[0]:.5f}")
     
     # corner plots
-    fig = corner.corner(flat_samples, labels=[r"$\Delta m^2_{41}$", r"$|U_{e4}|^2$", r"$|U_{\mu 4}|^2$", r"$\alpha_{flux}$", r"$\alpha_{brn}$", r"$\alpha_{nin}$", r"$\alpha_{ssb}$"])
+    fig = corner.corner(flat_samples, labels=[r"$\Delta m_{41}$", r"$|U_{e4}|^2$", r"$|U_{\mu 4}|^2$", r"$\alpha_{flux}$", r"$\alpha_{brn}$", r"$\alpha_{nin}$", r"$\alpha_{ssb}$"])
     fig.savefig("corner.png")
 
+    # tau = sampler.get_autocorr_time()
+    # print(tau)
+
 if __name__ == "__main__":
-    main()
-    # plot()
+    # main()
+    plot()
