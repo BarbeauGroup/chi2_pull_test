@@ -1,6 +1,8 @@
 import numpy as np
 from utils.histograms import rebin_histogram, centers_to_edges
 
+import matplotlib.pyplot as plt
+
 def make_ssb_pdf(params: dict) -> dict:
     """
     params: dictionary with SSB information
@@ -43,5 +45,20 @@ def make_ssb_pdf(params: dict) -> dict:
     t_edges = centers_to_edges(t)
 
     ssb_pdf["time"] = (time_bins, rebin_histogram(y, t_edges, time_bins)/np.diff(time_bins))
+
+    # plot the PDFs
+    fig, ax = plt.subplots(1, 2, figsize=(12, 6))
+    ax[0].step(energy_bins[:-1], AC_PE_hist, where="mid")
+    ax[0].set_xlabel("Energy [PE]")
+    ax[0].set_ylabel("Counts")
+    ax[0].set_title("Energy PDF")
+
+    ax[1].step(time_bins[:-1], ssb_pdf["time"][1], where="mid")
+    ax[1].set_xlabel("Time [us]")
+    ax[1].set_ylabel("Counts")
+    ax[1].set_title("Time PDF")
+
+    plt.show()
+
 
 

@@ -60,7 +60,7 @@ def cost_function_global(x: np.ndarray) -> float:
     """
     osc_params = x[0:3]
 
-    if(osc_params[0] > 10):
+    if(osc_params[0] > 100):
         return -np.inf
 
     if(osc_params[0] < 0 or osc_params[1] < 0 or osc_params[2] < 0):
