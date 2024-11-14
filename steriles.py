@@ -11,6 +11,7 @@ from stats.fit import chi2_stat, chi2_sys
 
 from flux.nuflux import oscillate_flux
 from flux.create_observables import create_observables
+from flux.ssb_pdf import make_ssb_pdf
 from plotting.observables import analysis_bins, plot_observables
 from stats.marginalize import marginalize
 
@@ -27,17 +28,18 @@ with open("flux/flux_dict.pkl", "rb") as f:
     flux = np.load(f, allow_pickle=True).item()
 
 params = load_params("config/csi.json")
+ssb_dict = make_ssb_pdf(params)
 bkd_dict = read_brns_nins_from_txt(params)
 data_dict = read_data_from_txt(params)
 
 observable_bin_arr = np.asarray(params["analysis"]["energy_bins"])
 t_bin_arr = np.asarray(params["analysis"]["time_bins"])
 
-brn_e_weights = rebin_histogram(bkd_dict["brn"]["energy"][1], bkd_dict["brn"]["energy"][0], observable_bin_arr) / np.diff(observable_bin_arr)
-brn_t_weights = rebin_histogram(bkd_dict["brn"]["time"][1], bkd_dict["brn"]["time"][0], t_bin_arr) / np.diff(t_bin_arr)
+brn_e_weights = rebin_histogram(bkd_dict["brn"]["energy"][1], bkd_dict["brn"]["energy"][0], observable_bin_arr) # / np.diff(observable_bin_arr)
+brn_t_weights = rebin_histogram(bkd_dict["brn"]["time"][1], bkd_dict["brn"]["time"][0], t_bin_arr) # / np.diff(t_bin_arr)
 
-nin_e_weights = rebin_histogram(bkd_dict["nin"]["energy"][1], bkd_dict["nin"]["energy"][0], observable_bin_arr) / np.diff(observable_bin_arr)
-nin_t_weights = rebin_histogram(bkd_dict["nin"]["time"][1], bkd_dict["nin"]["time"][0], t_bin_arr) / np.diff(t_bin_arr)
+nin_e_weights = rebin_histogram(bkd_dict["nin"]["energy"][1], bkd_dict["nin"]["energy"][0], observable_bin_arr) # / np.diff(observable_bin_arr)
+nin_t_weights = rebin_histogram(bkd_dict["nin"]["time"][1], bkd_dict["nin"]["time"][0], t_bin_arr) # / np.diff(t_bin_arr)
 
 new_bkd_dict = {}
 new_bkd_dict["brn"] = {
@@ -96,7 +98,7 @@ def plot():
         with open("flux/flux_dict.pkl", "rb") as f:
             flux = np.load(f, allow_pickle=True).item()
 
-    use_backend = True
+    use_backend = False
     if use_backend:
         x = []
         sampler = emcee.backends.HDFBackend("backend.h5")

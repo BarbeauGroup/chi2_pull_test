@@ -44,21 +44,23 @@ def make_ssb_pdf(params: dict) -> dict:
     y /= np.sum(y)
     t_edges = centers_to_edges(t)
 
-    ssb_pdf["time"] = (time_bins, rebin_histogram(y, t_edges, time_bins)/np.diff(time_bins))
+    ssb_pdf["time"] = (time_bins, rebin_histogram(y, t_edges, time_bins))
 
-    # plot the PDFs
-    fig, ax = plt.subplots(1, 2, figsize=(12, 6))
-    ax[0].step(energy_bins[:-1], AC_PE_hist, where="mid")
-    ax[0].set_xlabel("Energy [PE]")
-    ax[0].set_ylabel("Counts")
-    ax[0].set_title("Energy PDF")
+    return ssb_pdf
 
-    ax[1].step(time_bins[:-1], ssb_pdf["time"][1], where="mid")
-    ax[1].set_xlabel("Time [us]")
-    ax[1].set_ylabel("Counts")
-    ax[1].set_title("Time PDF")
+    # # plot the PDFs
+    # fig, ax = plt.subplots(1, 2, figsize=(12, 6))
+    # ax[0].step(energy_bins[:-1], AC_PE_hist/np.diff(energy_bins), where="mid")
+    # ax[0].set_xlabel("Energy [PE]")
+    # ax[0].set_ylabel("Counts")
+    # ax[0].set_title("Energy PDF")
 
-    plt.show()
+    # ax[1].step(time_bins[:-1], ssb_pdf["time"][1]/np.diff(time_bins), where="mid")
+    # ax[1].set_xlabel("Time [us]")
+    # ax[1].set_ylabel("Counts")
+    # ax[1].set_title("Time PDF")
+
+    # plt.show()
 
 
 

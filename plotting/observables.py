@@ -10,26 +10,16 @@ def analysis_bins(observable: dict, bkd_dict: dict, data: dict, params: dict, br
     observable_bin_arr = np.asarray(params["analysis"]["energy_bins"])
     t_bin_arr = np.asarray(params["analysis"]["time_bins"])
 
+    histograms = {}
+
     beam_dict = {}
     for beam_state in ["C", "AC"]:
         pe_hist, _ = np.histogram(data[beam_state]["energy"], bins=observable_bin_arr)
-        pe_err = np.sqrt(pe_hist)
-        pe_err = np.divide(pe_err, np.diff(observable_bin_arr))
-        pe_hist = np.divide(pe_hist, np.diff(observable_bin_arr))
-
         t_hist, _ = np.histogram(data[beam_state]["time"], bins=t_bin_arr)
-        t_err = np.sqrt(t_hist)
-        t_err = np.divide(t_err, np.diff(t_bin_arr))
-        t_hist = np.divide(t_hist, np.diff(t_bin_arr))
-
-        histograms = {}
-
-        e_weights = pe_hist
-        t_weights = t_hist
 
         beam_dict[beam_state] = {
-            "energy": e_weights,
-            "time": t_weights
+            "energy": pe_hist,
+            "time": t_hist
         }
     
     histograms["beam_state"] = beam_dict
@@ -38,8 +28,8 @@ def analysis_bins(observable: dict, bkd_dict: dict, data: dict, params: dict, br
     for flavor in observable.keys():
         if flavor == "nuS" or flavor == "nuSBar":
             continue
-        e_weights = rebin_histogram(observable[flavor]["energy"][1], observable[flavor]["energy"][0], observable_bin_arr) / np.diff(observable_bin_arr)
-        t_weights = rebin_histogram(observable[flavor]["time"][1], observable[flavor]["time"][0]/1000, t_bin_arr) / np.diff(t_bin_arr) #TODO: mandate times are same unit
+        e_weights = rebin_histogram(observable[flavor]["energy"][1], observable[flavor]["energy"][0], observable_bin_arr) # / np.diff(observable_bin_arr)
+        t_weights = rebin_histogram(observable[flavor]["time"][1], observable[flavor]["time"][0]/1000, t_bin_arr) # / np.diff(t_bin_arr) #TODO: mandate times are same unit
 
         flavor_dict[flavor] = {
             "energy": e_weights,
@@ -52,9 +42,6 @@ def analysis_bins(observable: dict, bkd_dict: dict, data: dict, params: dict, br
         if bkd == "brn": norm = brn_norm
         else: norm = nin_norm
 
-        # e_weights = norm*rebin_histogram(bkd_dict[bkd]["energy"][1], bkd_dict[bkd]["energy"][0], observable_bin_arr) / np.diff(observable_bin_arr)
-        # t_weights = norm*rebin_histogram(bkd_dict[bkd]["time"][1], bkd_dict[bkd]["time"][0], t_bin_arr) / np.diff(t_bin_arr)
-
         e_weights = norm*bkd_dict[bkd]["energy"]
         t_weights = norm*bkd_dict[bkd]["time"]
 
@@ -64,9 +51,7 @@ def analysis_bins(observable: dict, bkd_dict: dict, data: dict, params: dict, br
         }
     histograms["backgrounds"] = final_bkd_dict
 
-    
     return histograms
-
 
 def plot_observables(params: dict, histograms_unosc: dict, histograms_osc: dict, alpha) -> None:
     fig, ax = plt.subplots(1, 2, figsize=(16, 6))
@@ -84,10 +69,10 @@ def plot_observables(params: dict, histograms_unosc: dict, histograms_osc: dict,
     t_bin_arr = np.asarray(params["analysis"]["time_bins"])
 
     # beam state subtraction
-    pe_hist = histograms_unosc["beam_state"]["C"]["energy"] - histograms_unosc["beam_state"]["AC"]["energy"] * ( 1 + alpha[3])
-    t_hist = histograms_unosc["beam_state"]["C"]["time"] - histograms_unosc["beam_state"]["AC"]["time"] * ( 1 + alpha[3])
-    pe_err = np.sqrt(histograms_unosc["beam_state"]["C"]["energy"] + histograms_unosc["beam_state"]["AC"]["energy"] * ( 1 + alpha[3]))
-    t_err = np.sqrt(histograms_unosc["beam_state"]["C"]["time"] + histograms_unosc["beam_state"]["AC"]["time"] * ( 1 + alpha[3]))
+    pe_hist = (histograms_unosc["beam_state"]["C"]["energy"] - histograms_unosc["beam_state"]["AC"]["energy"] * ( 1 + alpha[3])) / np.diff(observable_bin_arr)
+    t_hist = (histograms_unosc["beam_state"]["C"]["time"] - histograms_unosc["beam_state"]["AC"]["time"] * ( 1 + alpha[3])) / np.diff(t_bin_arr)
+    pe_err = (np.sqrt(histograms_unosc["beam_state"]["C"]["energy"] + histograms_unosc["beam_state"]["AC"]["energy"] * ( 1 + alpha[3]))) / np.diff(observable_bin_arr)
+    t_err = (np.sqrt(histograms_unosc["beam_state"]["C"]["time"] + histograms_unosc["beam_state"]["AC"]["time"] * ( 1 + alpha[3]))) / np.diff(t_bin_arr)
 
     # 3+1 model
     for bkd in histograms_osc["backgrounds"].keys():
@@ -95,8 +80,8 @@ def plot_observables(params: dict, histograms_unosc: dict, histograms_osc: dict,
         if(bkd == "nin"): scale = alpha[2]
         x.append(observable_bin_arr[:-1])
         t.append(t_bin_arr[:-1])
-        e_weights.append(histograms_osc["backgrounds"][bkd]["energy"] * (1 + scale))
-        t_weights.append(histograms_osc["backgrounds"][bkd]["time"] * (1 + scale))
+        e_weights.append(histograms_osc["backgrounds"][bkd]["energy"] * (1 + scale)/np.diff(observable_bin_arr))
+        t_weights.append(histograms_osc["backgrounds"][bkd]["time"] * (1 + scale)/np.diff(t_bin_arr))
 
         labels.append(bkd)
 
@@ -107,10 +92,11 @@ def plot_observables(params: dict, histograms_unosc: dict, histograms_osc: dict,
         scale = alpha[0]
         x.append(observable_bin_arr[:-1])
         t.append(t_bin_arr[:-1])
-        e_weights.append(histograms_osc["neutrinos"][flavor]["energy"] * (1 + scale))
-        t_weights.append(histograms_osc["neutrinos"][flavor]["time"] * (1 + scale))
+        e_weights.append(histograms_osc["neutrinos"][flavor]["energy"] * (1 + scale)/np.diff(observable_bin_arr))
+        t_weights.append(histograms_osc["neutrinos"][flavor]["time"] * (1 + scale)/np.diff(t_bin_arr))
 
         labels.append(flavor)
+
     
     ax[0].hist(x, bins=observable_bin_arr, weights=e_weights,
                 stacked=True, 
@@ -142,13 +128,13 @@ def plot_observables(params: dict, histograms_unosc: dict, histograms_osc: dict,
     for bkd in histograms_unosc["backgrounds"].keys():
         if bkd == "brn": scale = alpha[1]
         if bkd == "nin": scale = alpha[2]
-        e_weights += histograms_unosc["backgrounds"][bkd]["energy"] * (1 + scale)
-        t_weights += histograms_unosc["backgrounds"][bkd]["time"] * (1 + scale)
+        e_weights += histograms_unosc["backgrounds"][bkd]["energy"] * (1 + scale) / np.diff(observable_bin_arr)
+        t_weights += histograms_unosc["backgrounds"][bkd]["time"] * (1 + scale) / np.diff(t_bin_arr)
 
     for flavor in histograms_unosc["neutrinos"].keys():
         scale = alpha[0]
-        e_weights += histograms_unosc["neutrinos"][flavor]["energy"] * (1 + scale)
-        t_weights += histograms_unosc["neutrinos"][flavor]["time"] * (1 + scale)
+        e_weights += histograms_unosc["neutrinos"][flavor]["energy"] * (1 + scale) / np.diff(observable_bin_arr)
+        t_weights += histograms_unosc["neutrinos"][flavor]["time"] * (1 + scale) / np.diff(t_bin_arr)
 
     ax[0].hist(observable_bin_arr[:-1], bins=observable_bin_arr, weights=e_weights, histtype='step', linestyle='dashed', label="Standard Model", color="grey")
     ax[1].hist(t_bin_arr[:-1], bins=t_bin_arr, weights=t_weights, histtype='step', linestyle='dashed', label="Standard Model", color="grey")
