@@ -57,6 +57,16 @@ def plot_observables(params: dict, histograms_unosc: dict, histograms_osc: dict,
     fig, ax = plt.subplots(1, 2, figsize=(16, 6))
 
     colors = ["#d73027", "#f46d43", "#fdae61", "#fee090", "#e0f3f8", "#abd9e9", "#74add1", "#4575b4"]
+    label_dict = {
+        "brn": "BRNs",
+        "nin": "NINs",
+        "nuE": r"$\nu_e$",
+        "nuMu": r"$\nu_\mu$",
+        "nuTau": r"$\nu_\tau$",
+        "nuEBar": r"$\bar{\nu}_e$",
+        "nuMuBar": r"$\bar{\nu}_\mu$",
+        "nuTauBar": r"$\bar{\nu}_\tau$",
+    }
 
     # stacked histogram
     x = []
@@ -97,7 +107,9 @@ def plot_observables(params: dict, histograms_unosc: dict, histograms_osc: dict,
 
         labels.append(flavor)
 
-    
+    # transform labels
+    labels = [label_dict[label] for label in labels]
+
     ax[0].hist(x, bins=observable_bin_arr, weights=e_weights,
                 stacked=True, 
                 histtype='step',
@@ -136,12 +148,12 @@ def plot_observables(params: dict, histograms_unosc: dict, histograms_osc: dict,
         e_weights += histograms_unosc["neutrinos"][flavor]["energy"] * (1 + scale) / np.diff(observable_bin_arr)
         t_weights += histograms_unosc["neutrinos"][flavor]["time"] * (1 + scale) / np.diff(t_bin_arr)
 
-    ax[0].hist(observable_bin_arr[:-1], bins=observable_bin_arr, weights=e_weights, histtype='step', linestyle='dashed', label="Standard Model", color="grey")
-    ax[1].hist(t_bin_arr[:-1], bins=t_bin_arr, weights=t_weights, histtype='step', linestyle='dashed', label="Standard Model", color="grey")
+    ax[0].hist(observable_bin_arr[:-1], bins=observable_bin_arr, weights=e_weights, histtype='step', linestyle='dashed', label="No Oscillation", color="grey")
+    ax[1].hist(t_bin_arr[:-1], bins=t_bin_arr, weights=t_weights, histtype='step', linestyle='dashed', label="No Oscillation", color="grey")
 
     # data
-    ax[0].errorbar(x=(observable_bin_arr[1:] + observable_bin_arr[:-1])/2, y=pe_hist, ls="none", yerr=np.sqrt(pe_err), label="C", color="black", marker="x", markersize=5)
-    ax[1].errorbar(x=(t_bin_arr[1:] + t_bin_arr[:-1])/2, y=t_hist, ls="none", yerr=np.sqrt(t_err), label="C", color="black", marker="x", markersize=5)
+    ax[0].errorbar(x=(observable_bin_arr[1:] + observable_bin_arr[:-1])/2, y=pe_hist, ls="none", yerr=np.sqrt(pe_err), label="Data", color="black", marker="x", markersize=5)
+    ax[1].errorbar(x=(t_bin_arr[1:] + t_bin_arr[:-1])/2, y=t_hist, ls="none", yerr=np.sqrt(t_err), label="Data", color="black", marker="x", markersize=5)
     
     ax[0].set_xlabel("Energy [PE]")
     ax[0].set_ylabel("Counts / PE")
@@ -152,8 +164,8 @@ def plot_observables(params: dict, histograms_unosc: dict, histograms_osc: dict,
     ax[1].set_xscale('function', functions=(lambda x: np.where(x < 1, x, (x - 1) / 3 + 1),
                                             lambda x: np.where(x < 1, x, 3 * (x - 1) + 1)))
 
-    ax[0].legend()
-    ax[1].legend()
+    ax[0].legend(*map(reversed, ax[0].get_legend_handles_labels()))
+    ax[1].legend(*map(reversed, ax[1].get_legend_handles_labels()))
 
     plt.plot()
     plt.show()
