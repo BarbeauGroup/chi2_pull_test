@@ -77,8 +77,8 @@ def read_flux_from_root(params: dict) -> dict:
         },
 
         'nuEBar': {
-            'energy': (anc_keNuEBar_edges, anc_keNuEBar_values),
-            'time': (new_t_edges, anc_tNuEBar_values)
+            'energy': (anc_keNuEBar_edges, np.zeros(anc_keNuE_values.shape)),
+            'time': (new_t_edges, np.zeros(anc_tNuE_values.shape))
         },
 
         'nuMu': {

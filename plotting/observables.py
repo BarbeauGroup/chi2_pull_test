@@ -26,8 +26,6 @@ def analysis_bins(observable: dict, bkd_dict: dict, data: dict, params: dict, br
 
     flavor_dict = {}
     for flavor in observable.keys():
-        if flavor == "nuS" or flavor == "nuSBar":
-            continue
         e_weights = rebin_histogram(observable[flavor]["energy"][1], observable[flavor]["energy"][0], observable_bin_arr) # / np.diff(observable_bin_arr)
         t_weights = rebin_histogram(observable[flavor]["time"][1], observable[flavor]["time"][0]/1000, t_bin_arr) # / np.diff(t_bin_arr) #TODO: mandate times are same unit
 
@@ -66,6 +64,8 @@ def plot_observables(params: dict, histograms_unosc: dict, histograms_osc: dict,
         "nuEBar": r"$\bar{\nu}_e$",
         "nuMuBar": r"$\bar{\nu}_\mu$",
         "nuTauBar": r"$\bar{\nu}_\tau$",
+        "nuS": r"$\nu_s$",
+        "nuSBar": r"$\bar{\nu}_s$"
     }
 
     # stacked histogram
@@ -96,6 +96,8 @@ def plot_observables(params: dict, histograms_unosc: dict, histograms_osc: dict,
         labels.append(bkd)
 
     for flavor in histograms_osc["neutrinos"].keys():
+        # if flavor == "nuS" or flavor == "nuSBar":
+        #     continue
         # don't plot empty flavors
         if np.sum(histograms_osc["neutrinos"][flavor]["energy"]) == 0: continue
         if np.sum(histograms_osc["neutrinos"][flavor]["time"]) == 0: continue
@@ -144,6 +146,8 @@ def plot_observables(params: dict, histograms_unosc: dict, histograms_osc: dict,
         t_weights += histograms_unosc["backgrounds"][bkd]["time"] * (1 + scale) / np.diff(t_bin_arr)
 
     for flavor in histograms_unosc["neutrinos"].keys():
+        # if flavor == "nuS" or flavor == "nuSBar":
+        #     continue
         scale = alpha[0]
         e_weights += histograms_unosc["neutrinos"][flavor]["energy"] * (1 + scale) / np.diff(observable_bin_arr)
         t_weights += histograms_unosc["neutrinos"][flavor]["time"] * (1 + scale) / np.diff(t_bin_arr)

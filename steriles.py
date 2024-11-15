@@ -89,7 +89,7 @@ def plot():
     params = load_params("config/csi.json")
     data_dict = read_data_from_txt(params)
 
-    no_pkl = False
+    no_pkl = True
     if no_pkl:
         flux = read_flux_from_root(params)
         with open("flux/flux_dict.pkl", "wb") as f:
