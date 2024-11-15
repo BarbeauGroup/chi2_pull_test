@@ -26,93 +26,44 @@ def read_flux_from_root(params: dict) -> dict:
     new_t_edges = np.arange(0, 15010, 10)
     
     # nu e
-    NuE = convolved_energy_and_time_of_nu_e.values()
-    anc_keNuE_edges = convolved_energy_and_time_of_nu_e.axis(1).edges()[1:60]
-    anc_keNuE_values = np.sum(NuE, axis=0)[1:60]
-    anc_keNuE_values = (anc_keNuE_values / np.sum(anc_keNuE_values))*params["beam"]["nus_per_pot"]["nuE"]
-
-    anc_tNuE_edges = convolved_energy_and_time_of_nu_e.axis(0).edges()
-    anc_tNuE_values = np.sum(NuE, axis=1)
-    anc_tNuE_values = rebin_histogram(anc_tNuE_values, anc_tNuE_edges, new_t_edges)
-    anc_tNuE_values = anc_tNuE_values / np.sum(anc_tNuE_values)
+    NuE = convolved_energy_and_time_of_nu_e.values()[:, 1:60]
+    NuE /= np.sum(NuE)
+    NuE *= params["beam"]["nus_per_pot"]["nuE"]
+    NuE_e_edges = convolved_energy_and_time_of_nu_e.axis(1).edges()[1:60]
+    NuE_t_edges = convolved_energy_and_time_of_nu_e.axis(0).edges()
 
     # nu e bar
-    NuEBar = convolved_energy_and_time_of_nu_e_bar.values()
-    anc_keNuEBar_edges = convolved_energy_and_time_of_nu_e_bar.axis(1).edges()[1:60]
-    anc_keNuEBar_values = np.sum(NuEBar, axis=0)[1:60]
-    anc_keNuEBar_values = (anc_keNuEBar_values / np.sum(anc_keNuEBar_values))*params["beam"]["nus_per_pot"]["nuEBar"]
+    NuEBar = convolved_energy_and_time_of_nu_e_bar.values()[:, 1:60]
+    NuEBar /= np.sum(NuEBar)
+    NuEBar *= params["beam"]["nus_per_pot"]["nuEBar"]
+    NuEBar_e_edges = convolved_energy_and_time_of_nu_e_bar.axis(1).edges()[1:60]
+    NuEBar_t_edges = convolved_energy_and_time_of_nu_e_bar.axis(0).edges()
 
-    anc_tNuEBar_edges = convolved_energy_and_time_of_nu_e_bar.axis(0).edges()
-    anc_tNuEBar_values = np.sum(NuEBar, axis=1)
-    anc_tNuEBar_values = rebin_histogram(anc_tNuEBar_values, anc_tNuEBar_edges, new_t_edges)
-    anc_tNuEBar_values = anc_tNuEBar_values / np.sum(anc_tNuEBar_values)
-    
     # nu mu
-    NuMu = convolved_energy_and_time_of_nu_mu.values()
-    anc_keNuMu_edges = convolved_energy_and_time_of_nu_mu.axis(1).edges()[1:60]
-    anc_keNuMu_values = np.sum(NuMu, axis=0)[1:60]
-    anc_keNuMu_values = (anc_keNuMu_values / np.sum(anc_keNuMu_values))*params["beam"]["nus_per_pot"]["nuMu"]
-
-    anc_tNuMu_edges = convolved_energy_and_time_of_nu_mu.axis(0).edges()
-    anc_tNuMu_values = np.sum(NuMu, axis=1)
-    anc_tNuMu_values = rebin_histogram(anc_tNuMu_values, anc_tNuMu_edges, new_t_edges)
-    anc_tNuMu_values = anc_tNuMu_values / np.sum(anc_tNuMu_values)
+    NuMu = convolved_energy_and_time_of_nu_mu.values()[:, 1:60]
+    NuMu /= np.sum(NuMu)
+    NuMu *= params["beam"]["nus_per_pot"]["nuMu"]
+    NuMu_e_edges = convolved_energy_and_time_of_nu_mu.axis(1).edges()[1:60]
+    NuMu_t_edges = convolved_energy_and_time_of_nu_mu.axis(0).edges()
 
     # nu mu bar
-    NuMuBar = convolved_energy_and_time_of_nu_mu_bar.values()
-    anc_keNuMuBar_edges = convolved_energy_and_time_of_nu_mu_bar.axis(1).edges()[1:60]
-    anc_keNuMuBar_values = np.sum(NuMuBar, axis=0)[1:60]
-    anc_keNuMuBar_values = (anc_keNuMuBar_values / np.sum(anc_keNuMuBar_values))*params["beam"]["nus_per_pot"]["nuMuBar"]
-
-    anc_tNuMuBar_edges = convolved_energy_and_time_of_nu_mu_bar.axis(0).edges()
-    anc_tNuMuBar_values = np.sum(NuMuBar, axis=1)
-    anc_tNuMuBar_values = rebin_histogram(anc_tNuMuBar_values, anc_tNuMuBar_edges, new_t_edges)
-    anc_tNuMuBar_values = anc_tNuMuBar_values / np.sum(anc_tNuMuBar_values)
+    NuMuBar = convolved_energy_and_time_of_nu_mu_bar.values()[:, 1:60]
+    NuMuBar /= np.sum(NuMuBar)
+    NuMuBar *= params["beam"]["nus_per_pot"]["nuMuBar"]
+    NuMuBar_e_edges = convolved_energy_and_time_of_nu_mu_bar.axis(1).edges()[1:60]
+    NuMuBar_t_edges = convolved_energy_and_time_of_nu_mu_bar.axis(0).edges()
 
     # Make a tuple of the flux information for each neutrino type
-    flux_info = {
-        'nuE': {
-            'energy': (anc_keNuE_edges, anc_keNuE_values),
-            'time': (new_t_edges, anc_tNuE_values)
-        },
-
-        'nuEBar': {
-            'energy': (anc_keNuEBar_edges, np.zeros(anc_keNuE_values.shape)),
-            'time': (new_t_edges, np.zeros(anc_tNuE_values.shape))
-        },
-
-        'nuMu': {
-            'energy': (anc_keNuMu_edges, anc_keNuMu_values),
-            'time': (new_t_edges, anc_tNuMu_values)
-        },
-
-        'nuMuBar': {
-            'energy': (anc_keNuMuBar_edges, anc_keNuMuBar_values),
-            'time': (new_t_edges, anc_tNuMuBar_values)
-        },
-
-        'nuTau': {
-            'energy': (anc_keNuMu_edges, np.zeros(anc_keNuE_values.shape)),
-            'time': (new_t_edges, np.zeros(anc_tNuE_values.shape))
-        },
-
-        'nuTauBar': {
-            'energy': (anc_keNuMu_edges, np.zeros(anc_keNuE_values.shape)),
-            'time': (new_t_edges, np.zeros(anc_tNuE_values.shape))
-        },
-
-        'nuS': {
-            'energy': (anc_keNuMu_edges, np.zeros(anc_keNuE_values.shape)),
-            'time': (new_t_edges, np.zeros(anc_tNuE_values.shape))
-        },
-
-        'nuSBar': {
-            'energy': (anc_keNuMu_edges, np.zeros(anc_keNuE_values.shape)),
-            'time': (new_t_edges, np.zeros(anc_tNuE_values.shape))
-        }
+    return {
+        'nuE': ((NuE_t_edges, NuE_e_edges), NuE),
+        'nuEBar': ((NuMu_t_edges, NuMu_e_edges), np.zeros_like(NuMu)),
+        'nuMu': ((NuMu_t_edges, NuMu_e_edges), NuMu),
+        'nuMuBar': ((NuMuBar_t_edges, NuMuBar_e_edges), NuMuBar),
+        'nuTau': ((NuMu_t_edges, NuMu_e_edges), np.zeros_like(NuMu)),
+        'nuTauBar': ((NuMu_t_edges, NuMu_e_edges), np.zeros_like(NuMu)),
+        'nuS': ((NuMu_t_edges, NuMu_e_edges), np.zeros_like(NuMu)),
+        'nuSBar': ((NuMu_t_edges, NuMu_e_edges), np.zeros_like(NuMu))
     }
-
-    return flux_info
 
 def read_brns_nins_from_txt(params: dict) -> dict:
     """

@@ -19,13 +19,15 @@ import matplotlib.pyplot as plt
 
 import time
 
+import cProfile
+
 # Maybe needed bc of numpy matrix multiplication
 import os
 os.environ["OMP_NUM_THREADS"] = "1"
 
 # Global variables for data
-with open("flux/flux_dict.pkl", "rb") as f:
-    flux = np.load(f, allow_pickle=True).item()
+# with open("flux/flux_dict.pkl", "rb") as f:
+#     flux = np.load(f, allow_pickle=True).item()
 
 params = load_params("config/csi.json")
 ssb_dict = make_ssb_pdf(params)
@@ -89,7 +91,7 @@ def plot():
     params = load_params("config/csi.json")
     data_dict = read_data_from_txt(params)
 
-    no_pkl = True
+    no_pkl = False
     if no_pkl:
         flux = read_flux_from_root(params)
         with open("flux/flux_dict.pkl", "wb") as f:
@@ -114,6 +116,8 @@ def plot():
     osc_params = [params["detector"]["distance"]/100., osc_params[0], osc_params[1], osc_params[2], 0.0] #osc_params[3]]
 
     oscillated_flux = oscillate_flux(flux=flux, oscillation_params=osc_params)
+    # print(oscillated_flux)
+    
 
     un_osc_obs = create_observables(params=params, flux=flux)
     osc_obs = create_observables(params=params, flux=oscillated_flux)
@@ -121,9 +125,9 @@ def plot():
     histograms_unosc = analysis_bins(observable=un_osc_obs, bkd_dict=new_bkd_dict, data=data_dict, params=params, brn_norm=18.4, nin_norm=5.6)
     histograms_osc = analysis_bins(observable=osc_obs, bkd_dict=new_bkd_dict, data=data_dict, params=params, brn_norm=18.4, nin_norm=5.6)
 
-    print(cost_function_global(x))
+    # print(cost_function_global(x))
 
-    plot_observables(params, histograms_unosc, histograms_osc, x[3:])
+    # plot_observables(params, histograms_unosc, histograms_osc, x[3:])
 
 def main():
     global flux, params, new_bkd_dict, data_dict  # Declare globals for data
@@ -181,4 +185,5 @@ def main():
 
 if __name__ == "__main__":
     # main()
-    plot()
+    # plot()
+    cProfile.run("plot()", "output.prof")

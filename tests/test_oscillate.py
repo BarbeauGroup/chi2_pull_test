@@ -33,15 +33,6 @@ class TestOscillate(unittest.TestCase):
         osc = 0
         unosc = 0
         for flavor in self.flux.keys():
-            osc += self.oscillated_flux[flavor]["energy"][1]
-            unosc += self.flux[flavor]["energy"][1]
+            osc += self.oscillated_flux[flavor][1]
+            unosc += self.flux[flavor][1]
         self.assertTrue(np.allclose(osc, unosc))
-        # print(np.sum(osc), np.sum(unosc))
-
-        osc = 0
-        unosc = 0
-        for flavor in self.flux.keys():
-            osc += self.oscillated_flux[flavor]["time"][1] * np.sum(self.oscillated_flux[flavor]["energy"][1])
-            unosc += self.flux[flavor]["time"][1] * np.sum(self.flux[flavor]["energy"][1])
-        self.assertTrue(np.allclose(osc, unosc))
-        # print(np.sum(osc), np.sum(unosc))
