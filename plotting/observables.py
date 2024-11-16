@@ -6,11 +6,13 @@ from utils.histograms import rebin_histogram
 
 plt.style.use(['science'])
 
-def analysis_bins(observable: dict, bkd_dict: dict, data: dict, params: dict, brn_norm: float, nin_norm: float) -> dict:
+def analysis_bins(observable: dict, ssb_dict: dict, bkd_dict: dict, data: dict, params: dict, brn_norm: float, nin_norm: float) -> dict:
     observable_bin_arr = np.asarray(params["analysis"]["energy_bins"])
     t_bin_arr = np.asarray(params["analysis"]["time_bins"])
 
     histograms = {}
+
+    histograms["ssb"] = ssb_dict
 
     beam_dict = {}
     for beam_state in ["C", "AC"]:
@@ -21,13 +23,12 @@ def analysis_bins(observable: dict, bkd_dict: dict, data: dict, params: dict, br
             "energy": pe_hist,
             "time": t_hist
         }
-    
     histograms["beam_state"] = beam_dict
 
     flavor_dict = {}
     for flavor in observable.keys():
-        e_weights = rebin_histogram(np.sum(observable[flavor][1], axis=1), observable[flavor][0][1], observable_bin_arr) # / np.diff(observable_bin_arr)
-        t_weights = rebin_histogram(np.sum(observable[flavor][1], axis=0), observable[flavor][0][0]/1000, t_bin_arr) # / np.diff(t_bin_arr) #TODO: mandate times are same unit
+        e_weights = rebin_histogram(np.sum(observable[flavor][1], axis=1), observable[flavor][0][1], observable_bin_arr) 
+        t_weights = rebin_histogram(np.sum(observable[flavor][1], axis=0), observable[flavor][0][0]/1000, t_bin_arr) 
 
         flavor_dict[flavor] = {
             "energy": e_weights,
@@ -79,8 +80,8 @@ def plot_observables(params: dict, histograms_unosc: dict, histograms_osc: dict,
     t_bin_arr = np.asarray(params["analysis"]["time_bins"])
 
     # beam state subtraction
-    pe_hist = (histograms_unosc["beam_state"]["C"]["energy"] - histograms_unosc["beam_state"]["AC"]["energy"] * ( 1 + alpha[3])) / np.diff(observable_bin_arr)
-    t_hist = (histograms_unosc["beam_state"]["C"]["time"] - histograms_unosc["beam_state"]["AC"]["time"] * ( 1 + alpha[3])) / np.diff(t_bin_arr)
+    pe_hist = (histograms_unosc["beam_state"]["C"]["energy"] - histograms_unosc["ssb"]["energy"] * ( 1 + alpha[3])) / np.diff(observable_bin_arr)
+    t_hist = (histograms_unosc["beam_state"]["C"]["time"] - histograms_unosc["ssb"]["time"] * ( 1 + alpha[3])) / np.diff(t_bin_arr)
     pe_err = (np.sqrt(histograms_unosc["beam_state"]["C"]["energy"] + histograms_unosc["beam_state"]["AC"]["energy"] * ( 1 + alpha[3]))) / np.diff(observable_bin_arr)
     t_err = (np.sqrt(histograms_unosc["beam_state"]["C"]["time"] + histograms_unosc["beam_state"]["AC"]["time"] * ( 1 + alpha[3]))) / np.diff(t_bin_arr)
 

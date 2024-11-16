@@ -73,8 +73,10 @@ def read_brns_nins_from_txt(params: dict) -> dict:
     returns: dictionary with SNS flux information
     
     """
-
-    dictionary = {}
+    
+    # Final binning from params
+    observable_bin_arr = np.asarray(params["analysis"]["energy_bins"])
+    t_bin_arr = np.asarray(params["analysis"]["time_bins"])
 
     # BRNs 
     brn_pe = np.loadtxt(params["beam"]["brn_energy_file"])
@@ -90,8 +92,7 @@ def read_brns_nins_from_txt(params: dict) -> dict:
     brn_t_counts = brn_t[:,1]
     brn_t_counts /= np.sum(brn_t_counts)
 
-    dictionary["brn"] =  { "energy": (brn_pe_bins_edges, brn_pe_counts),
-                            "time": (brn_t_bins_edges, brn_t_counts) }
+    # NINs
 
     nin_pe = np.loadtxt(params["beam"]["nin_energy_file"])
     nin_t = np.loadtxt(params["beam"]["nin_time_file"])
@@ -106,10 +107,27 @@ def read_brns_nins_from_txt(params: dict) -> dict:
     nin_t_counts = nin_t[:,1]
     nin_t_counts /= np.sum(nin_t_counts)
 
-    dictionary["nin"] =  { "energy": (nin_pe_bins_edges, nin_pe_counts),
-                            "time": (nin_t_bins_edges, nin_t_counts) }
 
-    return dictionary
+    # Rebin the histograms
+
+    brn_e_weights = rebin_histogram(brn_pe_counts, brn_pe_bins_edges, observable_bin_arr)
+    brn_t_weights = rebin_histogram(brn_t_counts, brn_t_bins_edges, t_bin_arr) 
+    nin_e_weights = rebin_histogram(nin_pe_counts, nin_pe_bins_edges, observable_bin_arr) 
+    nin_t_weights = rebin_histogram(nin_t_counts, nin_t_bins_edges, t_bin_arr)
+
+
+    new_bkd_dict = {}
+    new_bkd_dict["brn"] = {
+        "energy": np.asarray(brn_e_weights),
+        "time": np.asarray(brn_t_weights)
+    }
+
+    new_bkd_dict["nin"] = {
+        "energy": np.asarray(nin_e_weights),
+        "time": np.asarray(nin_t_weights)
+    }
+
+    return new_bkd_dict
 
 
 def read_data_from_txt(params: dict) -> dict:

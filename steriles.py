@@ -26,8 +26,8 @@ import os
 os.environ["OMP_NUM_THREADS"] = "1"
 
 # Global variables for data
-# with open("flux/flux_dict.pkl", "rb") as f:
-#     flux = np.load(f, allow_pickle=True).item()
+with open("flux/flux_dict.pkl", "rb") as f:
+    flux = np.load(f, allow_pickle=True).item()
 
 params = load_params("config/csi.json")
 ssb_dict = make_ssb_pdf(params)
@@ -36,23 +36,6 @@ data_dict = read_data_from_txt(params)
 
 observable_bin_arr = np.asarray(params["analysis"]["energy_bins"])
 t_bin_arr = np.asarray(params["analysis"]["time_bins"])
-
-brn_e_weights = rebin_histogram(bkd_dict["brn"]["energy"][1], bkd_dict["brn"]["energy"][0], observable_bin_arr) # / np.diff(observable_bin_arr)
-brn_t_weights = rebin_histogram(bkd_dict["brn"]["time"][1], bkd_dict["brn"]["time"][0], t_bin_arr) # / np.diff(t_bin_arr)
-
-nin_e_weights = rebin_histogram(bkd_dict["nin"]["energy"][1], bkd_dict["nin"]["energy"][0], observable_bin_arr) # / np.diff(observable_bin_arr)
-nin_t_weights = rebin_histogram(bkd_dict["nin"]["time"][1], bkd_dict["nin"]["time"][0], t_bin_arr) # / np.diff(t_bin_arr)
-
-new_bkd_dict = {}
-new_bkd_dict["brn"] = {
-    "energy": np.asarray(brn_e_weights),
-    "time": np.asarray(brn_t_weights)
-}
-
-new_bkd_dict["nin"] = {
-    "energy": np.asarray(nin_e_weights),
-    "time": np.asarray(nin_t_weights)
-}
 
 
 def cost_function_global(x: np.ndarray) -> float:
@@ -91,14 +74,14 @@ def plot():
     params = load_params("config/csi.json")
     data_dict = read_data_from_txt(params)
 
-    no_pkl = False
-    if no_pkl:
-        flux = read_flux_from_root(params)
-        with open("flux/flux_dict.pkl", "wb") as f:
-            np.save(f, flux)
-    else:
-        with open("flux/flux_dict.pkl", "rb") as f:
-            flux = np.load(f, allow_pickle=True).item()
+    # no_pkl = False
+    # if no_pkl:
+    #     flux = read_flux_from_root(params)
+    #     with open("flux/flux_dict.pkl", "wb") as f:
+    #         np.save(f, flux)
+    # else:
+    #     with open("flux/flux_dict.pkl", "rb") as f:
+    #         flux = np.load(f, allow_pickle=True).item()
 
     use_backend = False
     if use_backend:
@@ -116,18 +99,16 @@ def plot():
     osc_params = [params["detector"]["distance"]/100., osc_params[0], osc_params[1], osc_params[2], 0.0] #osc_params[3]]
 
     oscillated_flux = oscillate_flux(flux=flux, oscillation_params=osc_params)
-    # print(oscillated_flux)
-    
 
     un_osc_obs = create_observables(params=params, flux=flux)
     osc_obs = create_observables(params=params, flux=oscillated_flux)
 
-    histograms_unosc = analysis_bins(observable=un_osc_obs, bkd_dict=new_bkd_dict, data=data_dict, params=params, brn_norm=18.4, nin_norm=5.6)
-    histograms_osc = analysis_bins(observable=osc_obs, bkd_dict=new_bkd_dict, data=data_dict, params=params, brn_norm=18.4, nin_norm=5.6)
+    histograms_unosc = analysis_bins(observable=un_osc_obs, ssb_dict=ssb_dict, bkd_dict=bkd_dict, data=data_dict, params=params, brn_norm=18.4, nin_norm=5.6)
+    histograms_osc = analysis_bins(observable=osc_obs, ssb_dict=ssb_dict, bkd_dict=bkd_dict, data=data_dict, params=params, brn_norm=18.4, nin_norm=5.6)
 
     # print(cost_function_global(x))
 
-    # plot_observables(params, histograms_unosc, histograms_osc, x[3:])
+    plot_observables(params, histograms_unosc, histograms_osc, x[3:])
 
 def main():
     global flux, params, new_bkd_dict, data_dict  # Declare globals for data
@@ -185,5 +166,5 @@ def main():
 
 if __name__ == "__main__":
     # main()
-    # plot()
-    cProfile.run("plot()", "output.prof")
+    plot()
+    # cProfile.run("plot()", "output.prof")

@@ -1,6 +1,8 @@
 import numpy as np
+import sys
+sys.path.append("./")
 from utils.histograms import rebin_histogram, centers_to_edges
-
+from utils.loadparams import load_params
 import matplotlib.pyplot as plt
 
 def make_ssb_pdf(params: dict) -> dict:
@@ -30,7 +32,7 @@ def make_ssb_pdf(params: dict) -> dict:
 
     AC_PE_hist, _ = np.histogram(AC_PE, bins=energy_bins)
 
-    ssb_pdf["energy"] = (energy_bins, AC_PE_hist)
+    ssb_pdf["energy"] = AC_PE_hist
 
 
     # Time PDF is an analytic function
@@ -43,24 +45,32 @@ def make_ssb_pdf(params: dict) -> dict:
     y = exp_decay(t, k)
     y /= np.sum(y)
     t_edges = centers_to_edges(t)
+    time_values = rebin_histogram(y, t_edges, time_bins)
+    time_values /= np.sum(time_values)
+    time_values *= np.sum(AC_PE_hist)
 
-    ssb_pdf["time"] = (time_bins, rebin_histogram(y, t_edges, time_bins))
+    ssb_pdf["time"] = time_values
 
     return ssb_pdf
 
-    # # plot the PDFs
-    # fig, ax = plt.subplots(1, 2, figsize=(12, 6))
-    # ax[0].step(energy_bins[:-1], AC_PE_hist/np.diff(energy_bins), where="mid")
-    # ax[0].set_xlabel("Energy [PE]")
-    # ax[0].set_ylabel("Counts")
-    # ax[0].set_title("Energy PDF")
+    # plot the PDFs
+    fig, ax = plt.subplots(1, 2, figsize=(12, 6))
+    ax[0].step(energy_bins[:-1], AC_PE_hist/np.diff(energy_bins), where="mid")
+    ax[0].set_xlabel("Energy [PE]")
+    ax[0].set_ylabel("Counts")
+    ax[0].set_title("Energy PDF")
 
-    # ax[1].step(time_bins[:-1], ssb_pdf["time"][1]/np.diff(time_bins), where="mid")
-    # ax[1].set_xlabel("Time [us]")
-    # ax[1].set_ylabel("Counts")
-    # ax[1].set_title("Time PDF")
+    ax[1].step(time_bins[:-1], ssb_pdf["time"][1]/np.diff(time_bins), where="mid")
+    ax[1].set_xlabel("Time [us]")
+    ax[1].set_ylabel("Counts")
+    ax[1].set_title("Time PDF")
 
-    # plt.show()
+    plt.show()
+
+if __name__ == "__main__":
+    
+    params = load_params("config/csi.json")
+    make_ssb_pdf(params)
 
 
 
