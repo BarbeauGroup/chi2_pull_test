@@ -12,7 +12,7 @@ def chi2_stat(histograms: dict, nuisance_params: dict) -> float:
     chi2 = 0
     for hist in ["energy", "time"]:
 
-        ssb = histograms["beam_state"]["AC"][hist]
+        ssb = histograms["ssb"][hist]
         observed = histograms["beam_state"]["C"][hist]
 
         predicted = 0

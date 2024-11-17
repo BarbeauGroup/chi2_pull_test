@@ -31,6 +31,7 @@ def make_ssb_pdf(params: dict) -> dict:
     AC_PE = np.delete(AC_PE, AC_high_energy_idx)
 
     AC_PE_hist, _ = np.histogram(AC_PE, bins=energy_bins)
+    AC_PE_hist = np.divide(AC_PE_hist, np.sum(AC_PE_hist))
 
     ssb_pdf["energy"] = AC_PE_hist
 
@@ -47,7 +48,6 @@ def make_ssb_pdf(params: dict) -> dict:
     t_edges = centers_to_edges(t)
     time_values = rebin_histogram(y, t_edges, time_bins)
     time_values /= np.sum(time_values)
-    time_values *= np.sum(AC_PE_hist)
 
     ssb_pdf["time"] = time_values
 

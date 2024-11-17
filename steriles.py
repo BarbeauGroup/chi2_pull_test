@@ -65,7 +65,7 @@ def cost_function_global(x: np.ndarray) -> float:
 
     oscillated_flux = oscillate_flux(flux=flux, oscillation_params=osc_params)
     osc_obs = create_observables(params=params, flux=oscillated_flux)
-    histograms_osc = analysis_bins(observable=osc_obs, bkd_dict=new_bkd_dict, data=data_dict, params=params, brn_norm=18.4, nin_norm=5.6)
+    histograms_osc = analysis_bins(observable=osc_obs, bkd_dict=new_bkd_dict, data=data_dict, params=params, ssb_norm=1286, brn_norm=18.4, nin_norm=5.6)
     
     return -(chi2_stat(histograms=histograms_osc, nuisance_params=nuisance_params) + chi2_sys(nuisance_params=nuisance_params, nuisance_param_priors=nuisance_param_priors))
 
@@ -103,15 +103,15 @@ def plot():
     un_osc_obs = create_observables(params=params, flux=flux)
     osc_obs = create_observables(params=params, flux=oscillated_flux)
 
-    histograms_unosc = analysis_bins(observable=un_osc_obs, ssb_dict=ssb_dict, bkd_dict=bkd_dict, data=data_dict, params=params, brn_norm=18.4, nin_norm=5.6)
-    histograms_osc = analysis_bins(observable=osc_obs, ssb_dict=ssb_dict, bkd_dict=bkd_dict, data=data_dict, params=params, brn_norm=18.4, nin_norm=5.6)
+    histograms_unosc = analysis_bins(observable=un_osc_obs, ssb_dict=ssb_dict, bkd_dict=bkd_dict, data=data_dict, params=params, ssb_norm=1286, brn_norm=18.4, nin_norm=5.6)
+    histograms_osc = analysis_bins(observable=osc_obs, ssb_dict=ssb_dict, bkd_dict=bkd_dict, data=data_dict, params=params, ssb_norm=1286, brn_norm=18.4, nin_norm=5.6)
 
     # print(cost_function_global(x))
 
     plot_observables(params, histograms_unosc, histograms_osc, x[3:])
 
 def main():
-    global flux, params, new_bkd_dict, data_dict  # Declare globals for data
+    global flux, params, bkd_dict, data_dict  # Declare globals for data
 
     params = load_params("config/csi.json")
     data_dict = read_data_from_txt(params)

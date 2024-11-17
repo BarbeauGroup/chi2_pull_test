@@ -6,13 +6,18 @@ from utils.histograms import rebin_histogram
 
 plt.style.use(['science'])
 
-def analysis_bins(observable: dict, ssb_dict: dict, bkd_dict: dict, data: dict, params: dict, brn_norm: float, nin_norm: float) -> dict:
+def analysis_bins(observable: dict, ssb_dict: dict, bkd_dict: dict, data: dict, params: dict, ssb_norm: float, brn_norm: float, nin_norm: float) -> dict:
     observable_bin_arr = np.asarray(params["analysis"]["energy_bins"])
     t_bin_arr = np.asarray(params["analysis"]["time_bins"])
 
     histograms = {}
+    
+    normalized_ssb_dict = {}
+    for hist in ["energy", "time"]:
+        normalized_ssb_dict[hist] = ssb_dict[hist] * ssb_norm
 
-    histograms["ssb"] = ssb_dict
+    histograms["ssb"] = normalized_ssb_dict
+
 
     beam_dict = {}
     for beam_state in ["C", "AC"]:
