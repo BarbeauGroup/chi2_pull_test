@@ -10,6 +10,8 @@ def chi2_stat(histograms: dict, nuisance_params: dict) -> float:
 
     """
     chi2 = 0
+
+    # Coincident Data
     for hist in ["energy", "time"]:
 
         ssb = histograms["ssb"][hist]
@@ -23,6 +25,19 @@ def chi2_stat(histograms: dict, nuisance_params: dict) -> float:
         predicted += histograms["backgrounds"]["brn"][hist] * (1 + nuisance_params[1])
         predicted += histograms["backgrounds"]["nin"][hist] * (1 + nuisance_params[2])
         predicted += ssb * (1 + nuisance_params[3])
+
+        num = (observed - predicted)**2
+        denom = np.abs((observed - ssb) + 2*ssb + histograms["backgrounds"]["brn"][hist] + histograms["backgrounds"]["nin"][hist])
+
+        chi2 += np.sum(num/denom)
+
+    # Anti-Coincident Data
+    for hist in ["energy", "time"]:
+
+        ssb = histograms["ssb"][hist]
+        observed = histograms["beam_state"]["AC"][hist]
+
+        predicted = ssb * (1 + nuisance_params[3])
 
         num = (observed - predicted)**2
         denom = np.abs((observed - ssb) + 2*ssb + histograms["backgrounds"]["brn"][hist] + histograms["backgrounds"]["nin"][hist])
