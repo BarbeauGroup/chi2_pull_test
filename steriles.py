@@ -88,32 +88,33 @@ def plot():
 
     # return
 
-    use_backend = False
+    use_backend = True
     if use_backend:
         x = []
         sampler = emcee.backends.HDFBackend("backend.h5")
-        flat_samples = sampler.get_chain(discard=300, thin=50, flat=True)
-        for i in range(7):
+        flat_samples = sampler.get_chain(discard=100, flat=True)
+        for i in range(8):
             mcmc = np.percentile(flat_samples[:, i], 50)
             x.append(mcmc)
     else:
         x = [1.521e+00, 4.174e-01, 4.462e-01, 1.196e-02, -4.793e-03,
                  -4.465e-03, -1.447e-02]
     
+    print(x)
     osc_params = x[0:3]
     osc_params = [params["detector"]["distance"]/100., osc_params[0], osc_params[1], osc_params[2], 0.0] #osc_params[3]]
 
     oscillated_flux = oscillate_flux(flux=flux, oscillation_params=osc_params)
 
-    un_osc_obs = create_observables(params=params, flux=flux, time_offset=500)
-    osc_obs = create_observables(params=params, flux=oscillated_flux, time_offset=500)
+    un_osc_obs = create_observables(params=params, flux=flux, time_offset=x[-1])
+    osc_obs = create_observables(params=params, flux=oscillated_flux, time_offset=x[-1])
 
-    histograms_unosc = analysis_bins(observable=un_osc_obs, ssb_dict=ssb_dict, bkd_dict=bkd_dict, data=data_dict, params=params, ssb_norm=1286, brn_norm=18.4, nin_norm=5.6, time_offset=500)
-    histograms_osc = analysis_bins(observable=osc_obs, ssb_dict=ssb_dict, bkd_dict=bkd_dict, data=data_dict, params=params, ssb_norm=1286, brn_norm=18.4, nin_norm=5.6, time_offset=500)
+    histograms_unosc = analysis_bins(observable=un_osc_obs, ssb_dict=ssb_dict, bkd_dict=bkd_dict, data=data_dict, params=params, ssb_norm=1286, brn_norm=18.4, nin_norm=5.6, time_offset=x[-1])
+    histograms_osc = analysis_bins(observable=osc_obs, ssb_dict=ssb_dict, bkd_dict=bkd_dict, data=data_dict, params=params, ssb_norm=1286, brn_norm=18.4, nin_norm=5.6, time_offset=x[-1])
 
     print(cost_function_global(x))
 
-    # plot_observables(params, histograms_unosc, histograms_osc, x[3:])
+    plot_observables(params, histograms_unosc, histograms_osc, x[3:-1])
 
 def main():
     global flux, params, bkd_dict, data_dict  # Declare globals for data
@@ -170,6 +171,6 @@ def main():
     # print(tau)
 
 if __name__ == "__main__":
-    main()
-    # plot()
+    # main()
+    plot()
     # cProfile.run("plot()", "output.prof")
