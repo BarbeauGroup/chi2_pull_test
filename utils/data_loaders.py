@@ -23,7 +23,7 @@ def read_flux_from_root(params: dict) -> dict:
     convolved_energy_and_time_of_nu_e_bar = paper_rf["convolved_energy_time_of_anti_nu_e;1"]
 
     # TODO: put in config file
-    new_t_edges = np.arange(0, 15010, 10)
+    new_t_edges = np.arange(0, 15125, 125)
     
     # nu e
     NuE = convolved_energy_and_time_of_nu_e.values()[:, 1:60]
@@ -53,16 +53,21 @@ def read_flux_from_root(params: dict) -> dict:
     NuMuBar_e_edges = convolved_energy_and_time_of_nu_mu_bar.axis(1).edges()[1:60]
     NuMuBar_t_edges = convolved_energy_and_time_of_nu_mu_bar.axis(0).edges()
 
+    new_hist_arr = [np.zeros((len(new_t_edges)-1, hist.shape[1])) for hist in [NuE, NuEBar, NuMu, NuMuBar]]
+    for i, hist in enumerate([NuE, NuEBar, NuMu, NuMuBar]):
+        for col in range(hist.shape[1]):
+            new_hist_arr[i][:, col] = rebin_histogram(hist[:, col], NuE_t_edges, new_t_edges)
+
     # Make a tuple of the flux information for each neutrino type
     return {
-        'nuE': ((NuE_t_edges, NuE_e_edges), NuE),
-        'nuEBar': ((NuMu_t_edges, NuMu_e_edges), np.zeros_like(NuMu)),
-        'nuMu': ((NuMu_t_edges, NuMu_e_edges), NuMu),
-        'nuMuBar': ((NuMuBar_t_edges, NuMuBar_e_edges), NuMuBar),
-        'nuTau': ((NuMu_t_edges, NuMu_e_edges), np.zeros_like(NuMu)),
-        'nuTauBar': ((NuMu_t_edges, NuMu_e_edges), np.zeros_like(NuMu)),
-        'nuS': ((NuMu_t_edges, NuMu_e_edges), np.zeros_like(NuMu)),
-        'nuSBar': ((NuMu_t_edges, NuMu_e_edges), np.zeros_like(NuMu))
+        'nuE': ((new_t_edges, NuE_e_edges), new_hist_arr[0]),
+        'nuEBar': ((new_t_edges, NuEBar_e_edges), new_hist_arr[1]),
+        'nuMu': ((new_t_edges, NuMu_e_edges), new_hist_arr[2]),
+        'nuMuBar': ((new_t_edges, NuMuBar_e_edges), new_hist_arr[3]),
+        'nuTau': ((new_t_edges, NuMu_e_edges), np.zeros_like(new_hist_arr[0])),
+        'nuTauBar': ((new_t_edges, NuMu_e_edges), np.zeros_like(new_hist_arr[0])),
+        'nuS': ((new_t_edges, NuMu_e_edges), np.zeros_like(new_hist_arr[0])),
+        'nuSBar': ((new_t_edges, NuMu_e_edges), np.zeros_like(new_hist_arr[0]))
     }
 
 def read_brns_nins_from_txt(params: dict) -> dict:
@@ -111,20 +116,20 @@ def read_brns_nins_from_txt(params: dict) -> dict:
     # Rebin the histograms
 
     brn_e_weights = rebin_histogram(brn_pe_counts, brn_pe_bins_edges, observable_bin_arr)
-    brn_t_weights = rebin_histogram(brn_t_counts, brn_t_bins_edges, t_bin_arr) 
+    # brn_t_weights = rebin_histogram(brn_t_counts, brn_t_bins_edges, t_bin_arr) 
     nin_e_weights = rebin_histogram(nin_pe_counts, nin_pe_bins_edges, observable_bin_arr) 
-    nin_t_weights = rebin_histogram(nin_t_counts, nin_t_bins_edges, t_bin_arr)
+    # nin_t_weights = rebin_histogram(nin_t_counts, nin_t_bins_edges, t_bin_arr)
 
 
     new_bkd_dict = {}
     new_bkd_dict["brn"] = {
         "energy": np.asarray(brn_e_weights),
-        "time": np.asarray(brn_t_weights)
+        "time": (brn_t_bins_edges, brn_t_counts)#np.asarray(brn_t_weights)
     }
 
     new_bkd_dict["nin"] = {
         "energy": np.asarray(nin_e_weights),
-        "time": np.asarray(nin_t_weights)
+        "time": (nin_t_bins_edges, nin_t_counts) #np.asarray(nin_t_weights)
     }
 
     return new_bkd_dict

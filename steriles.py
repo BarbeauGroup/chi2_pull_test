@@ -57,15 +57,16 @@ def cost_function_global(x: np.ndarray) -> float:
         return -np.inf
 
     osc_params = [params["detector"]["distance"]/100., osc_params[0], osc_params[1], osc_params[2], 0.0] #osc_params[3]]   
-    nuisance_params = x[3:]
+    nuisance_params = x[3:-1]
+    time_offset = x[-1]
     nuisance_param_priors = [params["detector"]["systematics"]["flux"],
                             params["detector"]["systematics"]["brn"],
                             params["detector"]["systematics"]["nin"],
                             params["detector"]["systematics"]["ssb"]]
 
     oscillated_flux = oscillate_flux(flux=flux, oscillation_params=osc_params)
-    osc_obs = create_observables(params=params, flux=oscillated_flux)
-    histograms_osc = analysis_bins(observable=osc_obs, ssb_dict=ssb_dict, bkd_dict=bkd_dict, data=data_dict, params=params, ssb_norm=1286, brn_norm=18.4, nin_norm=5.6)
+    osc_obs = create_observables(params=params, flux=oscillated_flux, time_offset=time_offset)
+    histograms_osc = analysis_bins(observable=osc_obs, ssb_dict=ssb_dict, bkd_dict=bkd_dict, data=data_dict, params=params, ssb_norm=1286, brn_norm=18.4, nin_norm=5.6, time_offset=time_offset)
     
     return -(chi2_stat(histograms=histograms_osc, nuisance_params=nuisance_params) + chi2_sys(nuisance_params=nuisance_params, nuisance_param_priors=nuisance_param_priors))
 
@@ -74,7 +75,7 @@ def plot():
     params = load_params("config/csi.json")
     data_dict = read_data_from_txt(params)
 
-    # no_pkl = False
+    # no_pkl = True
     # if no_pkl:
     #     flux = read_flux_from_root(params)
     #     with open("flux/flux_dict.pkl", "wb") as f:
@@ -82,6 +83,10 @@ def plot():
     # else:
     #     with open("flux/flux_dict.pkl", "rb") as f:
     #         flux = np.load(f, allow_pickle=True).item()
+    
+    # print(flux)
+
+    # return
 
     use_backend = False
     if use_backend:
@@ -100,15 +105,15 @@ def plot():
 
     oscillated_flux = oscillate_flux(flux=flux, oscillation_params=osc_params)
 
-    un_osc_obs = create_observables(params=params, flux=flux)
-    osc_obs = create_observables(params=params, flux=oscillated_flux)
+    un_osc_obs = create_observables(params=params, flux=flux, time_offset=500)
+    osc_obs = create_observables(params=params, flux=oscillated_flux, time_offset=500)
 
-    histograms_unosc = analysis_bins(observable=un_osc_obs, ssb_dict=ssb_dict, bkd_dict=bkd_dict, data=data_dict, params=params, ssb_norm=1286, brn_norm=18.4, nin_norm=5.6)
-    histograms_osc = analysis_bins(observable=osc_obs, ssb_dict=ssb_dict, bkd_dict=bkd_dict, data=data_dict, params=params, ssb_norm=1286, brn_norm=18.4, nin_norm=5.6)
+    histograms_unosc = analysis_bins(observable=un_osc_obs, ssb_dict=ssb_dict, bkd_dict=bkd_dict, data=data_dict, params=params, ssb_norm=1286, brn_norm=18.4, nin_norm=5.6, time_offset=500)
+    histograms_osc = analysis_bins(observable=osc_obs, ssb_dict=ssb_dict, bkd_dict=bkd_dict, data=data_dict, params=params, ssb_norm=1286, brn_norm=18.4, nin_norm=5.6, time_offset=500)
 
     print(cost_function_global(x))
 
-    plot_observables(params, histograms_unosc, histograms_osc, x[3:])
+    # plot_observables(params, histograms_unosc, histograms_osc, x[3:])
 
 def main():
     global flux, params, bkd_dict, data_dict  # Declare globals for data
@@ -125,9 +130,9 @@ def main():
         with open("flux/flux_dict.pkl", "rb") as f:
             flux = np.load(f, allow_pickle=True).item()
 
-    x = [1.32, np.sqrt(0.116), np.sqrt(0.135), 0.0, 0.0, 0.0, 0.0]  # Initial guess
+    x = [1.32, np.sqrt(0.116), np.sqrt(0.135), 0.0, 0.0, 0.0, 0.0, 0.0]  # Initial guess
 
-    pos = x + [1., 0.1, 0.1, 0.2, 0.2, 0.2, 0.2] * np.random.randn(32, len(x))
+    pos = x + [1., 0.1, 0.1, 0.2, 0.2, 0.2, 0.2, 10] * np.random.randn(32, len(x))
     if np.any(pos[:, 0:3] < 0):
         pos[:, 0:3] = np.abs(pos[:, 0:3])
     js = np.where(pos[:, 1] + pos[:, 2] > 1)[0]
@@ -158,13 +163,13 @@ def main():
         print(f"{mcmc[1]:.5f} +{q[1]:.5f} -{q[0]:.5f}")
     
     # corner plots
-    fig = corner.corner(flat_samples, labels=[r"$\Delta m_{41}$", r"$|U_{e4}|^2$", r"$|U_{\mu 4}|^2$", r"$\alpha_{flux}$", r"$\alpha_{brn}$", r"$\alpha_{nin}$", r"$\alpha_{ssb}$"])
+    fig = corner.corner(flat_samples, labels=[r"$\Delta m_{41}$", r"$|U_{e4}|^2$", r"$|U_{\mu 4}|^2$", r"$\alpha_{flux}$", r"$\alpha_{brn}$", r"$\alpha_{nin}$", r"$\alpha_{ssb}$", r"$\Delta t$"])
     fig.savefig("corner.png")
 
     # tau = sampler.get_autocorr_time()
     # print(tau)
 
 if __name__ == "__main__":
-    # main()
-    plot()
+    main()
+    # plot()
     # cProfile.run("plot()", "output.prof")

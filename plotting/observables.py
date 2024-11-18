@@ -6,7 +6,7 @@ from utils.histograms import rebin_histogram
 
 plt.style.use(['science'])
 
-def analysis_bins(observable: dict, ssb_dict: dict, bkd_dict: dict, data: dict, params: dict, ssb_norm: float, brn_norm: float, nin_norm: float) -> dict:
+def analysis_bins(observable: dict, ssb_dict: dict, bkd_dict: dict, data: dict, params: dict, ssb_norm: float, brn_norm: float, nin_norm: float, time_offset: float) -> dict:
     observable_bin_arr = np.asarray(params["analysis"]["energy_bins"])
     t_bin_arr = np.asarray(params["analysis"]["time_bins"])
 
@@ -47,7 +47,7 @@ def analysis_bins(observable: dict, ssb_dict: dict, bkd_dict: dict, data: dict, 
         else: norm = nin_norm
 
         e_weights = norm*bkd_dict[bkd]["energy"]
-        t_weights = norm*bkd_dict[bkd]["time"]
+        t_weights = norm*rebin_histogram(bkd_dict[bkd]["time"][1], bkd_dict[bkd]["time"][0] + time_offset/1000., t_bin_arr)
 
         final_bkd_dict[bkd] = {
             "energy": e_weights,

@@ -48,9 +48,9 @@ def csi_time_efficiency(t):
     a = 520
     b = 0.0494 / 1000
 
-    return np.where(t < a, 1, np.where(t < 6000, np.exp(-b*(t - a)), 0))
+    return np.where(t < 0, 0, np.where(t < a, 1, np.where(t < 6000, np.exp(-b*(t - a)), 0)))
 
-def create_observables(flux, params) -> dict:
+def create_observables(flux, params, time_offset) -> dict:
     """
     This is the linear algebra step: flux -> true -> reconstructed
 
@@ -73,9 +73,12 @@ def create_observables(flux, params) -> dict:
     dx = params["detector"]["detector_matrix_dx"]
     observable_bin_arr = np.arange(0, detector_matrix.shape[0] * dx, dx)
 
+    # Do time offset
+    new_time_edges = flux["nuE"][0][0][:-1] + time_offset
+
     # Calculate the efficiency arrays
     energy_efficiency = csi_energy_efficiency(observable_bin_arr)
-    time_efficiency = csi_time_efficiency(flux["nuE"][0][0][:-1])
+    time_efficiency = csi_time_efficiency(new_time_edges)
 
     efficiency = energy_efficiency[:, None] * time_efficiency
     
@@ -92,6 +95,6 @@ def create_observables(flux, params) -> dict:
         # Apply efficiencies
         post_efficiency = observable * efficiency
 
-        observables[flavor] = ((flux["nuE"][0][0][:-1], observable_bin_arr), post_efficiency)
+        observables[flavor] = ((new_time_edges, observable_bin_arr), post_efficiency)
 
     return observables
