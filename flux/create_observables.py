@@ -1,5 +1,6 @@
 import numpy as np
 import timeit
+from numba import jit
 
 def num_atoms(params):
     mass = params["detector"]["mass"]
@@ -81,20 +82,42 @@ def create_observables(flux, params, time_offset) -> dict:
     time_efficiency = csi_time_efficiency(new_time_edges)
 
     efficiency = energy_efficiency[:, None] * time_efficiency
+
+    flavor_arr = ["nuE", "nuEBar", "nuMu", "nuMuBar", "nuTau", "nuTauBar", "nuS", "nuSBar"]
+    flux_arr = []
+    for flavor in flavor_arr:
+        flux_arr.append(flux[flavor])
+
+    mass = params["detector"]["mass"]
+    num_isotopes = len(params["detector"]["isotopes"])
+    Da = 1.66e-27
+
+    A = 0
+    for isotope in params["detector"]["isotopes"]:
+        A += isotope["mass"] * isotope["abundance"]
+
+    A /= num_isotopes
+
+    num_atoms = mass / (A * Da)
+
+    @jit
+    def do_it(flux_arr):
+        observables = {}
+
+        for i in range(len(flux_arr)):
+            # Load in energy and calculate observable energy before efficiencies
+            truth = np.dot(flux_matrix, np.transpose(flux_arr[i][1]))
+            observable = np.dot(detector_matrix, truth)
+
+            # Rescale counts
+            observable *= num_atoms * pot_per_cm2
+
+            # Apply efficiencies
+            post_efficiency = observable * efficiency
+
+            observables[flavor] = ((new_time_edges, observable_bin_arr), post_efficiency)
+
+
+            return observables
     
-    observables = {}
-
-    for flavor in flux.keys():
-        # Load in energy and calculate observable energy before efficiencies
-        truth = np.dot(flux_matrix, np.transpose(flux[flavor][1]))
-        observable = np.dot(detector_matrix, truth)
-
-        # Rescale counts
-        observable *= num_atoms(params) * pot_per_cm2
-
-        # Apply efficiencies
-        post_efficiency = observable * efficiency
-
-        observables[flavor] = ((new_time_edges, observable_bin_arr), post_efficiency)
-
-    return observables
+    return do_it(flux_arr)
