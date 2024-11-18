@@ -14,6 +14,7 @@ from flux.create_observables import create_observables
 from flux.ssb_pdf import make_ssb_pdf
 from plotting.observables import analysis_bins, plot_observables
 from stats.marginalize import marginalize
+from stats.likelihood import loglike_stat, loglike_sys
 
 import matplotlib.pyplot as plt
 
@@ -68,7 +69,7 @@ def cost_function_global(x: np.ndarray) -> float:
     osc_obs = create_observables(params=params, flux=oscillated_flux, time_offset=time_offset)
     histograms_osc = analysis_bins(observable=osc_obs, ssb_dict=ssb_dict, bkd_dict=bkd_dict, data=data_dict, params=params, ssb_norm=1286, brn_norm=18.4, nin_norm=5.6, time_offset=time_offset)
     
-    return -(chi2_stat(histograms=histograms_osc, nuisance_params=nuisance_params) + chi2_sys(nuisance_params=nuisance_params, nuisance_param_priors=nuisance_param_priors))
+    return loglike_stat(histograms_osc, nuisance_params) + loglike_sys(nuisance_params, nuisance_param_priors)
 
 
 def plot():
