@@ -1,6 +1,7 @@
 *.png
 *.h5
 *.npy
+*.pkl
 
 data/*.npy
 flux/*.root

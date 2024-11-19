@@ -2,35 +2,34 @@ import emcee
 import numpy as np
 import corner
 from multiprocessing import Pool
-import scipy.optimize as op
 
 from utils.loadparams import load_params
-from utils.histograms import rebin_histogram
 from utils.data_loaders import read_flux_from_root, read_brns_nins_from_txt, read_data_from_txt
-from stats.fit import chi2_stat, chi2_sys
 
 from flux.nuflux import oscillate_flux
 from flux.create_observables import create_observables
 from flux.ssb_pdf import make_ssb_pdf
 from plotting.observables import analysis_bins, plot_observables
-from stats.marginalize import marginalize
 from stats.likelihood import loglike_stat, loglike_sys
 
 import matplotlib.pyplot as plt
-
-import time
-
-import cProfile
 
 # Maybe needed bc of numpy matrix multiplication
 import os
 os.environ["OMP_NUM_THREADS"] = "1"
 
 # Global variables for data
-with open("flux/flux_dict.pkl", "rb") as f:
-    flux = np.load(f, allow_pickle=True).item()
-
 params = load_params("config/csi.json")
+
+no_pkl = True
+if no_pkl:
+    flux = read_flux_from_root(params, np.arange(0, 15125, 125))
+    with open("flux/flux_dict.pkl", "wb") as f:
+        np.save(f, flux)
+else:
+    with open("flux/flux_dict.pkl", "rb") as f:
+        flux = np.load(f, allow_pickle=True).item()
+
 ssb_dict = make_ssb_pdf(params)
 bkd_dict = read_brns_nins_from_txt(params)
 data_dict = read_data_from_txt(params)
@@ -74,22 +73,6 @@ def cost_function_global(x: np.ndarray) -> float:
 
 
 def plot():
-    params = load_params("config/csi.json")
-    data_dict = read_data_from_txt(params)
-
-    no_pkl = True
-    if no_pkl:
-        flux = read_flux_from_root(params)
-        with open("flux/flux_dict.pkl", "wb") as f:
-            np.save(f, flux)
-    else:
-        with open("flux/flux_dict.pkl", "rb") as f:
-            flux = np.load(f, allow_pickle=True).item()
-    
-    print(flux)
-
-    # return
-
     use_backend = False
     if use_backend:
         x = []
@@ -118,20 +101,8 @@ def plot():
 
     # plot_observables(params, histograms_unosc, histograms_osc, x[3:-1])
 
-def main():
+def fit():
     global flux, params, bkd_dict, data_dict  # Declare globals for data
-
-    params = load_params("config/csi.json")
-    data_dict = read_data_from_txt(params)
-
-    no_pkl = False
-    if no_pkl:
-        flux = read_flux_from_root(params)
-        with open("flux/flux_dict.pkl", "wb") as f:
-            np.save(f, flux)
-    else:
-        with open("flux/flux_dict.pkl", "rb") as f:
-            flux = np.load(f, allow_pickle=True).item()
 
     x = [1.32, np.sqrt(0.116), np.sqrt(0.135), 0.0, 0.0, 0.0, 0.0, 0.0]  # Initial guess
 
@@ -173,6 +144,6 @@ def main():
     # print(tau)
 
 if __name__ == "__main__":
-    main()
+    fit()
     # plot()
     # cProfile.run("plot()", "output.prof")
