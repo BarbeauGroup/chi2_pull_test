@@ -37,7 +37,8 @@ data_dict = read_data_from_txt(params)
 
 observable_bin_arr = np.asarray(params["analysis"]["energy_bins"])
 t_bin_arr = np.asarray(params["analysis"]["time_bins"])
-
+flux_matrix = np.load(params["detector"]["flux_matrix"])
+detector_matrix = np.load(params["detector"]["detector_matrix"])
 
 def cost_function_global(x: np.ndarray) -> float:
     """
@@ -66,7 +67,7 @@ def cost_function_global(x: np.ndarray) -> float:
                             params["detector"]["systematics"]["ssb"]]
 
     oscillated_flux = oscillate_flux(flux=flux, oscillation_params=osc_params)
-    osc_obs = create_observables(params=params, flux=oscillated_flux, time_offset=time_offset)
+    osc_obs = create_observables(params=params, flux=oscillated_flux, time_offset=time_offset, flux_matrix=flux_matrix, detector_matrix=detector_matrix, flavorblind=True)
     histograms_osc = analysis_bins(observable=osc_obs, ssb_dict=ssb_dict, bkd_dict=bkd_dict, data=data_dict, params=params, ssb_norm=1286, brn_norm=18.4, nin_norm=5.6, time_offset=time_offset)
     
     return loglike_stat(histograms_osc, nuisance_params) + loglike_sys(nuisance_params, nuisance_param_priors)
@@ -89,7 +90,7 @@ def plot():
 
     # return
 
-    use_backend = True
+    use_backend = False
     if use_backend:
         x = []
         sampler = emcee.backends.HDFBackend("backend.h5")
@@ -99,7 +100,7 @@ def plot():
             x.append(mcmc)
     else:
         x = [1.521e+00, 4.174e-01, 4.462e-01, 1.196e-02, -4.793e-03,
-                 -4.465e-03, -1.447e-02]
+                 -4.465e-03, -1.447e-02, 58.0]
     
     print(x)
     osc_params = x[0:3]
@@ -107,15 +108,15 @@ def plot():
 
     oscillated_flux = oscillate_flux(flux=flux, oscillation_params=osc_params)
 
-    un_osc_obs = create_observables(params=params, flux=flux, time_offset=x[-1])
-    osc_obs = create_observables(params=params, flux=oscillated_flux, time_offset=x[-1])
+    un_osc_obs = create_observables(params=params, flux=flux, time_offset=x[-1], flux_matrix=flux_matrix, detector_matrix=detector_matrix)
+    # osc_obs = create_observables(params=params, flux=oscillated_flux, time_offset=x[-1], flux_matrix=flux_matrix, detector_matrix=detector_matrix)
 
-    histograms_unosc = analysis_bins(observable=un_osc_obs, ssb_dict=ssb_dict, bkd_dict=bkd_dict, data=data_dict, params=params, ssb_norm=1286, brn_norm=18.4, nin_norm=5.6, time_offset=x[-1])
-    histograms_osc = analysis_bins(observable=osc_obs, ssb_dict=ssb_dict, bkd_dict=bkd_dict, data=data_dict, params=params, ssb_norm=1286, brn_norm=18.4, nin_norm=5.6, time_offset=x[-1])
+    # histograms_unosc = analysis_bins(observable=un_osc_obs, ssb_dict=ssb_dict, bkd_dict=bkd_dict, data=data_dict, params=params, ssb_norm=1286, brn_norm=18.4, nin_norm=5.6, time_offset=x[-1])
+    # histograms_osc = analysis_bins(observable=osc_obs, ssb_dict=ssb_dict, bkd_dict=bkd_dict, data=data_dict, params=params, ssb_norm=1286, brn_norm=18.4, nin_norm=5.6, time_offset=x[-1])
 
-    print(cost_function_global(x))
+    # print(cost_function_global(x))
 
-    plot_observables(params, histograms_unosc, histograms_osc, x[3:-1])
+    # plot_observables(params, histograms_unosc, histograms_osc, x[3:-1])
 
 def main():
     global flux, params, bkd_dict, data_dict  # Declare globals for data
@@ -154,10 +155,10 @@ def main():
 
         with Pool() as pool:
             sampler = emcee.EnsembleSampler(nwalkers, ndim, cost_function_global, pool=pool, backend=backend)#, moves=emcee.moves.StretchMove(a=2.0))
-            sampler.run_mcmc(pos, 1000, progress=True)
+            sampler.run_mcmc(pos, 10000, progress=True)
 
     # print the best fit values
-    flat_samples = sampler.get_chain(discard=100, flat=True)
+    flat_samples = sampler.get_chain(discard=1000, thin=10, flat=True)
 
     for i in range(ndim):
         mcmc = np.percentile(flat_samples[:, i], [16, 50, 84])
@@ -172,6 +173,6 @@ def main():
     # print(tau)
 
 if __name__ == "__main__":
-    # main()
-    plot()
+    main()
+    # plot()
     # cProfile.run("plot()", "output.prof")

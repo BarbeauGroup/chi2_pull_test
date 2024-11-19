@@ -50,7 +50,7 @@ def csi_time_efficiency(t):
 
     return np.where(t < 0, 0, np.where(t < a, 1, np.where(t < 6000, np.exp(-b*(t - a)), 0)))
 
-def create_observables(flux, params, time_offset) -> dict:
+def create_observables(flux, params, time_offset, flux_matrix, detector_matrix, flavorblind=False) -> dict:
     """
     This is the linear algebra step: flux -> true -> reconstructed
 
@@ -62,10 +62,6 @@ def create_observables(flux, params, time_offset) -> dict:
     dict
         The true observables.
     """
-
-    flux_matrix = np.load(params["detector"]["flux_matrix"])
-    detector_matrix = np.load(params["detector"]["detector_matrix"])
-
     # flux is normalized to number of neutrinos per POT so it's not counted here
     pot_per_cm2 = params["beam"]["pot"] / (4 * np.pi * np.power(params["detector"]["distance"], 2))
 
@@ -84,10 +80,12 @@ def create_observables(flux, params, time_offset) -> dict:
     
     observables = {}
 
-    for flavor in flux.keys():
+    combined_flux = 0
+
+    def calculate(flux_object):
         # Load in energy and calculate observable energy before efficiencies
-        truth = np.dot(flux_matrix, np.transpose(flux[flavor][1]))
-        observable = np.dot(detector_matrix, truth)
+        truth = flux_matrix @ flux_object
+        observable = detector_matrix @ truth
 
         # Rescale counts
         observable *= num_atoms(params) * pot_per_cm2
@@ -95,6 +93,18 @@ def create_observables(flux, params, time_offset) -> dict:
         # Apply efficiencies
         post_efficiency = observable * efficiency
 
-        observables[flavor] = ((new_time_edges, observable_bin_arr), post_efficiency)
+        return post_efficiency
+
+    for flavor in flux.keys():
+        if flavorblind and flavor != "nuS" and flavor != "nuSBar":
+            combined_flux += flux[flavor][1]
+        
+        else:
+            observables[flavor] = ((new_time_edges, observable_bin_arr), calculate(flux[flavor][1].mT))
+    
+    if flavorblind:
+        observables = {
+            "combined": ((new_time_edges, observable_bin_arr), calculate(combined_flux.mT))
+        }
 
     return observables
