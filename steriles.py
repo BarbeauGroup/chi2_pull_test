@@ -21,14 +21,19 @@ os.environ["OMP_NUM_THREADS"] = "1"
 # Global variables for data
 params = load_params("config/csi.json")
 
-no_pkl = True
-if no_pkl:
-    flux = read_flux_from_root(params, np.arange(0, 15125, 125))
+pkl = True
+new_time_edges = np.arange(0, 15125, 125)
+if not pkl or not os.path.exists("flux/flux_dict.pkl"):
+    flux = read_flux_from_root(params, new_time_edges)
     with open("flux/flux_dict.pkl", "wb") as f:
         np.save(f, flux)
 else:
     with open("flux/flux_dict.pkl", "rb") as f:
         flux = np.load(f, allow_pickle=True).item()
+    if(flux["nuE"][0][0] != new_time_edges).all():
+        flux = read_flux_from_root(params, new_time_edges)
+        with open("flux/flux_dict.pkl", "wb") as f:
+            np.save(f, flux)
 
 ssb_dict = make_ssb_pdf(params)
 bkd_dict = read_brns_nins_from_txt(params)
@@ -73,7 +78,7 @@ def cost_function_global(x: np.ndarray) -> float:
 
 
 def plot():
-    use_backend = False
+    use_backend = True
     if use_backend:
         x = []
         sampler = emcee.backends.HDFBackend("backend.h5")
@@ -92,14 +97,14 @@ def plot():
     oscillated_flux = oscillate_flux(flux=flux, oscillation_params=osc_params)
 
     un_osc_obs = create_observables(params=params, flux=flux, time_offset=x[-1], flux_matrix=flux_matrix, detector_matrix=detector_matrix)
-    # osc_obs = create_observables(params=params, flux=oscillated_flux, time_offset=x[-1], flux_matrix=flux_matrix, detector_matrix=detector_matrix)
+    osc_obs = create_observables(params=params, flux=oscillated_flux, time_offset=x[-1], flux_matrix=flux_matrix, detector_matrix=detector_matrix)
 
-    # histograms_unosc = analysis_bins(observable=un_osc_obs, ssb_dict=ssb_dict, bkd_dict=bkd_dict, data=data_dict, params=params, ssb_norm=1286, brn_norm=18.4, nin_norm=5.6, time_offset=x[-1])
-    # histograms_osc = analysis_bins(observable=osc_obs, ssb_dict=ssb_dict, bkd_dict=bkd_dict, data=data_dict, params=params, ssb_norm=1286, brn_norm=18.4, nin_norm=5.6, time_offset=x[-1])
+    histograms_unosc = analysis_bins(observable=un_osc_obs, ssb_dict=ssb_dict, bkd_dict=bkd_dict, data=data_dict, params=params, ssb_norm=1286, brn_norm=18.4, nin_norm=5.6, time_offset=x[-1])
+    histograms_osc = analysis_bins(observable=osc_obs, ssb_dict=ssb_dict, bkd_dict=bkd_dict, data=data_dict, params=params, ssb_norm=1286, brn_norm=18.4, nin_norm=5.6, time_offset=x[-1])
 
-    # print(cost_function_global(x))
+    print(cost_function_global(x))
 
-    # plot_observables(params, histograms_unosc, histograms_osc, x[3:-1])
+    plot_observables(params, histograms_unosc, histograms_osc, x[3:-1])
 
 def fit():
     global flux, params, bkd_dict, data_dict  # Declare globals for data
@@ -129,7 +134,7 @@ def fit():
             sampler.run_mcmc(pos, 10000, progress=True)
 
     # print the best fit values
-    flat_samples = sampler.get_chain(discard=1000, thin=10, flat=True)
+    flat_samples = sampler.get_chain(discard=500, flat=True)
 
     for i in range(ndim):
         mcmc = np.percentile(flat_samples[:, i], [16, 50, 84])
@@ -144,6 +149,6 @@ def fit():
     # print(tau)
 
 if __name__ == "__main__":
-    fit()
-    # plot()
+    # fit()
+    plot()
     # cProfile.run("plot()", "output.prof")
