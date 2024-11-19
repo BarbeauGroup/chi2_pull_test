@@ -100,11 +100,11 @@ def create_observables(flux, params, time_offset, flux_matrix, detector_matrix, 
             combined_flux += flux[flavor][1]
         
         else:
-            observables[flavor] = ((new_time_edges, observable_bin_arr), calculate(flux[flavor][1].mT))
+            observables[flavor] = ((new_time_edges, observable_bin_arr), calculate(flux[flavor][1].T))
     
     if flavorblind:
         observables = {
-            "combined": ((new_time_edges, observable_bin_arr), calculate(combined_flux.mT))
+            "combined": ((new_time_edges, observable_bin_arr), calculate(combined_flux.T))
         }
 
     return observables

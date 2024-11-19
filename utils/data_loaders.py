@@ -5,7 +5,7 @@ from utils.histograms import centers_to_edges
 
 from utils.histograms import rebin_histogram
 
-def read_flux_from_root(params: dict) -> dict:
+def read_flux_from_root(params: dict, new_t_edges=None) -> dict:
     """
     
     params: dictionary with flux_file key and other info
@@ -23,7 +23,7 @@ def read_flux_from_root(params: dict) -> dict:
     convolved_energy_and_time_of_nu_e_bar = paper_rf["convolved_energy_time_of_anti_nu_e;1"]
 
     # TODO: put in config file
-    new_t_edges = np.arange(0, 15125, 125)
+    # new_t_edges = np.arange(0, 15125, 125)
     
     # nu e
     NuE = convolved_energy_and_time_of_nu_e.values()[:, 1:60]
@@ -53,10 +53,14 @@ def read_flux_from_root(params: dict) -> dict:
     NuMuBar_e_edges = convolved_energy_and_time_of_nu_mu_bar.axis(1).edges()[1:60]
     NuMuBar_t_edges = convolved_energy_and_time_of_nu_mu_bar.axis(0).edges()
 
-    new_hist_arr = [np.zeros((len(new_t_edges)-1, hist.shape[1])) for hist in [NuE, NuEBar, NuMu, NuMuBar]]
-    for i, hist in enumerate([NuE, NuEBar, NuMu, NuMuBar]):
-        for col in range(hist.shape[1]):
-            new_hist_arr[i][:, col] = rebin_histogram(hist[:, col], NuE_t_edges, new_t_edges)
+    if new_t_edges is not None:
+        new_hist_arr = [np.zeros((len(new_t_edges)-1, hist.shape[1])) for hist in [NuE, NuEBar, NuMu, NuMuBar]]
+        for i, hist in enumerate([NuE, NuEBar, NuMu, NuMuBar]):
+            for col in range(hist.shape[1]):
+                new_hist_arr[i][:, col] = rebin_histogram(hist[:, col], NuE_t_edges, new_t_edges)
+    else:
+        new_hist_arr = [NuE, NuEBar, NuMu, NuMuBar]
+        new_t_edges = NuE_t_edges
 
     # Make a tuple of the flux information for each neutrino type
     return {

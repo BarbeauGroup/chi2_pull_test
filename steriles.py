@@ -77,16 +77,16 @@ def plot():
     params = load_params("config/csi.json")
     data_dict = read_data_from_txt(params)
 
-    # no_pkl = True
-    # if no_pkl:
-    #     flux = read_flux_from_root(params)
-    #     with open("flux/flux_dict.pkl", "wb") as f:
-    #         np.save(f, flux)
-    # else:
-    #     with open("flux/flux_dict.pkl", "rb") as f:
-    #         flux = np.load(f, allow_pickle=True).item()
+    no_pkl = True
+    if no_pkl:
+        flux = read_flux_from_root(params)
+        with open("flux/flux_dict.pkl", "wb") as f:
+            np.save(f, flux)
+    else:
+        with open("flux/flux_dict.pkl", "rb") as f:
+            flux = np.load(f, allow_pickle=True).item()
     
-    # print(flux)
+    print(flux)
 
     # return
 
