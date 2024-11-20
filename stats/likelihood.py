@@ -5,29 +5,27 @@ def loglike_stat(histograms: dict, nuisance_params: dict) -> float:
     loglike = 0
 
     # Coincident Data
-    for hist in ["energy", "time"]:
-        ssb = histograms["ssb"][hist]
-        observed = histograms["beam_state"]["C"][hist]
+    ssb = histograms["ssb"]
+    observed = histograms["beam_state"]["C"]
 
-        predicted = 0
-        for flavor in histograms["neutrinos"].keys():
-            if flavor == "nuS" or flavor == "nuSBar":
-                continue
-            predicted += histograms["neutrinos"][flavor][hist] * (1 + nuisance_params[0])
-        predicted += histograms["backgrounds"]["brn"][hist] * (1 + nuisance_params[1])
-        predicted += histograms["backgrounds"]["nin"][hist] * (1 + nuisance_params[2])
-        predicted += ssb * (1 + nuisance_params[3])
+    predicted = 0
+    for flavor in histograms["neutrinos"].keys():
+        if flavor == "nuS" or flavor == "nuSBar":
+            continue
+        predicted += histograms["neutrinos"][flavor] * (1 + nuisance_params[0])
+    predicted += histograms["backgrounds"]["brn"] * (1 + nuisance_params[1])
+    predicted += histograms["backgrounds"]["nin"] * (1 + nuisance_params[2])
+    predicted += ssb * (1 + nuisance_params[3])
 
-        loglike += np.sum(-predicted + observed*np.log(predicted) - gammaln(observed + 1))
+    loglike += np.sum(-predicted + observed*np.log(predicted) - gammaln(observed + 1))
     
     # Anti-Coincident Data
-    for hist in ["energy", "time"]:
-        ssb = histograms["ssb"][hist]
-        observed = histograms["beam_state"]["AC"][hist]
+    ssb = histograms["ssb"]
+    observed = histograms["beam_state"]["AC"]
 
-        predicted = ssb * (1 + nuisance_params[3])
+    predicted = ssb * (1 + nuisance_params[3])
 
-        loglike += np.sum(-predicted + observed*np.log(predicted) - gammaln(observed + 1))
+    loglike += np.sum(-predicted + observed*np.log(predicted) - gammaln(observed + 1))
 
     return loglike
 
