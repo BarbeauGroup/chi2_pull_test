@@ -21,8 +21,8 @@ os.environ["OMP_NUM_THREADS"] = "1"
 # Global variables for data
 params = load_params("config/csi.json")
 
-pkl = True
-new_time_edges = np.arange(0, 15125, 125)
+pkl = False
+new_time_edges = np.arange(0, 6625, 125)
 if not pkl or not os.path.exists("flux/flux_dict.pkl"):
     flux = read_flux_from_root(params, new_time_edges)
     with open("flux/flux_dict.pkl", "wb") as f:
@@ -149,6 +149,6 @@ def fit():
     # print(tau)
 
 if __name__ == "__main__":
-    # fit()
-    plot()
+    fit()
+    # plot()
     # cProfile.run("plot()", "output.prof")
