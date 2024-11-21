@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import scienceplots
 import numpy as np
+from scipy.special import gammaln
 
 from utils.histograms import rebin_histogram, rebin_histogram2d
 
@@ -22,7 +23,7 @@ def analysis_bins(observable: dict, ssb_dict: dict, bkd_dict: dict, data: dict, 
 
     histograms["ssb"] = normalized_ssb
 
-
+    
     beam_dict = {}
     for beam_state in ["C", "AC"]:
         # pe_hist, _ = np.histogram(data[beam_state]["energy"], bins=observable_bin_arr)
@@ -121,6 +122,7 @@ def plot_observables(params: dict, histograms_1d_unosc: dict, histograms_1d_osc:
 
     # beam state subtraction
     pe_hist = (histograms_1d_unosc["beam_state"]["C"]["energy"] - histograms_1d_unosc["ssb"]["energy"] * ( 1 + alpha[3])) / np.diff(observable_bin_arr)
+    print( histograms_1d_unosc["ssb"]["energy"] * ( 1 + alpha[3]) / np.diff(observable_bin_arr))
     t_hist = (histograms_1d_unosc["beam_state"]["C"]["time"] - histograms_1d_unosc["ssb"]["time"] * ( 1 + alpha[3])) / np.diff(t_bin_arr)
     pe_err = (np.sqrt(histograms_1d_unosc["beam_state"]["C"]["energy"] + histograms_1d_unosc["beam_state"]["AC"]["energy"] * ( 1 + alpha[3]))) / np.diff(observable_bin_arr)
     t_err = (np.sqrt(histograms_1d_unosc["beam_state"]["C"]["time"] + histograms_1d_unosc["beam_state"]["AC"]["time"] * ( 1 + alpha[3]))) / np.diff(t_bin_arr)
@@ -275,8 +277,26 @@ def plot_observables2d(params: dict, histograms_unosc: dict, histograms_osc: dic
     cbar = plt.colorbar(ax[1,0].collections[0], ax=ax[1,0])
     cbar.set_label(r"Counts / PE / $\mu$s")
 
+    # stat likelihood
+    predicted = 0
+    for flavor in histograms_osc["neutrinos"].keys():
+        if flavor == "nuS" or flavor == "nuSBar":
+            continue
+        predicted += histograms_osc["neutrinos"][flavor] * (1 + alpha[0])
+    predicted += histograms_osc["backgrounds"]["brn"] * (1 + alpha[1])
+    predicted += histograms_osc["backgrounds"]["nin"] * (1 + alpha[2])
+    predicted += histograms_osc["ssb"] * (1 + alpha[3])
+
+    observed = histograms_unosc["beam_state"]["C"]
+
+    weights = -predicted + observed * np.log(predicted) - gammaln(observed + 1)
+    print(np.sum(weights))
+    ax[1, 1].set_title("Log Likelihood")
+    ax[1,1].hist2d(x, y, bins=[observable_bin_arr, t_bin_arr], weights=weights.T.flatten(), cmap="Greys_r")
+    cbar = plt.colorbar(ax[1,1].collections[0], ax=ax[1,1])
+    cbar.set_label("Log Likelihood")
+
     # settings
-    ax[1, 1].axis('off')
 
     for a in ax.flat:
         a.set_yscale('function', functions=(lambda x: np.where(x < 1, x, (x - 1) / 3 + 1),
