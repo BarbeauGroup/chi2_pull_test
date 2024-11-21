@@ -10,6 +10,7 @@ from flux.nuflux import oscillate_flux
 from flux.create_observables import create_observables
 from flux.ssb_pdf import make_ssb_pdf
 from plotting.observables import analysis_bins, plot_observables, project_histograms, plot_observables2d
+from plotting.posteriors import plot_posterior
 from stats.likelihood import loglike_stat, loglike_sys
 
 import matplotlib.pyplot as plt
@@ -115,9 +116,9 @@ def plot():
     histograms_1d_unosc = project_histograms(histograms_unosc)
     histograms_1d_osc = project_histograms(histograms_osc)
 
-    plot_observables2d(params, histograms_unosc, histograms_osc, x[3:-1])
+    # plot_observables2d(params, histograms_unosc, histograms_osc, x[3:-1])
 
-    # plot_observables(params, histograms_1d_unosc, histograms_1d_osc, x[3:-1])
+    plot_observables(params, histograms_1d_unosc, histograms_1d_osc, x[3:-1])
 
 def fit():
     global flux, params, bkd_dict, data_dict  # Declare globals for data
@@ -144,24 +145,25 @@ def fit():
 
         with Pool() as pool:
             sampler = emcee.EnsembleSampler(nwalkers, ndim, cost_function_global, pool=pool, backend=backend)#, moves=emcee.moves.StretchMove(a=2.0))\
-            sampler.run_mcmc(pos, 1000, progress=True)
+            sampler.run_mcmc(pos, 100, progress=True, store=True)
 
     # print the best fit values
-    flat_samples = sampler.get_chain(discard=100, flat=True)
-
-    for i in range(ndim):
-        mcmc = np.percentile(flat_samples[:, i], [16, 50, 84])
-        q = np.diff(mcmc)
-        print(f"{mcmc[1]:.5f} +{q[1]:.5f} -{q[0]:.5f}")
+    flat_samples = sampler.get_chain(discard=1, flat=True)
+    prob = sampler.get_log_prob(discard=1, flat=True)
+    plot_posterior(prob, flat_samples, 0)
+    # for i in range(ndim):
+    #     mcmc = np.percentile(flat_samples[:, i], [16, 50, 84])
+    #     q = np.diff(mcmc)
+    #     print(f"{mcmc[1]:.5f} +{q[1]:.5f} -{q[0]:.5f}")
     
-    # corner plots
-    fig = corner.corner(flat_samples, labels=[r"$\Delta m_{41}^2$", r"$|U_{e4}|^2$", r"$|U_{\mu 4}|^2$", r"$\alpha_{flux}$", r"$\alpha_{brn}$", r"$\alpha_{nin}$", r"$\alpha_{ssb}$", r"$\Delta t$"])
-    fig.savefig("corner.png")
+    # # corner plots
+    # fig = corner.corner(flat_samples, labels=[r"$\Delta m_{41}^2$", r"$|U_{e4}|^2$", r"$|U_{\mu 4}|^2$", r"$\alpha_{flux}$", r"$\alpha_{brn}$", r"$\alpha_{nin}$", r"$\alpha_{ssb}$", r"$\Delta t$"])
+    # fig.savefig("corner.png")
 
     # tau = sampler.get_autocorr_time()
     # print(tau)
 
 if __name__ == "__main__":
-    # fit()
-    plot()
+    fit()
+    # plot()
     # cProfile.run("plot()", "output.prof")
