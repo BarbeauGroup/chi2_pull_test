@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import matplotlib.colors as colors
 import scienceplots
 import numpy as np
 
@@ -215,3 +216,77 @@ def plot_observables(params: dict, histograms_1d_unosc: dict, histograms_1d_osc:
     plt.show()
 
     return
+
+def plot_observables2d(params: dict, histograms_unosc: dict, histograms_osc: dict, alpha) -> None:
+    fig, ax = plt.subplots(2, 2, figsize=(14, 10))
+
+    observable_bin_arr = np.asarray(params["analysis"]["energy_bins"])
+    t_bin_arr = np.asarray(params["analysis"]["time_bins"])
+
+    # x, y = np.meshgrid(observable_bin_arr[:-1], t_bin_arr[:-1])
+    x = np.tile(observable_bin_arr[:-1], len(t_bin_arr[:-1]))
+    y = np.repeat(t_bin_arr[:-1], len(observable_bin_arr[:-1]))
+
+    # 3 + 1 model
+    weights = 0
+
+    for bkd in histograms_osc["backgrounds"].keys():
+        if bkd == "brn": scale = alpha[1]
+        if bkd == "nin": scale = alpha[2]
+        weights += histograms_osc["backgrounds"][bkd] * (1 + scale) / np.outer(np.diff(observable_bin_arr), np.diff(t_bin_arr))
+
+    for flavor in histograms_osc["neutrinos"].keys():
+        if flavor == "nuS" or flavor == "nuSBar":
+            continue
+        scale = alpha[0]
+        weights += histograms_osc["neutrinos"][flavor] * (1 + scale) / np.outer(np.diff(observable_bin_arr), np.diff(t_bin_arr))
+
+    ax[0, 0].set_title("3+1 Model Observables")
+    ax[0,0].hist2d(x, y, bins=[observable_bin_arr, t_bin_arr], weights=weights.T.flatten(), cmap="Greys")
+    cbar = plt.colorbar(ax[0,0].collections[0], ax=ax[0,0])
+    cbar.set_label(r"Counts / PE / $\mu$s")
+
+    model_weights = weights
+
+    # disappearance
+    weights = 0
+    for flavor in histograms_unosc["neutrinos"].keys():
+        if flavor == "nuS" or flavor == "nuSBar":
+            continue
+        scale = alpha[0]
+        weights += histograms_unosc["neutrinos"][flavor] * (1 + scale) / np.outer(np.diff(observable_bin_arr), np.diff(t_bin_arr))
+                                                                                
+    for flavor in histograms_osc["neutrinos"].keys():
+        if flavor == "nuS" or flavor == "nuSBar":
+            continue
+        scale = alpha[0]
+        weights -= histograms_osc["neutrinos"][flavor] * (1 + scale) / np.outer(np.diff(observable_bin_arr), np.diff(t_bin_arr))
+
+    ax[0, 1].set_title("3+1 Model Steriles")
+    ax[0,1].hist2d(x, y, bins=[observable_bin_arr, t_bin_arr], weights=weights.T.flatten(), cmap="Greys")
+    cbar = plt.colorbar(ax[0,1].collections[0], ax=ax[0,1])
+    cbar.set_label(r"Counts / PE / $\mu$s")
+
+    # data residual
+    weights = (histograms_unosc["beam_state"]["C"] - histograms_unosc["ssb"] * (1 + alpha[3])) / np.outer(np.diff(observable_bin_arr), np.diff(t_bin_arr))
+    weights -= model_weights
+    ax[1, 0].set_title("Data Residual")
+    ax[1,0].hist2d(x, y, bins=[observable_bin_arr, t_bin_arr], weights=weights.T.flatten(), cmap="bwr", norm=colors.CenteredNorm())
+    cbar = plt.colorbar(ax[1,0].collections[0], ax=ax[1,0])
+    cbar.set_label(r"Counts / PE / $\mu$s")
+
+    # settings
+    ax[1, 1].axis('off')
+
+    for a in ax.flat:
+        a.set_yscale('function', functions=(lambda x: np.where(x < 1, x, (x - 1) / 3 + 1),
+                                                lambda x: np.where(x < 1, x, 3 * (x - 1) + 1)))
+        a.set_yticks(np.arange(0, 7.0, 1.0))
+        a.set_yticks(np.arange(0, 1., 0.125), minor=True)
+        a.tick_params(axis='y', direction='out')
+        a.tick_params(axis='y', which='minor', direction='out')
+        a.tick_params(axis='x', direction='out')
+        a.set_xlabel("Energy [PE]")
+        a.set_ylabel(r"Time [$\mu$s]")
+    plt.plot()
+    plt.show()

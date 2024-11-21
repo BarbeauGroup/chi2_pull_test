@@ -9,7 +9,7 @@ from utils.data_loaders import read_flux_from_root, read_brns_nins_from_txt, rea
 from flux.nuflux import oscillate_flux
 from flux.create_observables import create_observables
 from flux.ssb_pdf import make_ssb_pdf
-from plotting.observables import analysis_bins, plot_observables, project_histograms
+from plotting.observables import analysis_bins, plot_observables, project_histograms, plot_observables2d
 from stats.likelihood import loglike_stat, loglike_sys
 
 import matplotlib.pyplot as plt
@@ -114,6 +114,8 @@ def plot():
 
     histograms_1d_unosc = project_histograms(histograms_unosc)
     histograms_1d_osc = project_histograms(histograms_osc)
+
+    plot_observables2d(params, histograms_unosc, histograms_osc, x[3:-1])
 
     # plot_observables(params, histograms_1d_unosc, histograms_1d_osc, x[3:-1])
 
