@@ -45,7 +45,7 @@ def csi_time_efficiency(t):
     float
         The efficiency.
     """
-    a = 520
+    a = 0.52 * 1000
     b = 0.0494 / 1000
 
     return np.where(t < 0, 0, np.where(t < a, 1, np.where(t < 6000, np.exp(-b*(t - a)), 0)))

@@ -1,6 +1,8 @@
 import matplotlib.pyplot as plt
+import matplotlib.colors as colors
 import scienceplots
 import numpy as np
+from scipy.special import gammaln
 
 from utils.histograms import rebin_histogram, rebin_histogram2d
 
@@ -21,7 +23,7 @@ def analysis_bins(observable: dict, ssb_dict: dict, bkd_dict: dict, data: dict, 
 
     histograms["ssb"] = normalized_ssb
 
-
+    
     beam_dict = {}
     for beam_state in ["C", "AC"]:
         # pe_hist, _ = np.histogram(data[beam_state]["energy"], bins=observable_bin_arr)
@@ -120,6 +122,7 @@ def plot_observables(params: dict, histograms_1d_unosc: dict, histograms_1d_osc:
 
     # beam state subtraction
     pe_hist = (histograms_1d_unosc["beam_state"]["C"]["energy"] - histograms_1d_unosc["ssb"]["energy"] * ( 1 + alpha[3])) / np.diff(observable_bin_arr)
+    print( histograms_1d_unosc["ssb"]["energy"] * ( 1 + alpha[3]) / np.diff(observable_bin_arr))
     t_hist = (histograms_1d_unosc["beam_state"]["C"]["time"] - histograms_1d_unosc["ssb"]["time"] * ( 1 + alpha[3])) / np.diff(t_bin_arr)
     pe_err = (np.sqrt(histograms_1d_unosc["beam_state"]["C"]["energy"] + histograms_1d_unosc["beam_state"]["AC"]["energy"] * ( 1 + alpha[3]))) / np.diff(observable_bin_arr)
     t_err = (np.sqrt(histograms_1d_unosc["beam_state"]["C"]["time"] + histograms_1d_unosc["beam_state"]["AC"]["time"] * ( 1 + alpha[3]))) / np.diff(t_bin_arr)
@@ -215,3 +218,95 @@ def plot_observables(params: dict, histograms_1d_unosc: dict, histograms_1d_osc:
     plt.show()
 
     return
+
+def plot_observables2d(params: dict, histograms_unosc: dict, histograms_osc: dict, alpha) -> None:
+    fig, ax = plt.subplots(2, 2, figsize=(14, 10))
+
+    observable_bin_arr = np.asarray(params["analysis"]["energy_bins"])
+    t_bin_arr = np.asarray(params["analysis"]["time_bins"])
+
+    # x, y = np.meshgrid(observable_bin_arr[:-1], t_bin_arr[:-1])
+    x = np.tile(observable_bin_arr[:-1], len(t_bin_arr[:-1]))
+    y = np.repeat(t_bin_arr[:-1], len(observable_bin_arr[:-1]))
+
+    # 3 + 1 model
+    weights = 0
+
+    for bkd in histograms_osc["backgrounds"].keys():
+        if bkd == "brn": scale = alpha[1]
+        if bkd == "nin": scale = alpha[2]
+        weights += histograms_osc["backgrounds"][bkd] * (1 + scale) / np.outer(np.diff(observable_bin_arr), np.diff(t_bin_arr))
+
+    for flavor in histograms_osc["neutrinos"].keys():
+        if flavor == "nuS" or flavor == "nuSBar":
+            continue
+        scale = alpha[0]
+        weights += histograms_osc["neutrinos"][flavor] * (1 + scale) / np.outer(np.diff(observable_bin_arr), np.diff(t_bin_arr))
+
+    ax[0, 0].set_title("3+1 Model Observables")
+    ax[0,0].hist2d(x, y, bins=[observable_bin_arr, t_bin_arr], weights=weights.T.flatten(), cmap="Greys")
+    cbar = plt.colorbar(ax[0,0].collections[0], ax=ax[0,0])
+    cbar.set_label(r"Counts / PE / $\mu$s")
+
+    model_weights = weights
+
+    # disappearance
+    weights = 0
+    for flavor in histograms_unosc["neutrinos"].keys():
+        if flavor == "nuS" or flavor == "nuSBar":
+            continue
+        scale = alpha[0]
+        weights += histograms_unosc["neutrinos"][flavor] * (1 + scale) / np.outer(np.diff(observable_bin_arr), np.diff(t_bin_arr))
+                                                                                
+    for flavor in histograms_osc["neutrinos"].keys():
+        if flavor == "nuS" or flavor == "nuSBar":
+            continue
+        scale = alpha[0]
+        weights -= histograms_osc["neutrinos"][flavor] * (1 + scale) / np.outer(np.diff(observable_bin_arr), np.diff(t_bin_arr))
+
+    ax[0, 1].set_title("3+1 Model Steriles")
+    ax[0,1].hist2d(x, y, bins=[observable_bin_arr, t_bin_arr], weights=weights.T.flatten(), cmap="Greys")
+    cbar = plt.colorbar(ax[0,1].collections[0], ax=ax[0,1])
+    cbar.set_label(r"Counts / PE / $\mu$s")
+
+    # data residual
+    weights = (histograms_unosc["beam_state"]["C"] - histograms_unosc["ssb"] * (1 + alpha[3])) / np.outer(np.diff(observable_bin_arr), np.diff(t_bin_arr))
+    weights -= model_weights
+    ax[1, 0].set_title("Data Residual")
+    ax[1,0].hist2d(x, y, bins=[observable_bin_arr, t_bin_arr], weights=weights.T.flatten(), cmap="bwr", norm=colors.CenteredNorm())
+    cbar = plt.colorbar(ax[1,0].collections[0], ax=ax[1,0])
+    cbar.set_label(r"Counts / PE / $\mu$s")
+
+    # stat likelihood
+    predicted = 0
+    for flavor in histograms_osc["neutrinos"].keys():
+        if flavor == "nuS" or flavor == "nuSBar":
+            continue
+        predicted += histograms_osc["neutrinos"][flavor] * (1 + alpha[0])
+    predicted += histograms_osc["backgrounds"]["brn"] * (1 + alpha[1])
+    predicted += histograms_osc["backgrounds"]["nin"] * (1 + alpha[2])
+    predicted += histograms_osc["ssb"] * (1 + alpha[3])
+
+    observed = histograms_unosc["beam_state"]["C"]
+
+    weights = -predicted + observed * np.log(predicted) - gammaln(observed + 1)
+    print(np.sum(weights))
+    ax[1, 1].set_title("Log Likelihood")
+    ax[1,1].hist2d(x, y, bins=[observable_bin_arr, t_bin_arr], weights=weights.T.flatten(), cmap="Greys_r")
+    cbar = plt.colorbar(ax[1,1].collections[0], ax=ax[1,1])
+    cbar.set_label("Log Likelihood")
+
+    # settings
+
+    for a in ax.flat:
+        a.set_yscale('function', functions=(lambda x: np.where(x < 1, x, (x - 1) / 3 + 1),
+                                                lambda x: np.where(x < 1, x, 3 * (x - 1) + 1)))
+        a.set_yticks(np.arange(0, 7.0, 1.0))
+        a.set_yticks(np.arange(0, 1., 0.125), minor=True)
+        a.tick_params(axis='y', direction='out')
+        a.tick_params(axis='y', which='minor', direction='out')
+        a.tick_params(axis='x', direction='out')
+        a.set_xlabel("Energy [PE]")
+        a.set_ylabel(r"Time [$\mu$s]")
+    plt.plot()
+    plt.show()
