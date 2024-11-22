@@ -53,7 +53,7 @@ def plot_2dposterior(log_probs, samples, param1, param2, xbins=100, ybins=100):
     
     xv, yv = np.meshgrid(x_edges, y_edges)
 
-    ax.contour(xv, yv, pll, levels=[0, 2.3], colors=["black", "blue"])
+    ax.contour(xv, yv, pll, levels=[2.3, 6.18, 11.83], colors=["black", "blue", "red"])
 
     plt.plot()
     plt.show()
