@@ -87,11 +87,11 @@ def cost_function_global(x: np.ndarray) -> float:
 
 
 def plot():
-    use_backend = False
+    use_backend = True
     if use_backend:
         x = []
-        sampler = emcee.backends.HDFBackend("backend.h5")
-        flat_samples = sampler.get_chain(discard=100, flat=True)
+        sampler = emcee.backends.HDFBackend("backend_long.h5")
+        flat_samples = sampler.get_chain(discard=30000, flat=True)
         for i in range(8):
             mcmc = np.percentile(flat_samples[:, i], 50)
             x.append(mcmc)
@@ -99,7 +99,7 @@ def plot():
         x = [2.0, 0.01, 0.03, 1.196e-02, -4.793e-03,
                  -4.465e-03, -1.447e-02, 58.0]
     
-    print(x)
+
     osc_params = x[0:3]
     osc_params = [params["detector"]["distance"]/100., osc_params[0], osc_params[1], osc_params[2], 0.0] #osc_params[3]]
 
@@ -112,6 +112,7 @@ def plot():
     histograms_osc = analysis_bins(observable=osc_obs, ssb_dict=ssb_dict, bkd_dict=bkd_dict, data=data_dict, params=params, ssb_norm=1286, brn_norm=18.4, nin_norm=5.6, time_offset=x[-1])
 
     print(cost_function_global(x))
+    print(cost_function_global([0, 0, 0, 0, 0, 0, 0, 0]))
 
     histograms_1d_unosc = project_histograms(histograms_unosc)
     histograms_1d_osc = project_histograms(histograms_osc)
@@ -125,7 +126,7 @@ def fit():
 
     x = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]  # Initial guess
 
-    pos = x + [1., 0.01, 0.01, 0.2, 0.2, 0.2, 0.2, 10] * np.random.randn(100, len(x))
+    pos = x + 1e-2 * np.asarray([100., 0.01, 0.01, 0.1, 0.1, 0.1, 0.1, 100]) * np.random.randn(16, len(x))
     if np.any(pos[:, 0:3] < 0):
         pos[:, 0:3] = np.abs(pos[:, 0:3])
     js = np.where(pos[:, 1] + pos[:, 2] > 1)[0]
@@ -137,19 +138,19 @@ def fit():
 
     use_backend = True
     if use_backend:
-        sampler = emcee.backends.HDFBackend("backend.h5")
+        sampler = emcee.backends.HDFBackend("backend_long.h5")
 
     else:
-        backend = emcee.backends.HDFBackend("backend.h5")
+        backend = emcee.backends.HDFBackend("backend_long2.h5")
         backend.reset(nwalkers, ndim)
 
         with Pool() as pool:
-            sampler = emcee.EnsembleSampler(nwalkers, ndim, cost_function_global, pool=pool, backend=backend)#, moves=emcee.moves.StretchMove(a=2.0))\
-            sampler.run_mcmc(pos, 5000, progress=True, store=True)
+            sampler = emcee.EnsembleSampler(nwalkers, ndim, cost_function_global, pool=pool, backend=backend, moves=emcee.moves.StretchMove())
+            sampler.run_mcmc(pos, 200_000, progress=True, store=True)
 
     # print the best fit values
-    flat_samples = sampler.get_chain(discard=1000, flat=True)
-    prob = sampler.get_log_prob(discard=1000, flat=True)
+    flat_samples = sampler.get_chain(discard=30_000, flat=True)
+    prob = sampler.get_log_prob(discard=30_000, flat=True)
     # plot_posterior(prob, flat_samples, 0)
     # plot_posterior(prob, flat_samples, 1)
     # plot_posterior(prob, flat_samples, 2)
@@ -159,15 +160,16 @@ def fit():
     # plot_posterior(prob, flat_samples, 6)
     # plot_posterior(prob, flat_samples, 7)
 
-    plot_2dposterior(prob, flat_samples, 0, 1)
-    plot_2dposterior(prob, flat_samples, 6, 7)
+    plot_2dposterior(prob, flat_samples, 1, 0)
+    # plot_2dposterior(prob, flat_samples, 6, 7)
     # for i in range(ndim):
     #     mcmc = np.percentile(flat_samples[:, i], [16, 50, 84])
     #     q = np.diff(mcmc)
     #     print(f"{mcmc[1]:.5f} +{q[1]:.5f} -{q[0]:.5f}")
     
-    # # corner plots
-    # fig = corner.corner(flat_samples, labels=[r"$\Delta m_{41}^2$", r"$|U_{e4}|^2$", r"$|U_{\mu 4}|^2$", r"$\alpha_{flux}$", r"$\alpha_{brn}$", r"$\alpha_{nin}$", r"$\alpha_{ssb}$", r"$\Delta t$"])
+    # corner plots
+    # fig = corner.corner(flat_samples, 
+    #                     labels=[r"$\Delta m_{41}^2$", r"$|U_{e4}|^2$", r"$|U_{\mu 4}|^2$", r"$\alpha_{flux}$", r"$\alpha_{brn}$", r"$\alpha_{nin}$", r"$\alpha_{ssb}$", r"$\Delta t$"])
     # fig.savefig("corner.png")
 
     # tau = sampler.get_autocorr_time()
