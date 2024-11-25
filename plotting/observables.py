@@ -122,10 +122,9 @@ def plot_observables(params: dict, histograms_1d_unosc: dict, histograms_1d_osc:
 
     # beam state subtraction
     pe_hist = (histograms_1d_unosc["beam_state"]["C"]["energy"] - histograms_1d_unosc["ssb"]["energy"] * ( 1 + alpha[3])) / np.diff(observable_bin_arr)
-    print( histograms_1d_unosc["ssb"]["energy"] * ( 1 + alpha[3]) / np.diff(observable_bin_arr))
     t_hist = (histograms_1d_unosc["beam_state"]["C"]["time"] - histograms_1d_unosc["ssb"]["time"] * ( 1 + alpha[3])) / np.diff(t_bin_arr)
-    pe_err = (np.sqrt(histograms_1d_unosc["beam_state"]["C"]["energy"] + histograms_1d_unosc["beam_state"]["AC"]["energy"] * ( 1 + alpha[3]))) / np.diff(observable_bin_arr)
-    t_err = (np.sqrt(histograms_1d_unosc["beam_state"]["C"]["time"] + histograms_1d_unosc["beam_state"]["AC"]["time"] * ( 1 + alpha[3]))) / np.diff(t_bin_arr)
+    pe_err = (np.sqrt(histograms_1d_unosc["beam_state"]["C"]["energy"] + histograms_1d_unosc["ssb"]["energy"] * ( 1 + alpha[3]))) / np.diff(observable_bin_arr)
+    t_err = (np.sqrt(histograms_1d_unosc["beam_state"]["C"]["time"] + histograms_1d_unosc["ssb"]["time"] * ( 1 + alpha[3]))) / np.diff(t_bin_arr)
 
     # 3+1 model
     for bkd in histograms_1d_osc["backgrounds"].keys():

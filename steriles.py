@@ -10,7 +10,7 @@ from flux.nuflux import oscillate_flux
 from flux.create_observables import create_observables
 from flux.ssb_pdf import make_ssb_pdf
 from plotting.observables import analysis_bins, plot_observables, project_histograms, plot_observables2d
-from plotting.posteriors import plot_posterior, plot_2dposterior
+from plotting.posteriors import plot_posterior, plot_2dposterior, plot_all_posteriors
 from stats.likelihood import loglike_stat, loglike_sys
 
 import matplotlib.pyplot as plt
@@ -87,14 +87,14 @@ def cost_function_global(x: np.ndarray) -> float:
 
 
 def plot():
-    use_backend = False
+    use_backend = True
     if use_backend:
         x = []
         sampler = emcee.backends.HDFBackend("backend.h5")
-        flat_samples = sampler.get_chain(discard=100, flat=True)
-        for i in range(8):
-            mcmc = np.percentile(flat_samples[:, i], 50)
-            x.append(mcmc)
+        flat_samples = sampler.get_chain(discard=1000, flat=True)
+        prob = sampler.get_log_prob(discard=1000, flat=True)
+        argmax = np.argmax(prob)
+        x = flat_samples[argmax]
     else:
         x = [2.0, 0.01, 0.03, 1.196e-02, -4.793e-03,
                  -4.465e-03, -1.447e-02, 58.0]
@@ -150,17 +150,20 @@ def fit():
     # print the best fit values
     flat_samples = sampler.get_chain(discard=1000, flat=True)
     prob = sampler.get_log_prob(discard=1000, flat=True)
-    # plot_posterior(prob, flat_samples, 0)
-    # plot_posterior(prob, flat_samples, 1)
-    # plot_posterior(prob, flat_samples, 2)
-    # plot_posterior(prob, flat_samples, 3)
-    # plot_posterior(prob, flat_samples, 4)
-    # plot_posterior(prob, flat_samples, 5)
-    # plot_posterior(prob, flat_samples, 6)
-    # plot_posterior(prob, flat_samples, 7)
+    
+    # plot_posterior(prob, flat_samples[:, 0], r"$\Delta m_{41}^2$")
+    # plot_posterior(prob, flat_samples[:, 1], r"$|U_{e4}|^2$")
+    # plot_posterior(prob, flat_samples[:, 2], r"$|U_{\mu 4}|^2$")
+    # plot_posterior(prob, flat_samples[:, 3], r"$\alpha_{flux}$")
+    # plot_posterior(prob, flat_samples[:, 4], r"$\alpha_{brn}$")
+    # plot_posterior(prob, flat_samples[:, 5], r"$\alpha_{nin}$")
+    # plot_posterior(prob, flat_samples[:, 6], r"$\alpha_{ssb}$")
+    # plot_posterior(prob, flat_samples[:, 7], r"$\Delta t$")
 
-    plot_2dposterior(prob, flat_samples, 0, 1)
-    plot_2dposterior(prob, flat_samples, 6, 7)
+    # plot_all_posteriors(prob, flat_samples, [r"$\Delta m_{41}^2$", r"$|U_{e4}|^2$", r"$|U_{\mu 4}|^2$", r"$\alpha_{flux}$", r"$\alpha_{brn}$", r"$\alpha_{nin}$", r"$\alpha_{ssb}$", r"$\Delta t$"])
+
+    plot_2dposterior(prob, flat_samples, 1, 2)
+    # plot_2dposterior(prob, flat_samples, 6, 7)
     # for i in range(ndim):
     #     mcmc = np.percentile(flat_samples[:, i], [16, 50, 84])
     #     q = np.diff(mcmc)
