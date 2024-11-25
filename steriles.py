@@ -10,7 +10,7 @@ from flux.nuflux import oscillate_flux
 from flux.create_observables import create_observables
 from flux.ssb_pdf import make_ssb_pdf
 from plotting.observables import analysis_bins, plot_observables, project_histograms, plot_observables2d
-from plotting.posteriors import plot_posterior, plot_2dposterior, plot_all_posteriors
+from plotting.posteriors import plot_posterior, plot_2dposterior
 from stats.likelihood import loglike_stat, loglike_sys
 
 import matplotlib.pyplot as plt
@@ -112,6 +112,7 @@ def plot():
     histograms_osc = analysis_bins(observable=osc_obs, ssb_dict=ssb_dict, bkd_dict=bkd_dict, data=data_dict, params=params, ssb_norm=1286, brn_norm=18.4, nin_norm=5.6, time_offset=x[-1])
 
     print(cost_function_global(x))
+    print(cost_function_global([0, 0, 0, 0, 0, 0, 0, 0]))
 
     histograms_1d_unosc = project_histograms(histograms_unosc)
     histograms_1d_osc = project_histograms(histograms_osc)
@@ -125,7 +126,7 @@ def fit():
 
     x = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]  # Initial guess
 
-    pos = x + [1., 0.01, 0.01, 0.2, 0.2, 0.2, 0.2, 10] * np.random.randn(100, len(x))
+    pos = x + 1e-2 * np.asarray([100., 0.01, 0.01, 0.1, 0.1, 0.1, 0.1, 100]) * np.random.randn(16, len(x))
     if np.any(pos[:, 0:3] < 0):
         pos[:, 0:3] = np.abs(pos[:, 0:3])
     js = np.where(pos[:, 1] + pos[:, 2] > 1)[0]
@@ -137,40 +138,38 @@ def fit():
 
     use_backend = True
     if use_backend:
-        sampler = emcee.backends.HDFBackend("backend.h5")
+        sampler = emcee.backends.HDFBackend("backend_long.h5")
 
     else:
-        backend = emcee.backends.HDFBackend("backend.h5")
+        backend = emcee.backends.HDFBackend("backend_long2.h5")
         backend.reset(nwalkers, ndim)
 
         with Pool() as pool:
-            sampler = emcee.EnsembleSampler(nwalkers, ndim, cost_function_global, pool=pool, backend=backend)#, moves=emcee.moves.StretchMove(a=2.0))\
-            sampler.run_mcmc(pos, 5000, progress=True, store=True)
+            sampler = emcee.EnsembleSampler(nwalkers, ndim, cost_function_global, pool=pool, backend=backend, moves=emcee.moves.StretchMove())
+            sampler.run_mcmc(pos, 200_000, progress=True, store=True)
 
     # print the best fit values
-    flat_samples = sampler.get_chain(discard=1000, flat=True)
-    prob = sampler.get_log_prob(discard=1000, flat=True)
-    
-    # plot_posterior(prob, flat_samples[:, 0], r"$\Delta m_{41}^2$")
-    # plot_posterior(prob, flat_samples[:, 1], r"$|U_{e4}|^2$")
-    # plot_posterior(prob, flat_samples[:, 2], r"$|U_{\mu 4}|^2$")
-    # plot_posterior(prob, flat_samples[:, 3], r"$\alpha_{flux}$")
-    # plot_posterior(prob, flat_samples[:, 4], r"$\alpha_{brn}$")
-    # plot_posterior(prob, flat_samples[:, 5], r"$\alpha_{nin}$")
-    # plot_posterior(prob, flat_samples[:, 6], r"$\alpha_{ssb}$")
-    # plot_posterior(prob, flat_samples[:, 7], r"$\Delta t$")
+    flat_samples = sampler.get_chain(discard=30_000, flat=True)
+    prob = sampler.get_log_prob(discard=30_000, flat=True)
+    # plot_posterior(prob, flat_samples, 0)
+    # plot_posterior(prob, flat_samples, 1)
+    # plot_posterior(prob, flat_samples, 2)
+    # plot_posterior(prob, flat_samples, 3)
+    # plot_posterior(prob, flat_samples, 4)
+    # plot_posterior(prob, flat_samples, 5)
+    # plot_posterior(prob, flat_samples, 6)
+    # plot_posterior(prob, flat_samples, 7)
 
-    # plot_all_posteriors(prob, flat_samples, [r"$\Delta m_{41}^2$", r"$|U_{e4}|^2$", r"$|U_{\mu 4}|^2$", r"$\alpha_{flux}$", r"$\alpha_{brn}$", r"$\alpha_{nin}$", r"$\alpha_{ssb}$", r"$\Delta t$"])
-
-    plot_2dposterior(prob, flat_samples, 1, 2)
+    plot_2dposterior(prob, flat_samples, 1, 0)
     # plot_2dposterior(prob, flat_samples, 6, 7)
     # for i in range(ndim):
     #     mcmc = np.percentile(flat_samples[:, i], [16, 50, 84])
     #     q = np.diff(mcmc)
     #     print(f"{mcmc[1]:.5f} +{q[1]:.5f} -{q[0]:.5f}")
     
-    # # corner plots
-    # fig = corner.corner(flat_samples, labels=[r"$\Delta m_{41}^2$", r"$|U_{e4}|^2$", r"$|U_{\mu 4}|^2$", r"$\alpha_{flux}$", r"$\alpha_{brn}$", r"$\alpha_{nin}$", r"$\alpha_{ssb}$", r"$\Delta t$"])
+    # corner plots
+    # fig = corner.corner(flat_samples, 
+    #                     labels=[r"$\Delta m_{41}^2$", r"$|U_{e4}|^2$", r"$|U_{\mu 4}|^2$", r"$\alpha_{flux}$", r"$\alpha_{brn}$", r"$\alpha_{nin}$", r"$\alpha_{ssb}$", r"$\Delta t$"])
     # fig.savefig("corner.png")
 
     # tau = sampler.get_autocorr_time()
