@@ -20,12 +20,12 @@ def loglike_stat(histograms: dict, nuisance_params: dict) -> float:
     loglike += np.sum(-predicted + observed*np.log(predicted) - gammaln(observed + 1))
     
     # Anti-Coincident Data
-    ssb = histograms["ssb"]
-    observed = histograms["beam_state"]["AC"]
+    # ssb = histograms["ssb"]
+    # observed = histograms["beam_state"]["AC"]
 
-    predicted = ssb * (1 + nuisance_params[3])
+    # predicted = ssb * (1 + nuisance_params[3])
 
-    loglike += np.sum(-predicted + observed*np.log(predicted) - gammaln(observed + 1))
+    # loglike += np.sum(-predicted + observed*np.log(predicted) - gammaln(observed + 1))
 
     return loglike
 

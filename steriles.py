@@ -46,6 +46,7 @@ observable_bin_arr = np.asarray(params["analysis"]["energy_bins"])
 t_bin_arr = np.asarray(params["analysis"]["time_bins"])
 flux_matrix = np.load(params["detector"]["flux_matrix"])
 detector_matrix = np.load(params["detector"]["detector_matrix"])
+matrix = detector_matrix @ flux_matrix
 
 def cost_function_global(x: np.ndarray) -> float:
     """
@@ -56,14 +57,14 @@ def cost_function_global(x: np.ndarray) -> float:
     """
     osc_params = x[0:3]
 
-    if(osc_params[0] > 10):
-        return -np.inf
+    # if(osc_params[0] > 10):
+    #     return -np.inf
     
-    if(osc_params[1] > 0.1):
-        return -np.inf
+    # if(osc_params[1] > 0.1):
+    #     return -np.inf
     
-    if(osc_params[2] > 0.5):
-        return -np.inf
+    # if(osc_params[2] > 0.5):
+    #     return -np.inf
 
     if(osc_params[0] < 0 or osc_params[1] < 0 or osc_params[2] < 0):
         return -np.inf
@@ -80,14 +81,14 @@ def cost_function_global(x: np.ndarray) -> float:
                             params["detector"]["systematics"]["ssb"]]
 
     oscillated_flux = oscillate_flux(flux=flux, oscillation_params=osc_params)
-    osc_obs = create_observables(params=params, flux=oscillated_flux, time_offset=time_offset, flux_matrix=flux_matrix, detector_matrix=detector_matrix, flavorblind=True)
+    osc_obs = create_observables(params=params, flux=oscillated_flux, time_offset=time_offset, matrix=matrix, flavorblind=True)
     histograms_osc = analysis_bins(observable=osc_obs, ssb_dict=ssb_dict, bkd_dict=bkd_dict, data=data_dict, params=params, ssb_norm=1286, brn_norm=18.4, nin_norm=5.6, time_offset=time_offset)
     
     return loglike_stat(histograms_osc, nuisance_params) + loglike_sys(nuisance_params, nuisance_param_priors)
 
 
 def plot():
-    use_backend = True
+    use_backend = False
     if use_backend:
         x = []
         sampler = emcee.backends.HDFBackend("backend.h5")
@@ -96,8 +97,7 @@ def plot():
         argmax = np.argmax(prob)
         x = flat_samples[argmax]
     else:
-        x = [2.0, 0.01, 0.03, 1.196e-02, -4.793e-03,
-                 -4.465e-03, -1.447e-02, 58.0]
+        x = [0.0, 0.0, 0.0, -7.32441500e-02, -9.52669416e-02, -9.83777252e-02, -1.31327876e-02, 5.61998318e-06]
     
     print(x)
     osc_params = x[0:3]
@@ -105,21 +105,21 @@ def plot():
 
     oscillated_flux = oscillate_flux(flux=flux, oscillation_params=osc_params)
 
-    un_osc_obs = create_observables(params=params, flux=flux, time_offset=x[-1], flux_matrix=flux_matrix, detector_matrix=detector_matrix)
-    osc_obs = create_observables(params=params, flux=oscillated_flux, time_offset=x[-1], flux_matrix=flux_matrix, detector_matrix=detector_matrix)
+    un_osc_obs = create_observables(params=params, flux=flux, time_offset=x[-1], matrix=matrix)
+    # osc_obs = create_observables(params=params, flux=oscillated_flux, time_offset=x[-1], matrix=matrix)
 
-    histograms_unosc = analysis_bins(observable=un_osc_obs, ssb_dict=ssb_dict, bkd_dict=bkd_dict, data=data_dict, params=params, ssb_norm=1286, brn_norm=18.4, nin_norm=5.6, time_offset=x[-1])
-    histograms_osc = analysis_bins(observable=osc_obs, ssb_dict=ssb_dict, bkd_dict=bkd_dict, data=data_dict, params=params, ssb_norm=1286, brn_norm=18.4, nin_norm=5.6, time_offset=x[-1])
+    # histograms_unosc = analysis_bins(observable=un_osc_obs, ssb_dict=ssb_dict, bkd_dict=bkd_dict, data=data_dict, params=params, ssb_norm=1286, brn_norm=18.4, nin_norm=5.6, time_offset=x[-1])
+    # histograms_osc = analysis_bins(observable=osc_obs, ssb_dict=ssb_dict, bkd_dict=bkd_dict, data=data_dict, params=params, ssb_norm=1286, brn_norm=18.4, nin_norm=5.6, time_offset=x[-1])
 
     print(cost_function_global(x))
-    print(cost_function_global([0, 0, 0, 0, 0, 0, 0, 0]))
+    # print(cost_function_global([0, 0, 0, 0, 0, 0, 0, 0]))
 
-    histograms_1d_unosc = project_histograms(histograms_unosc)
-    histograms_1d_osc = project_histograms(histograms_osc)
+    # histograms_1d_unosc = project_histograms(histograms_unosc)
+    # histograms_1d_osc = project_histograms(histograms_osc)
 
     # plot_observables2d(params, histograms_unosc, histograms_osc, x[3:-1])
 
-    plot_observables(params, histograms_1d_unosc, histograms_1d_osc, x[3:-1])
+    # plot_observables(params, histograms_1d_unosc, histograms_1d_osc, x[3:-1])
 
 def fit():
     global flux, params, bkd_dict, data_dict  # Declare globals for data
@@ -176,6 +176,6 @@ def fit():
     # print(tau)
 
 if __name__ == "__main__":
-    fit()
+    # fit()
     # plot()
-    # cProfile.run("plot()", "output.prof")
+    cProfile.run("plot()", "output.prof")

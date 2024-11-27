@@ -15,7 +15,7 @@
             }
         ],
         "systematics": {
-            "flux": 0.28,
+            "flux": 0.11,
             "brn": 0.25,
             "nin": 0.7,
             "ssb": 0.02

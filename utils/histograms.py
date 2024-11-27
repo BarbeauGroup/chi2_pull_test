@@ -1,5 +1,7 @@
 import numpy as np
+from numba import njit
 
+@njit
 def rebin_histogram(counts, bin_edges, new_bin_edges):
     new_counts = np.zeros(len(new_bin_edges) - 1)
 
@@ -32,6 +34,7 @@ def rebin_histogram(counts, bin_edges, new_bin_edges):
     
     return new_counts
 
+@njit
 def rebin_histogram2d(counts, x_bin_edges, y_bin_edges, new_x_bin_edges, new_y_bin_edges):
     new_counts = np.zeros((len(new_x_bin_edges) - 1, len(new_y_bin_edges) - 1))
 
