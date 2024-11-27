@@ -17,6 +17,7 @@ from plotting.posteriors import plot_posterior, plot_2dposterior
 from stats.likelihood import loglike_stat, loglike_sys
 
 import matplotlib.pyplot as plt
+import matplotlib.colors as colors
 
 # Global variables for data
 params = load_params("config/csi.json")
@@ -75,12 +76,57 @@ def cost(x, mass, u, index):
                             params["detector"]["systematics"]["ssb"]]
 
     return -2 * (loglike_stat(hist_osc, x[2:]) + loglike_sys(x[2:], nuisance_param_priors))
+
+
+u_bins = np.linspace(0, 1, 75)
+mass_bins = np.linspace(0, 50, 80)
+
+def plot_sin2theta():
+    chi2 = np.load("chi2.npy")
+    margin_u = np.load("margin_u.npy")
+
+    sin2_arr = sin2theta(1, 2, u_bins[:, None], margin_u, 0)
+    sin2_bins = np.linspace(sin2_arr.min(), sin2_arr.max(), len(u_bins)//10)
+
+    sin2_chi2 = np.full((len(sin2_bins), len(mass_bins)), 1e6)
+
+    for i, u in enumerate(u_bins):
+        for j, mass in enumerate(mass_bins):
+            s2 = sin2theta(1, 2, u, margin_u[i, j], 0)
+            idx = np.searchsorted(sin2_bins, s2)
+            if chi2[i, j] < sin2_chi2[idx, j]:
+                sin2_chi2[idx, j] = chi2[i, j]
     
+    fig, ax = plt.subplots()
+
+    # ctr = ax.matshow(sin2_chi2.T, norm=colors.LogNorm(vmin=1, vmax=100))
+    # cbar = fig.colorbar(ctr)
+    # cbar.ax.set_ylabel(r"$\chi^2$")
+
+    sin2_chi2_ma = np.ma.masked_where(sin2_chi2 > 1e5, sin2_chi2)
+    xv, yv = np.meshgrid(sin2_bins, mass_bins)
+
+    # set background yellow
+    ax.set_facecolor('yellow')
+
+    ctr = ax.contourf(xv, yv, sin2_chi2_ma.T, algorithm='serial', levels=3, cmap='Purples', antialiased=True)
+    cbar = fig.colorbar(ctr)
+    cbar.ax.set_ylabel(r'$\chi^2$')
+
+    ax.set_xlabel(r"$\sin^22\theta_{e\mu}$")
+    ax.set_ylabel(r"$\Delta m^2_{41}$")
+
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+
+    ax.set_xlim(10e-4, 1)
+    ax.set_ylim(10e-2, 50)
+
+    plt.show()
+
 
 def main(): 
-    u_bins = np.linspace(0, 1, 75)
-    mass_bins = np.linspace(0, 50, 80)
-    chi2 = np.zeros((len(u_bins), len(mass_bins)))
+    chi2 = np.full((len(u_bins), len(mass_bins)), 1e6)
     margin_u = np.zeros((len(u_bins), len(mass_bins)))
 
     for i, u in tqdm(enumerate(u_bins)):
@@ -91,12 +137,12 @@ def main():
             margin_u[i, j] = res.x[0]
             # print(f"mass: {mass}, u: {u}, chi2: {res.fun}, x: {res.x}, success: {res.success}")
     
-
     min_chi2 = np.min(chi2)
     chi2 = chi2 - min_chi2
     np.save("chi2.npy", chi2)
     np.save("margin_u.npy", margin_u)
     return
+
     chi2 = np.load("chi2.npy")
     margin_u = np.load("margin_u.npy")
     min_point = np.unravel_index(np.argmin(chi2, axis=None), chi2.shape)
@@ -130,4 +176,5 @@ def main():
     plt.show()
 
 if __name__ == "__main__":
-    main()
+    # main()
+    plot_sin2theta()
