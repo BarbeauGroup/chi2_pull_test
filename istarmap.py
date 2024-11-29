@@ -1,4 +1,5 @@
 # istarmap.py for Python 3.8+
+# https://stackoverflow.com/a/57364423
 import multiprocessing.pool as mpp
 
 
