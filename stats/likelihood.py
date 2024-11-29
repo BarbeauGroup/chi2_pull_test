@@ -1,6 +1,34 @@
 import numpy as np
 from scipy.special import gammaln
 
+def loglike_stat_asimov(histograms_osc: dict, histograms_unosc: dict, nuisance_params: dict, factor=10) -> float:
+    loglike = 0
+
+    observed = 0
+    for flavor in histograms_unosc["neutrinos"].keys():
+        if flavor == "nuS" or flavor == "nuSBar":
+            continue
+        observed += histograms_unosc["neutrinos"][flavor]
+    observed += histograms_unosc["backgrounds"]["brn"]
+    observed += histograms_unosc["backgrounds"]["nin"]
+    observed += histograms_unosc["ssb"]
+    observed *= factor
+
+    predicted = 0
+    for flavor in histograms_osc["neutrinos"].keys():
+        if flavor == "nuS" or flavor == "nuSBar":
+            continue
+        predicted += histograms_osc["neutrinos"][flavor] * (1 + nuisance_params[0])
+    predicted += histograms_osc["backgrounds"]["brn"] * (1 + nuisance_params[1])
+    predicted += histograms_osc["backgrounds"]["nin"] * (1 + nuisance_params[2])
+    predicted += histograms_osc["ssb"] * (1 + nuisance_params[3])
+    predicted *= factor
+
+    loglike += np.sum(-predicted + observed*np.log(predicted) - gammaln(observed + 1))
+
+    return loglike 
+
+
 def loglike_stat(histograms: dict, nuisance_params: dict) -> float:
     loglike = 0
 

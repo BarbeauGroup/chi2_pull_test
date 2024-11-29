@@ -3,6 +3,7 @@ from scipy.optimize import Bounds
 from multiprocessing import Pool
 from itertools import product
 import istarmap
+from functools import partial
 
 from tqdm import tqdm
 import numpy as np
@@ -17,7 +18,7 @@ from flux.create_observables import create_observables
 from flux.ssb_pdf import make_ssb_pdf
 from plotting.observables import analysis_bins, plot_observables, project_histograms, plot_observables2d
 from plotting.posteriors import plot_posterior, plot_2dposterior
-from stats.likelihood import loglike_stat, loglike_sys
+from stats.likelihood import loglike_stat, loglike_sys, loglike_stat_asimov
 
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
@@ -49,6 +50,43 @@ flux_matrix = np.load(params["detector"]["flux_matrix"])
 detector_matrix = np.load(params["detector"]["detector_matrix"])
 matrix = detector_matrix @ flux_matrix
 
+def cost_asimov(x, mass, u, index, u2=None, /):
+    """
+    x is [time_offset, a_flux, a_brn, a_nin, a_ssb, other_u]
+    index is 1 for Ue4, 2 for Umu4, 3 for Utau4
+    """
+
+    time_offset = x[0]
+
+    osc_params = [params["detector"]["distance"]/100., mass, 0, 0, 0.0]
+    if index == 1:
+        osc_params[2] = u
+        if u2 is not None:
+            osc_params[3] = u2
+        else:
+            osc_params[3] = x[-1]
+    elif index == 2:
+        if u2 is not None:
+            osc_params[2] = u2
+        else:
+            osc_params[2] = x[-1]
+        osc_params[3] = u
+    else:
+        raise ValueError("Invalid index")
+
+    oscillated_flux = oscillate_flux(flux=flux, oscillation_params=osc_params)
+    osc_obs = create_observables(params=params, flux=oscillated_flux, time_offset=time_offset, matrix=matrix, flavorblind=True)
+    hist_osc = analysis_bins(observable=osc_obs, ssb_dict=ssb_dict, bkd_dict=bkd_dict, data=data_dict, params=params, ssb_norm=1286, brn_norm=18.4, nin_norm=5.6, time_offset=time_offset)
+
+    unosc_obs = create_observables(params=params, flux=flux, time_offset=time_offset, matrix=matrix, flavorblind=True)
+    hist_unosc = analysis_bins(observable=unosc_obs, ssb_dict=ssb_dict, bkd_dict=bkd_dict, data=data_dict, params=params, ssb_norm=1286, brn_norm=18.4, nin_norm=5.6, time_offset=time_offset)
+
+    nuisance_param_priors = [params["detector"]["systematics"]["flux"],
+                            params["detector"]["systematics"]["brn"],
+                            params["detector"]["systematics"]["nin"],
+                            params["detector"]["systematics"]["ssb"]]
+
+    return -2 * (loglike_stat_asimov(hist_osc, hist_unosc, x[1:-1]) + loglike_sys(x[1:-1], nuisance_param_priors))
 
 def cost(x, mass, u, index, u2=None, /):
     """
@@ -172,20 +210,27 @@ def plot_sin2theta():
 
     plt.show()
 
+def marginalize_mass_u_helper(i, j, /, index):
+    u = u_bins[i]
+    mass = mass_bins[j]
+    bounds = Bounds([-np.inf, -np.inf, -np.inf, -np.inf, -np.inf, 0], [np.inf, np.inf, np.inf, np.inf, np.inf, 1 - u], keep_feasible=True)
+    res = iminuit.minimize(cost_asimov, np.asarray([80, 0, 0, 0, 0, 0]), args=(mass, u, index), bounds=bounds)
+    return (i, j, res.fun, res.x[-1])
+
 def marginalize_mass_u(index):
+    param_grid = list(product(range(len(u_bins)), range(len(mass_bins))))
+                      
+    with Pool() as pool:
+        results = list(tqdm(pool.istarmap(partial(marginalize_mass_u_helper, index=index), param_grid), total=len(param_grid)))
+
     chi2 = np.full((len(u_bins), len(mass_bins)), 1e6)
     margin_u = np.zeros((len(u_bins), len(mass_bins)))
 
-    for i, u in tqdm(enumerate(u_bins)):
-        for j, mass in tqdm(enumerate(mass_bins), leave=False):
-            bounds = Bounds([-np.inf, -np.inf, -np.inf, -np.inf, -np.inf, 0], [np.inf, np.inf, np.inf, np.inf, np.inf, 1 - u], keep_feasible=True)
-            res = iminuit.minimize(cost, np.asarray([80, 0, 0, 0, 0, 0]), args=(mass, u, index), bounds=bounds)
-            chi2[i, j] = res.fun
-            margin_u[i, j] = res.x[0]
-            # print(f"mass: {mass}, u: {u}, chi2: {res.fun}, x: {res.x}, success: {res.success}")
-    
-    min_chi2 = np.min(chi2)
-    chi2 = chi2 - min_chi2
+    for i, j, val, u in results:
+        chi2[i, j] = val
+        margin_u[i, j] = u
+
+    chi2 = chi2 - np.min(chi2)
     np.save("chi2.npy", chi2)
     np.save("margin_u.npy", margin_u)
 
@@ -266,4 +311,5 @@ if __name__ == "__main__":
     # main()
     # plot_sin2theta()
     # marginalize_mass_uu()
-    plot_sin2theta_new()
+    # plot_sin2theta_new()
+    marginalize_mass_u(1)
