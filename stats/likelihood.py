@@ -1,5 +1,10 @@
 import numpy as np
 from scipy.special import gammaln
+from scipy.stats import chi2, norm
+
+def dll_to_sigma(dll, dof=1):
+    percent = chi2.cdf(dll, dof)
+    return norm.ppf(percent)
 
 def loglike_stat_asimov(histograms_osc: dict, histograms_unosc: dict, nuisance_params: dict, factor=10) -> float:
     loglike = 0
@@ -24,7 +29,12 @@ def loglike_stat_asimov(histograms_osc: dict, histograms_unosc: dict, nuisance_p
     predicted += histograms_osc["ssb"] * (1 + nuisance_params[3])
     predicted *= factor
 
-    loglike += np.sum(-predicted + observed*np.log(predicted) - gammaln(observed + 1))
+    with np.errstate(all='raise'):
+        try:
+            loglike += np.sum(-predicted + observed*np.log(predicted) - gammaln(observed + 1))
+        except FloatingPointError:
+            # print(np.sum(predicted), np.sum(observed), nuisance_params)
+            return -np.inf
 
     return loglike 
 
@@ -45,7 +55,12 @@ def loglike_stat(histograms: dict, nuisance_params: dict) -> float:
     predicted += histograms["backgrounds"]["nin"] * (1 + nuisance_params[2])
     predicted += ssb * (1 + nuisance_params[3])
 
-    loglike += np.sum(-predicted + observed*np.log(predicted) - gammaln(observed + 1))
+    with np.errstate(all='raise'):
+        try:
+            loglike += np.sum(-predicted + observed*np.log(predicted) - gammaln(observed + 1))
+        except FloatingPointError:
+            # print(np.sum(predicted), np.sum(observed), nuisance_params)
+            return -np.inf
     
     # Anti-Coincident Data
     # ssb = histograms["ssb"]

@@ -2,9 +2,11 @@
 *.h5
 *.npy
 *.pkl
+*.html
 
 data/*.npy
 flux/*.root
+output/
 
 data/csi_anc
 
