@@ -14,7 +14,7 @@ def read_flux_from_root(params: dict, new_t_edges=None) -> dict:
     
     """
 
-    filename = params["beam"]["flux_file"]
+    filename = params["flux_file"]
     paper_rf = uproot.open(filename)
 
     convolved_energy_and_time_of_nu_mu = paper_rf["convolved_energy_time_of_nu_mu;1"]
@@ -28,28 +28,28 @@ def read_flux_from_root(params: dict, new_t_edges=None) -> dict:
     # nu e
     NuE = convolved_energy_and_time_of_nu_e.values()[:, 1:60]
     NuE /= np.sum(NuE)
-    NuE *= params["beam"]["nus_per_pot"]["nuE"]
+    NuE *= params["nus_per_pot"]["nuE"]
     NuE_e_edges = convolved_energy_and_time_of_nu_e.axis(1).edges()[1:60]
     NuE_t_edges = convolved_energy_and_time_of_nu_e.axis(0).edges()
 
     # nu e bar
     NuEBar = convolved_energy_and_time_of_nu_e_bar.values()[:, 1:60]
     NuEBar /= np.sum(NuEBar)
-    NuEBar *= params["beam"]["nus_per_pot"]["nuEBar"]
+    NuEBar *= params["nus_per_pot"]["nuEBar"]
     NuEBar_e_edges = convolved_energy_and_time_of_nu_e_bar.axis(1).edges()[1:60]
     NuEBar_t_edges = convolved_energy_and_time_of_nu_e_bar.axis(0).edges()
 
     # nu mu
     NuMu = convolved_energy_and_time_of_nu_mu.values()[:, 1:60]
     NuMu /= np.sum(NuMu)
-    NuMu *= params["beam"]["nus_per_pot"]["nuMu"]
+    NuMu *= params["nus_per_pot"]["nuMu"]
     NuMu_e_edges = convolved_energy_and_time_of_nu_mu.axis(1).edges()[1:60]
     NuMu_t_edges = convolved_energy_and_time_of_nu_mu.axis(0).edges()
 
     # nu mu bar
     NuMuBar = convolved_energy_and_time_of_nu_mu_bar.values()[:, 1:60]
     NuMuBar /= np.sum(NuMuBar)
-    NuMuBar *= params["beam"]["nus_per_pot"]["nuMuBar"]
+    NuMuBar *= params["nus_per_pot"]["nuMuBar"]
     NuMuBar_e_edges = convolved_energy_and_time_of_nu_mu_bar.axis(1).edges()[1:60]
     NuMuBar_t_edges = convolved_energy_and_time_of_nu_mu_bar.axis(0).edges()
 

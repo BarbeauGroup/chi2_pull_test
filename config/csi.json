@@ -1,7 +1,7 @@
 {
     "detector": {
-        "distance": 1930,
-        "mass": 14.6,
+        "distance": 19.3, "_distance_units": "m",
+        "mass": 14.6, "_mass_units": "kg",
         "isotopes": [
             {
                 "name": "Cs137",
@@ -16,15 +16,21 @@
         ],
         "systematics": {
             "flux": 0.11,
-            "brn": 0.25,
-            "nin": 0.7,
-            "ssb": 0.02
+            "brn_csi": 0.25,
+            "nin_csi": 0.7,
+            "ssb_csi": 0.02
+        },
+        "norms": {
+            "ssb": 1286,
+            "brn": 18.4,
+            "nin": 5.6
         },
         "flux_matrix": "data/flux_transfer_matrices/csi_flux_smearing_matrix.npy",
         "detector_matrix": "data/flux_transfer_matrices/csi_quenching_detector_matrix.npy",
         "detector_matrix_dx": 0.1,
         "beam_ac_data_file": "data/csi_anc/dataBeamOnAC.txt",
-        "beam_c_data_file": "data/csi_anc/dataBeamOnC.txt"
+        "beam_c_data_file": "data/csi_anc/dataBeamOnC.txt",
+        "observable_flavors": ["nuE", "nuEBar", "nuMu", "nuMuBar", "nuTau", "nuTauBar"]
     },
     "beam": {
         "flux_file": "flux/snsFlux2D.root",
@@ -48,6 +54,6 @@
         "energy_roi": [0.0, 60.0],
         "time_roi": [0.0, 6.0],
         "energy_bins": [0,8,12,16,20,24,32,40,50,60],
-        "time_bins": [0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1.0, 2.0, 4.0, 6.0]
+        "time_bins": [0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1.0, 2.0, 4.0, 6.0], "_time_units": "us"
     }
 }

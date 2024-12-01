@@ -50,10 +50,10 @@ def loglike_stat(histograms: dict, nuisance_params: dict) -> float:
     for flavor in histograms["neutrinos"].keys():
         if flavor == "nuS" or flavor == "nuSBar":
             continue
-        predicted += histograms["neutrinos"][flavor] * (1 + nuisance_params[0])
-    predicted += histograms["backgrounds"]["brn"] * (1 + nuisance_params[1])
-    predicted += histograms["backgrounds"]["nin"] * (1 + nuisance_params[2])
-    predicted += ssb * (1 + nuisance_params[3])
+        predicted += histograms["neutrinos"][flavor] * (1 + nuisance_params["flux"])
+    predicted += histograms["backgrounds"]["brn"] * (1 + nuisance_params["brn_csi"])
+    predicted += histograms["backgrounds"]["nin"] * (1 + nuisance_params["nin_csi"])
+    predicted += ssb * (1 + nuisance_params["ssb_csi"])
 
     with np.errstate(all='raise'):
         try:
@@ -74,6 +74,6 @@ def loglike_stat(histograms: dict, nuisance_params: dict) -> float:
 
 def loglike_sys(nuisance_params: dict, nuisance_param_priors: dict) -> float:
     loglike = 0
-    for i in range(len(nuisance_params)):
-        loglike += -0.5*(nuisance_params[i]/nuisance_param_priors[i])**2 - np.log(np.sqrt(2*np.pi*nuisance_param_priors[i]**2))
+    for k in nuisance_param_priors.keys():
+        loglike += -0.5*(nuisance_params[k]/nuisance_param_priors[k])**2 - np.log(np.sqrt(2*np.pi*nuisance_param_priors[k]**2))
     return loglike

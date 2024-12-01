@@ -3,56 +3,7 @@ import timeit
 
 from utils.histograms import rebin_histogram2d
 
-def num_atoms(params):
-    mass = params["detector"]["mass"]
-    num_isotopes = len(params["detector"]["isotopes"])
-    Da = 1.66e-27
-
-    A = 0
-    for isotope in params["detector"]["isotopes"]:
-        A += isotope["mass"] * isotope["abundance"]
-    
-    A /= num_isotopes
-
-    return mass / (A * Da)
-
-def csi_energy_efficiency(x):
-    """
-    Calculate the CsI detector efficiency.
-
-    Parameters
-    ----------
-    x : float
-        Energy in PE.
-    
-    Returns
-    -------
-    float
-        The efficiency.
-    """
-    eps = (1.32045 / (1 + np.exp(-0.285979*(x - 10.8646)))) - 0.333322
-    return np.where(x > 60, 0, np.where(eps < 0, 0, eps))
-
-def csi_time_efficiency(t):
-    """
-    Calculate the efficiency of the CsI detector as a function of time.
-
-    Parameters
-    ----------
-    t: float
-        The time at which the efficiency is calculated in ns.
-    
-    Returns
-    -------
-    float
-        The efficiency.
-    """
-    a = 0.52 * 1000
-    b = 0.0494 / 1000
-
-    return np.where(t < 0, 0, np.where(t < a, 1, np.where(t < 6000, np.exp(-b*(t - a)), 0)))
-
-def create_observables(flux, params, time_offset, matrix, flavorblind=False) -> dict:
+def create_observables(flux, experiment, nuisance_params, flavorblind=False) -> dict:
     """
     This is the linear algebra step: flux -> true -> reconstructed
 
@@ -65,24 +16,24 @@ def create_observables(flux, params, time_offset, matrix, flavorblind=False) -> 
         The true observables.
     """
     # flux is normalized to number of neutrinos per POT so it's not counted here
-    pot_per_cm2 = params["beam"]["pot"] / (4 * np.pi * np.power(params["detector"]["distance"], 2))
+    pot_per_cm2 = experiment.params["beam"]["pot"] / (4 * np.pi * np.power(experiment.params["detector"]["distance"] * 100, 2))
 
     # Load in energy binning
-    dx = params["detector"]["detector_matrix_dx"]
-    observable_bin_arr = np.arange(0, matrix.shape[0] * dx, dx)
+    dx = experiment.params["detector"]["detector_matrix_dx"]
+    observable_bin_arr = np.arange(0, experiment.matrix.shape[0] * dx, dx)
 
     # Load in time analysis bins
-    t_anal_bins = np.asarray(params["analysis"]["time_bins"])
+    t_anal_bins = experiment.observable_time_bins
 
     # Flux energy bins
     flux_energy_bins = np.arange(0, 60, 1)
 
     # Do time offset
-    new_time_edges = flux["nuE"][0][0][:-1] + time_offset
+    new_time_edges = flux["nuE"][0][0][:-1] + nuisance_params["flux_time_offset"]
 
     # Calculate the efficiency arrays
-    energy_efficiency = csi_energy_efficiency(observable_bin_arr)
-    time_efficiency = csi_time_efficiency(new_time_edges)
+    energy_efficiency = experiment.energy_efficiency(observable_bin_arr)
+    time_efficiency = experiment.time_efficiency(new_time_edges)
 
     # efficiency = energy_efficiency[:, None] * time_efficiency
     
@@ -98,10 +49,10 @@ def create_observables(flux, params, time_offset, matrix, flavorblind=False) -> 
         flux_object = rebin_histogram2d(flux_object, flux_energy_bins, new_time_edges, flux_energy_bins, t_anal_bins*1000.)
 
         # Load in energy and calculate observable energy before efficiencies
-        observable = matrix @ flux_object
+        observable = experiment.matrix @ flux_object
 
         # Rescale counts
-        observable *= num_atoms(params) * pot_per_cm2
+        observable *= experiment.num_atoms * pot_per_cm2
 
         # Apply energy efficiency
         post_efficiency = observable * energy_efficiency[:, None]
@@ -109,7 +60,7 @@ def create_observables(flux, params, time_offset, matrix, flavorblind=False) -> 
         return post_efficiency
 
     for flavor in flux.keys():
-        if flavorblind and flavor != "nuS" and flavor != "nuSBar":
+        if flavorblind and flavor in experiment.params["detector"]["observable_flavors"]:
             combined_flux += flux[flavor][1]
         
         else:

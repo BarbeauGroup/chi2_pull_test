@@ -8,9 +8,9 @@ from utils.histograms import rebin_histogram, rebin_histogram2d
 
 plt.style.use(['science'])
 
-def analysis_bins(observable: dict, ssb_dict: dict, bkd_dict: dict, data: dict, params: dict, ssb_norm: float, brn_norm: float, nin_norm: float, time_offset: float) -> dict:
-    observable_bin_arr = np.asarray(params["analysis"]["energy_bins"])
-    t_bin_arr = np.asarray(params["analysis"]["time_bins"])
+def analysis_bins(observable: dict, experiment, nuisance_params) -> dict:
+    observable_bin_arr = np.asarray(experiment.params["analysis"]["energy_bins"])
+    t_bin_arr = np.asarray(experiment.params["analysis"]["time_bins"])
 
     histograms = {}
     
@@ -18,8 +18,8 @@ def analysis_bins(observable: dict, ssb_dict: dict, bkd_dict: dict, data: dict, 
     # for hist in ["energy", "time"]:
     #     normalized_ssb_dict[hist] = ssb_dict[hist] * ssb_norm
     # Constrct 2d histogram of ssb
-    ssb_time_pdf = ssb_dict["time"] / np.sum(ssb_dict["time"])
-    normalized_ssb = ssb_norm * np.outer(ssb_dict["energy"], ssb_time_pdf) # energy is already normalized to 1 
+    ssb_time_pdf = experiment.ssb_dict["time"] / np.sum(experiment.ssb_dict["time"])
+    normalized_ssb = experiment.params["detector"]["norms"]["ssb"] * np.outer(experiment.ssb_dict["energy"], ssb_time_pdf) # energy is already normalized to 1 
 
     histograms["ssb"] = normalized_ssb
 
@@ -29,7 +29,7 @@ def analysis_bins(observable: dict, ssb_dict: dict, bkd_dict: dict, data: dict, 
         # pe_hist, _ = np.histogram(data[beam_state]["energy"], bins=observable_bin_arr)
         # t_hist, _ = np.histogram(data[beam_state]["time"], bins=t_bin_arr)
 
-        data_hist, _ = np.histogramdd([data[beam_state]["energy"], data[beam_state]["time"]], bins=[observable_bin_arr, t_bin_arr])
+        data_hist, _ = np.histogramdd([experiment.data_dict[beam_state]["energy"], experiment.data_dict[beam_state]["time"]], bins=[observable_bin_arr, t_bin_arr])
 
         beam_dict[beam_state] = data_hist
     histograms["beam_state"] = beam_dict
@@ -45,12 +45,12 @@ def analysis_bins(observable: dict, ssb_dict: dict, bkd_dict: dict, data: dict, 
     histograms["neutrinos"] = flavor_dict
 
     final_bkd_dict = {}
-    for bkd in bkd_dict.keys():
-        if bkd == "brn": norm = brn_norm
-        else: norm = nin_norm
+    for bkd in experiment.bkd_dict.keys():
+        if bkd == "brn": norm = experiment.params["detector"]["norms"]["brn"]
+        else: norm = experiment.params["detector"]["norms"]["nin"]
 
-        e_weights = bkd_dict[bkd]["energy"]
-        t_weights = rebin_histogram(bkd_dict[bkd]["time"][1], bkd_dict[bkd]["time"][0] + time_offset/1000., t_bin_arr)
+        e_weights = experiment.bkd_dict[bkd]["energy"]
+        t_weights = rebin_histogram(experiment.bkd_dict[bkd]["time"][1], experiment.bkd_dict[bkd]["time"][0] + nuisance_params["flux_time_offset"]/1000., t_bin_arr)
 
         energy_pdf = e_weights / np.sum(e_weights)
         time_pdf = t_weights / np.sum(t_weights)
