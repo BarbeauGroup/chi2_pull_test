@@ -1,6 +1,8 @@
 from classes.Experiment import Experiment
 from classes.Flux import Flux
+
 from transform_functions import csi
+from transform_functions import pb_glass
 
 from flux.nuflux import oscillate_flux
 from flux.create_observables import create_observables
@@ -37,6 +39,8 @@ def cost(x, flux, experiments, fit_param_keys, mass=None, ue4=None, umu4=None):
 
         oscillated_flux = oscillate_flux(flux=flux, oscillation_params=osc_params)
         osc_obs = create_observables(flux=oscillated_flux, experiment=experiment, nuisance_params=fit_params, flavorblind=True)
+        print(np.sum(osc_obs["combined"][1]))
+        return
         hist_osc = analysis_bins(observable=osc_obs, experiment=experiment, nuisance_params=fit_params)
 
         ll_stat += loglike_stat(hist_osc, fit_params)
@@ -48,9 +52,12 @@ def cost(x, flux, experiments, fit_param_keys, mass=None, ue4=None, umu4=None):
 
 def main():
     flux = Flux("config/ensemble.json")
-    CsI = Experiment("config/csi.json", csi.energy_efficiency, csi.time_efficiency)
+    print(np.sum(flux.flux["nuE"][1]))
 
-    print(cost([80, 0, 0, 0, 0], flux.flux, [CsI], ["flux_time_offset", "flux", "brn_csi", "nin_csi", "ssb_csi"], 1, 0, 0))
+    # CsI = Experiment("config/csi.json", csi.energy_efficiency, csi.time_efficiency, True)
+    Pb_glass = Experiment("config/pb_glass.json", pb_glass.energy_efficiency, pb_glass.time_efficiency, False)
+
+    print(cost([0, 0], flux.flux, [Pb_glass], ["flux_time_offset", "flux"], 1, 0, 0))
 
 if __name__ == "__main__":
     main()

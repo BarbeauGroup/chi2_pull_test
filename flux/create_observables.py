@@ -51,6 +51,8 @@ def create_observables(flux, experiment, nuisance_params, flavorblind=False) -> 
         # Load in energy and calculate observable energy before efficiencies
         observable = experiment.matrix @ flux_object
 
+        print(np.sum(observable, axis=0))
+
         # Rescale counts
         observable *= experiment.num_atoms * pot_per_cm2
 
@@ -60,9 +62,9 @@ def create_observables(flux, experiment, nuisance_params, flavorblind=False) -> 
         return post_efficiency
 
     for flavor in flux.keys():
-        if flavorblind and flavor in experiment.params["detector"]["observable_flavors"]:
-            combined_flux += flux[flavor][1]
-        
+        if flavorblind:
+            if flavor in experiment.params["detector"]["observable_flavors"]:
+                combined_flux += flux[flavor][1]
         else:
             observables[flavor] = ((t_anal_bins*1000., observable_bin_arr), calculate(flux[flavor][1].T))
     
