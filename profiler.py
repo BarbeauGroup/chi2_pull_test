@@ -24,35 +24,35 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 from contourpy.util.bokeh_renderer import BokehRenderer as Renderer
 
-# Global variables for data
-params = load_params("config/csi.json")
+# # Global variables for data
+# params = load_params("config/csi.json")
 
-pkl = False
-new_time_edges = np.arange(0, 6625, 125)
-if not pkl or not os.path.exists("flux/flux_dict.pkl"):
-    flux = read_flux_from_root(params, new_time_edges)
-    with open("flux/flux_dict.pkl", "wb") as f:
-        np.save(f, flux)
-else:
-    with open("flux/flux_dict.pkl", "rb") as f:
-        flux = np.load(f, allow_pickle=True).item()
-    if(flux["nuE"][0][0] != new_time_edges).all():
-        flux = read_flux_from_root(params, new_time_edges)
-        with open("flux/flux_dict.pkl", "wb") as f:
-            np.save(f, flux)
+# pkl = False
+# new_time_edges = np.arange(0, 6625, 125)
+# if not pkl or not os.path.exists("flux/flux_dict.pkl"):
+#     flux = read_flux_from_root(params, new_time_edges)
+#     with open("flux/flux_dict.pkl", "wb") as f:
+#         np.save(f, flux)
+# else:
+#     with open("flux/flux_dict.pkl", "rb") as f:
+#         flux = np.load(f, allow_pickle=True).item()
+#     if(flux["nuE"][0][0] != new_time_edges).all():
+#         flux = read_flux_from_root(params, new_time_edges)
+#         with open("flux/flux_dict.pkl", "wb") as f:
+#             np.save(f, flux)
 
-ssb_dict = make_ssb_pdf(params)
-bkd_dict = read_brns_nins_from_txt(params)
-data_dict = read_data_from_txt(params)
+# ssb_dict = make_ssb_pdf(params)
+# bkd_dict = read_brns_nins_from_txt(params)
+# data_dict = read_data_from_txt(params)
 
-observable_bin_arr = np.asarray(params["analysis"]["energy_bins"])
-t_bin_arr = np.asarray(params["analysis"]["time_bins"])
-flux_matrix = np.load(params["detector"]["flux_matrix"])
-detector_matrix = np.load(params["detector"]["detector_matrix"])
-matrix = detector_matrix @ flux_matrix
+# observable_bin_arr = np.asarray(params["analysis"]["energy_bins"])
+# t_bin_arr = np.asarray(params["analysis"]["time_bins"])
+# flux_matrix = np.load(params["detector"]["flux_matrix"])
+# detector_matrix = np.load(params["detector"]["detector_matrix"])
+# matrix = detector_matrix @ flux_matrix
 
-u_bins = np.linspace(0.01, 1, 90)
-mass_bins = np.linspace(0, 30, 30)
+# u_bins = np.linspace(0.01, 1, 90)
+# mass_bins = np.linspace(0, 30, 30)
 
 def cost_asimov(x, mass, u, index, u2=None, /):
     """
@@ -174,40 +174,48 @@ def plot_u(index):
     plt.show()
 
 def plot_sin2theta(index):
+    u_bins, mass_bins =  np.linspace(0.01, 1, 100), np.linspace(0, 5, 10)
+    # u_bins, mass_bins = np.linspace(0.01, 1, 1000), np.linspace(0, 50, 100)
     # chi2_files = ["chi2_10.npy", "chi2_50.npy", "chi2_100.npy", "chi2_1000.npy", "chi2_10*.npy", "chi2_10m.npy"]
-    chi2_files = ["output/chi2_csi_mass_ue4.npy"]
-    margin_files = ["output/chi2_csi_mass_ue4_margin_umu4.npy"]
-    success_files = ["output/chi2_csi_mass_ue4_success.npy"]
+    chi2_files = ["output/pbglass_chi2_mass_uu.npy"]
+    # margin_files = ["output/chi2_csi_mass_ue4_margin_umu4.npy"]
+    success_files = ["output/pbglass_success_mass_uu.npy"]
     # colors = ['blue', 'green', 'red', 'black', 'purple', 'orange']
     linecols = ['white']
     # labels = ['10', '50', '100', '1000', '10*', '10m']
     labels = ['90% CL']
 
     # sin2_bins = np.linspace(0.01, 1, 50)
-    sin2_bins = np.unique(sin2theta(1, 1, u_bins, 0, 0))[::3]
+    little_u_bins = np.linspace(0.01, 1, 100)
+    sin2_bins = np.unique(sin2theta(1, 1, little_u_bins, 0, 0))[::3]
     sin2_bins = np.append(sin2_bins, 1)
+    sin2_bins = np.unique(sin2_bins)
     print(sin2_bins)
     
     sin2_chi2 = {label: np.full((len(sin2_bins), len(mass_bins)), 1e6) for label in labels}
     sin2_marginu = {label: np.zeros((len(sin2_bins), len(mass_bins))) for label in labels}
 
-    for success_file, margin_file, chi2_file, label in zip(success_files, margin_files, chi2_files, labels):
+    for success_file, chi2_file, label in zip(success_files, chi2_files, labels):
         chi2 = np.load(chi2_file)
-        margin_u = np.load(margin_file)
+        # margin_u = np.load(margin_file)
         suc = np.load(success_file)
         chi2 = np.ma.masked_where(suc == 0, chi2)
-        margin_u = np.ma.masked_where(suc == 0, margin_u)
+        # margin_u = np.ma.masked_where(suc == 0, margin_u)
 
-        for i, u in enumerate(u_bins):
-            for j, mass in enumerate(mass_bins):
-                s2 = sin2theta(1, 1, u, 0, 0)
-                idx = np.searchsorted(sin2_bins, s2)
-                if idx >= len(sin2_bins):
-                    print(s2, idx)
-                if chi2[i, j] < sin2_chi2[label][idx, j]:
-                    sin2_chi2[label][idx, j] = chi2[i, j]
-                    # sin2_marginu[label][idx, j] = np.sum(Pab(np.arange(1, 60, 1), 19.3, mass, 1, 1, u, margin_u[i, j], 0))/59.
-                    sin2_marginu[label][idx, j] = margin_u[i, j]
+        for i, ue4 in enumerate(u_bins):
+            for j, umu4 in enumerate(u_bins):
+                for k, mass in enumerate(mass_bins):
+                    if index == 1:
+                        s2 = sin2theta(1, 1, ue4, 0, 0)
+                    # elif index == 2:
+                    #     s2 = sin2theta(2, 2, 0, umu4, 0)
+                    idx = np.searchsorted(sin2_bins, s2)
+                    if idx >= len(sin2_bins):
+                        print(s2, idx)
+                    if chi2[i, j, k] < sin2_chi2[label][idx, k]:
+                        sin2_chi2[label][idx, k] = chi2[i, j, k]
+                        # sin2_marginu[label][idx, j] = np.sum(Pab(np.arange(1, 60, 1), 19.3, mass, 1, 1, u, margin_u[i, j], 0))/59.
+                        # sin2_marginu[label][idx, j] = margin_u[i, j]
 
     # plot chi2
     fig, ax = plt.subplots()
@@ -221,7 +229,9 @@ def plot_sin2theta(index):
         # renderer.lines(line, cont_gen.line_type, color="red", linewidth=2)
         # renderer.show()
         sin2_chi2_ma = np.ma.masked_where(sin2_chi2[label] > 1e5, sin2_chi2[label])
-        im = ax.imshow(sin2_chi2_ma.T, aspect='auto', origin='lower', extent=[sin2_bins.min(), sin2_bins.max(), mass_bins.min(), mass_bins.max()], vmin=2.29, vmax=2.31, cmap='viridis',) # vmin=4.61, vmax=4.62
+        im = ax.imshow(sin2_chi2_ma.T, aspect='auto', origin='lower', extent=[sin2_bins.min(), sin2_bins.max(), mass_bins.min(), mass_bins.max()], vmax=30, cmap='viridis',) # vmin=4.61, vmax=4.62
+        # im = ax.imshow(sin2_chi2_ma.T, aspect='auto', origin='lower', extent=[sin2_bins.min(), sin2_bins.max(), mass_bins.min(), mass_bins.max()], vmin=6.17, vmax=6.19, cmap='Purples',) # vmin=4.61, vmax=4.62
+
         cbar = fig.colorbar(im, ax=ax)
         cbar.ax.set_ylabel(r'$\Delta\chi^2$')
         # ax.contour(xv, yv, sin2_chi2_ma.T, levels=[0, 4.61, 5], algorithm='serial', colors=['white', 'white', 'white'],  linewidths=1)
@@ -233,60 +243,56 @@ def plot_sin2theta(index):
     # patches = [plt.Line2D([0], [0], color=color, label=label) for color, label in zip(linecols, labels)]
     # plt.legend(handles=patches)
 
-    # ax.set_xscale("log")
+    ax.set_xscale("log")
     # ax.set_yscale("log")
     if index == 1:
         ax.set_xlabel(r"$\sin^2 2\theta_{ee}$")
     elif index == 2:
         ax.set_xlabel(r"$\sin^2 2\theta_{\mu\mu}$")
     ax.set_ylabel(r"$\Delta m^2_{41}$")
-    ax.set_xlim(sin2_bins.min(), sin2_bins.max())
-    ax.set_ylim(mass_bins.min(), mass_bins.max())
+    ax.set_xlim(1e-2, 1)
+    ax.set_ylim(0.5, 5)
 
     # Add grid
-    ax.set_xticks(sin2_bins, minor=True)
-    ax.set_xticks(sin2_bins[::8])
-    ax.set_yticks(mass_bins, minor=True)
-    ax.set_yticks(mass_bins[::20])
+    # ax.set_xticks(sin2_bins, minor=True)
+    # ax.set_xticks(sin2_bins[::8])
+    # ax.set_yticks(mass_bins, minor=True)
+    # ax.set_yticks(mass_bins[::20])
     # ax.grid(True, which='both', linestyle='--', linewidth=0.5)
 
     plt.show()
 
-def plot_sin2theta_mue(index):
-    chi2 = np.load("output/chi2_csi_mass_ue4.npy")
-    margin = np.load("output/chi2_csi_mass_ue4_margin_umu4.npy")
-    success = np.load("output/chi2_csi_mass_ue4_success.npy")
+def plot_sin2theta_mue():
+    u_bins, mass_bins = np.linspace(0.01, 1, 100), np.linspace(0, 5, 10)
+    chi2 = np.load("output/pb_glass_chi2_mass_uu.npy")
 
     # sin2_bins = np.sort(np.unique(sin2theta(1, 2, np.tile(u_bins, len(u_bins)), np.repeat(u_bins, len(u_bins)), 0)))
     # sin2_bins = sin2_bins[np.where(sin2_bins < 1)]
     # sin2_bins = sin2_bins[::300]
     # sin2_bins = np.append(sin2_bins, 1)
     # print(len(sin2_bins))
-    sin2_bins = np.linspace(0, 1, 20)
+    sin2_bins = np.linspace(0, 1, 100, endpoint=True)
 
     sin2_chi2 = np.full((len(sin2_bins), len(mass_bins)), 1e6)
 
-    for i, u in enumerate(u_bins):
-            for j, mass in enumerate(mass_bins):
-                other_u = margin[i, j]
-                if index == 1:
-                    s2 = sin2theta(1, 2, u, other_u, 0)
-                elif index == 2:
-                    s2 = sin2theta(1, 2, other_u, u, 0)
-                else: raise ValueError("Invalid index")
+    for i, u1 in enumerate(u_bins):
+        for j, u2 in enumerate(u_bins):
+            for k, mass in enumerate(mass_bins):
+                s2 = sin2theta(1, 2, u1, u2, 0)
 
                 idx = np.searchsorted(sin2_bins, s2)
-                if chi2[i, j] < sin2_chi2[idx, j]:
-                    sin2_chi2[idx, j] = chi2[i, j]
+                if chi2[i, j, k] < sin2_chi2[idx, k]:
+                    sin2_chi2[idx, k] = chi2[i, j, k]
 
-    print(sin2_chi2)
     fig, ax = plt.subplots()
     # sin2_chi2_ma = np.ma.masked_where(sin2_chi2 > 1e5, sin2_chi2)
-    sin2_chi2[np.where(sin2_chi2 > 1e5)] = -1
-    im = ax.imshow(sin2_chi2.T, aspect='auto', origin='lower', extent=[sin2_bins.min(), sin2_bins.max(), mass_bins.min(), mass_bins.max()],  cmap='viridis') # vmin=4.61, vmax=4.62
+    sin2_chi2_ma = np.ma.masked_where(sin2_chi2 > 1e5, sin2_chi2)
+    im = ax.imshow(sin2_chi2_ma.T, aspect='auto', origin='lower', extent=[sin2_bins.min(), sin2_bins.max(), mass_bins.min(), mass_bins.max()], vmin=2.29, vmax=2.31, cmap='Greys',) # vmin=4.61, vmax=4.62
     cbar = fig.colorbar(im, ax=ax)
     cbar.ax.set_ylabel(r'$\Delta\chi^2$')
 
+    ax.set_xscale("log")
+    ax.set_yscale("log")
     ax.set_xlabel(r"$\sin^2 2\theta_{e\mu}$")
     ax.set_ylabel(r"$\Delta m^2_{41}$")
     ax.set_xlim(sin2_bins.min(), sin2_bins.max())
@@ -367,11 +373,12 @@ def marginalize_mass_uu():
 if __name__ == "__main__":
     # main()
     # plot_sin2theta()
-    marginalize_mass_uu()
+    # marginalize_mass_uu()
     # plot_sin2theta_new()
     # marginalize_mass_u(1)
     # plot_u(1)
-    # plot_sin2theta(1)
+    plot_sin2theta(1)
+    plot_sin2theta(2)
     # plot_sin2theta_mue(1)
 
     # chi2 = np.load("chi2_10m_nosub.npy")

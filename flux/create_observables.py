@@ -51,8 +51,6 @@ def create_observables(flux, experiment, nuisance_params, flavorblind=False) -> 
         # Load in energy and calculate observable energy before efficiencies
         observable = experiment.matrix @ flux_object
 
-        print(np.sum(observable, axis=0))
-
         # Rescale counts
         observable *= experiment.num_atoms * pot_per_cm2
 

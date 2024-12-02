@@ -1,6 +1,6 @@
-{
+{   "name": "pb_glass_30m",
     "detector": {
-        "distance": 20.0, "_distance_units": "m",
+        "distance": 30.0, "_distance_units": "m",
         "mass": 10200.0, "_mass_units": "kg",
         "isotopes": [
             {

@@ -39,21 +39,22 @@ def loglike_stat_asimov(histograms_osc: dict, histograms_unosc: dict, nuisance_p
     return loglike 
 
 
-def loglike_stat(histograms: dict, nuisance_params: dict) -> float:
+def loglike_stat(histograms: dict, nuisance_params: dict, exp_name: str) -> float:
     loglike = 0
 
     # Coincident Data
-    ssb = histograms["ssb"]
     observed = histograms["beam_state"]["C"]
 
     predicted = 0
     for flavor in histograms["neutrinos"].keys():
-        if flavor == "nuS" or flavor == "nuSBar":
+        if flavor != "combined":
             continue
         predicted += histograms["neutrinos"][flavor] * (1 + nuisance_params["flux"])
-    predicted += histograms["backgrounds"]["brn"] * (1 + nuisance_params["brn_csi"])
-    predicted += histograms["backgrounds"]["nin"] * (1 + nuisance_params["nin_csi"])
-    predicted += ssb * (1 + nuisance_params["ssb_csi"])
+
+    for key in histograms.keys():
+        if key == "neutrinos" or key == "beam_state":
+            continue
+        predicted += histograms[key] * (1 + nuisance_params[f"{key}_{exp_name}"])
 
     with np.errstate(all='raise'):
         try:

@@ -8,7 +8,7 @@ from utils.data_loaders import read_brns_nins_from_txt, read_data_from_txt
 from flux.ssb_pdf import make_ssb_pdf
 
 class Experiment:
-    def __init__(self, config_file, e_eff, t_eff, data_exists):
+    def __init__(self, config_file, e_eff, t_eff, asimov, bkgs_exist):
         with open(config_file, 'r') as f:
             self.params = json.load(f)
         
@@ -23,13 +23,22 @@ class Experiment:
         self.observable_energy_bins = np.asarray(self.params["analysis"]["energy_bins"])
         self.observable_time_bins = np.asarray(self.params["analysis"]["time_bins"])
 
-        if data_exists:
-            # load in brn and nin histograms
-            self.bkd_dict = read_brns_nins_from_txt(self.params)
-
+        self.asimov = asimov
+        if not asimov:
             # load in data and ssb histograms
             self.data_dict = read_data_from_txt(self.params)
             self.ssb_dict = make_ssb_pdf(self.params)
+
+        else:
+            self.data_dict = None
+            self.ssb_dict = None
+        
+        self.bkgs_exist = bkgs_exist
+        if bkgs_exist:
+            # load in brn and nin histograms
+            self.bkd_dict = read_brns_nins_from_txt(self.params)
+        else:
+            self.bkd_dict = None
 
         self.energy_efficiency = e_eff
         self.time_efficiency = t_eff

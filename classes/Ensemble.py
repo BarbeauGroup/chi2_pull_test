@@ -1,0 +1,75 @@
+import sys
+import json
+import numpy as np
+from copy import deepcopy
+
+sys.path.append('../')
+from utils.data_loaders import read_flux_from_root
+
+from transform_functions import csi
+from transform_functions import pb_glass
+
+from flux.nuflux import oscillate_flux
+from flux.create_observables import create_observables
+from plotting.observables import analysis_bins
+
+from stats.likelihood import loglike_stat, loglike_sys
+
+class Ensemble:
+    def __init__(self, config_file):
+        with open(config_file, 'r') as f:
+            self.params = json.load(f)
+        
+        time_edges = np.arange(*self.params["time_edges"])
+
+        self.flux = read_flux_from_root(self.params, time_edges)
+
+        self.experiments = []
+    
+    def add_experiment(self, experiment):
+        self.experiments.append(experiment)
+
+    def cost(self, x, flux, experiments, fit_param_keys, mass=None, ue4=None, umu4=None):
+        """
+        fit_param_keys e.g. flux_time_offset
+        """
+
+        fit_params = dict(zip(fit_param_keys, x))
+        if mass is None:
+            mass = fit_params["mass"]
+        if ue4 is None:
+            ue4 = fit_params["ue4"]
+        if umu4 is None:
+            umu4 = fit_params["umu4"]
+
+        asimov_fit_params = deepcopy(fit_params)
+        for k in asimov_fit_params.keys():
+            asimov_fit_params[k] = 0
+
+        ll_stat = 0
+        fit_param_priors = {}
+
+        for experiment in experiments:
+            for k in experiment.params["detector"]["systematics"].keys():
+                v = fit_param_priors.get(k)
+                if v is not None and v != experiment.params["detector"]["systematics"][k]:
+                    raise ValueError("Mismatch in priors for shared nuisance parameters")
+                fit_param_priors[k] = experiment.params["detector"]["systematics"][k]
+
+            osc_params = [experiment.params["detector"]["distance"], mass, ue4, umu4, 0.0]
+
+            oscillated_flux = oscillate_flux(flux=flux, oscillation_params=osc_params)
+
+            osc_obs = create_observables(flux=oscillated_flux, experiment=experiment, nuisance_params=fit_params, flavorblind=True)
+            asimov = create_observables(flux=flux, experiment=experiment, nuisance_params=asimov_fit_params, flavorblind=True)
+            
+            hists = analysis_bins(observable=osc_obs, experiment=experiment, nuisance_params=fit_params, asimov=asimov)
+
+            ll_stat += loglike_stat(hists, fit_params, experiment.params["name"])
+            
+        ll_sys = loglike_sys(fit_params, fit_param_priors)
+
+        return -2 * (ll_stat + ll_sys)
+    
+    def __call__(self, x, mass, u1, u2):
+        return self.cost(x, self.flux, self.experiments, ["flux_time_offset", "flux"], mass, u1, u2)

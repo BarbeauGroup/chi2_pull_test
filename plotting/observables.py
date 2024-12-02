@@ -8,56 +8,50 @@ from utils.histograms import rebin_histogram, rebin_histogram2d
 
 plt.style.use(['science'])
 
-def analysis_bins(observable: dict, experiment, nuisance_params) -> dict:
+def analysis_bins(observable: dict, experiment, nuisance_params, asimov=None) -> dict:
     observable_bin_arr = np.asarray(experiment.params["analysis"]["energy_bins"])
     t_bin_arr = np.asarray(experiment.params["analysis"]["time_bins"])
 
     histograms = {}
     
-    # normalized_ssb_dict = {}
-    # for hist in ["energy", "time"]:
-    #     normalized_ssb_dict[hist] = ssb_dict[hist] * ssb_norm
-    # Constrct 2d histogram of ssb
-    ssb_time_pdf = experiment.ssb_dict["time"] / np.sum(experiment.ssb_dict["time"])
-    normalized_ssb = experiment.params["detector"]["norms"]["ssb"] * np.outer(experiment.ssb_dict["energy"], ssb_time_pdf) # energy is already normalized to 1 
+    if not experiment.asimov:
+        # Constrct 2d histogram of ssb
+        ssb_time_pdf = experiment.ssb_dict["time"] / np.sum(experiment.ssb_dict["time"])
+        normalized_ssb = experiment.params["detector"]["norms"]["ssb"] * np.outer(experiment.ssb_dict["energy"], ssb_time_pdf) # energy is already normalized to 1 
 
-    histograms["ssb"] = normalized_ssb
+        histograms["ssb"] = normalized_ssb
 
-    
-    beam_dict = {}
-    for beam_state in ["C", "AC"]:
-        # pe_hist, _ = np.histogram(data[beam_state]["energy"], bins=observable_bin_arr)
-        # t_hist, _ = np.histogram(data[beam_state]["time"], bins=t_bin_arr)
+        
+        beam_dict = {}
+        for beam_state in ["C", "AC"]:
+            data_hist, _ = np.histogramdd([experiment.data_dict[beam_state]["energy"], experiment.data_dict[beam_state]["time"]], bins=[observable_bin_arr, t_bin_arr])
+            beam_dict[beam_state] = data_hist
 
-        data_hist, _ = np.histogramdd([experiment.data_dict[beam_state]["energy"], experiment.data_dict[beam_state]["time"]], bins=[observable_bin_arr, t_bin_arr])
-
-        beam_dict[beam_state] = data_hist
-    histograms["beam_state"] = beam_dict
+        histograms["beam_state"] = beam_dict
+    else:
+        weights = rebin_histogram2d(asimov["combined"][1], asimov["combined"][0][1], asimov["combined"][0][0]/1000, observable_bin_arr, t_bin_arr)
+        histograms["beam_state"] = {"C": weights}
 
     flavor_dict = {}
     for flavor in observable.keys():
-        # e_weights = rebin_histogram(np.sum(observable[flavor][1], axis=1), observable[flavor][0][1], observable_bin_arr) 
-        # t_weights = rebin_histogram(np.sum(observable[flavor][1], axis=0), observable[flavor][0][0]/1000, t_bin_arr)
-
         weights = rebin_histogram2d(observable[flavor][1], observable[flavor][0][1], observable[flavor][0][0]/1000, observable_bin_arr, t_bin_arr)
-
         flavor_dict[flavor] = weights
+
     histograms["neutrinos"] = flavor_dict
 
-    final_bkd_dict = {}
-    for bkd in experiment.bkd_dict.keys():
-        if bkd == "brn": norm = experiment.params["detector"]["norms"]["brn"]
-        else: norm = experiment.params["detector"]["norms"]["nin"]
+    if experiment.bkgs_exist:
+        for bkd in experiment.bkd_dict.keys():
+            if bkd == "brn": norm = experiment.params["detector"]["norms"]["brn"]
+            else: norm = experiment.params["detector"]["norms"]["nin"]
 
-        e_weights = experiment.bkd_dict[bkd]["energy"]
-        t_weights = rebin_histogram(experiment.bkd_dict[bkd]["time"][1], experiment.bkd_dict[bkd]["time"][0] + nuisance_params["flux_time_offset"]/1000., t_bin_arr)
+            e_weights = experiment.bkd_dict[bkd]["energy"]
+            t_weights = rebin_histogram(experiment.bkd_dict[bkd]["time"][1], experiment.bkd_dict[bkd]["time"][0] + nuisance_params["flux_time_offset"]/1000., t_bin_arr)
 
-        energy_pdf = e_weights / np.sum(e_weights)
-        time_pdf = t_weights / np.sum(t_weights)
-        weights = norm * np.outer(energy_pdf, time_pdf)
+            energy_pdf = e_weights / np.sum(e_weights)
+            time_pdf = t_weights / np.sum(t_weights)
+            weights = norm * np.outer(energy_pdf, time_pdf)
 
-        final_bkd_dict[bkd] = weights
-    histograms["backgrounds"] = final_bkd_dict
+            histograms[bkd] = weights
 
     return histograms
 
@@ -74,6 +68,7 @@ def project_histograms(histograms: dict) -> dict:
         e = np.sum(histograms["beam_state"][beam_state], axis=1)
         t = np.sum(histograms["beam_state"][beam_state], axis=0)
         beam_state_hists[beam_state] = {"energy": e, "time": t}
+
     projected_histograms["beam_state"] = beam_state_hists
 
     neutrino_hists = {}
@@ -81,6 +76,7 @@ def project_histograms(histograms: dict) -> dict:
         e = np.sum(histograms["neutrinos"][flavor], axis=1)
         t = np.sum(histograms["neutrinos"][flavor], axis=0)
         neutrino_hists[flavor] = {"energy": e, "time": t}
+
     projected_histograms["neutrinos"] = neutrino_hists
 
     background_hists = {}
@@ -88,6 +84,7 @@ def project_histograms(histograms: dict) -> dict:
         e = np.sum(histograms["backgrounds"][bkd], axis=1)
         t = np.sum(histograms["backgrounds"][bkd], axis=0)
         background_hists[bkd] = {"energy": e, "time": t}
+
     projected_histograms["backgrounds"] = background_hists
 
     return projected_histograms

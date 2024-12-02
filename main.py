@@ -1,5 +1,5 @@
 from classes.Experiment import Experiment
-from classes.Flux import Flux
+from classes.Ensemble import Ensemble
 
 from transform_functions import csi
 from transform_functions import pb_glass
@@ -10,54 +10,24 @@ from plotting.observables import analysis_bins
 
 from stats.likelihood import loglike_stat, loglike_sys
 
+from minimization.minimization import marginalize_mass_u, marginalize_mass_uu
+
 import numpy as np
-
-def cost(x, flux, experiments, fit_param_keys, mass=None, ue4=None, umu4=None):
-    """
-    fit_param_keys e.g. flux_time_offset
-    """
-
-    fit_params = dict(zip(fit_param_keys, x))
-    if mass is None:
-        mass = fit_params["mass"]
-    if ue4 is None:
-        ue4 = fit_params["ue4"]
-    if umu4 is None:
-        umu4 = fit_params["umu4"]
-
-    ll_stat = 0
-    fit_param_priors = {}
-
-    for experiment in experiments:
-        for k in experiment.params["detector"]["systematics"].keys():
-            v = fit_param_priors.get(k)
-            if v is not None and v != experiment.params["detector"]["systematics"][k]:
-                raise ValueError("Mismatch in priors for shared nuisance parameters")
-            fit_param_priors[k] = experiment.params["detector"]["systematics"][k]
-
-        osc_params = [experiment.params["detector"]["distance"], mass, ue4, umu4, 0.0]
-
-        oscillated_flux = oscillate_flux(flux=flux, oscillation_params=osc_params)
-        osc_obs = create_observables(flux=oscillated_flux, experiment=experiment, nuisance_params=fit_params, flavorblind=True)
-        print(np.sum(osc_obs["combined"][1]))
-        return
-        hist_osc = analysis_bins(observable=osc_obs, experiment=experiment, nuisance_params=fit_params)
-
-        ll_stat += loglike_stat(hist_osc, fit_params)
-        
-    ll_sys = loglike_sys(fit_params, fit_param_priors)
-
-    return -2 * (ll_stat + ll_sys)
+from copy import deepcopy
+from functools import partial
 
 
 def main():
-    flux = Flux("config/ensemble.json")
-    print(np.sum(flux.flux["nuE"][1]))
+    ensemble = Ensemble("config/ensemble.json")
 
-    # CsI = Experiment("config/csi.json", csi.energy_efficiency, csi.time_efficiency, True)
-    Pb_glass = Experiment("config/pb_glass.json", pb_glass.energy_efficiency, pb_glass.time_efficiency, False)
+    # CsI = Experiment("config/csi.json", csi.energy_efficiency, csi.time_efficiency, False, True)
+    pbglass20 = Experiment("config/pb_glass_20m.json", pb_glass.energy_efficiency, pb_glass.time_efficiency, True, False)
+    pbglass30 = Experiment("config/pb_glass_30m.json", pb_glass.energy_efficiency, pb_glass.time_efficiency, True, False)
+    ensemble.add_experiment(pbglass20)
+    ensemble.add_experiment(pbglass30)
 
-    print(cost([0, 0], flux.flux, [Pb_glass], ["flux_time_offset", "flux"], 1, 0, 0))
+    # marginalize_mass_u(ensemble, [0, 0, 0], np.linspace(0.01, 1, 1000), np.linspace(0, 50, 100), "output/pbglass")
+    marginalize_mass_uu(ensemble, [0, 0], np.linspace(0.01, 1, 200), np.linspace(0, 5, 10), "output/pbglass")
 
 if __name__ == "__main__":
     main()

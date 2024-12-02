@@ -1,4 +1,5 @@
 {
+    "name": "csi",
     "detector": {
         "distance": 19.3, "_distance_units": "m",
         "mass": 14.6, "_mass_units": "kg",
