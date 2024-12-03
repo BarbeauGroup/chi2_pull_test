@@ -109,8 +109,10 @@ def plot_sin2theta_mue():
 
     # 
 
-    u_bins, mass_bins =  np.logspace(-2, 0, num=70), np.linspace(0.25, 15, 40)
-    chi2_file = "output/pbglass_chi2_mass_uu.npy"
+    # u_bins, mass_bins =  np.logspace(-2, 0, num=70), np.linspace(0.25, 15, 40)
+    u_bins, mass_bins = np.logspace(-2, 0, num=10), np.linspace(1, 2, 2)
+    # chi2_file = "output/pbglass_chi2_mass_uu.npy"
+    chi2_file = "output/csi_1t_chi2_mass_uu.npy"
     chi2 = np.load(chi2_file)
 
 
@@ -167,7 +169,7 @@ def plot_sin2theta_mue():
 if __name__ == "__main__":
 
 
-    plot_sin2theta(1)
+    # plot_sin2theta(1)
 
     # plot_sin2theta(2)
 

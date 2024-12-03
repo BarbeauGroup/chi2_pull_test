@@ -27,7 +27,7 @@ def main():
 
 
     # marginalize_mass_u(ensemble, [0, 0, 0], np.linspace(0.01, 1, 1000), np.linspace(0, 50, 100), "output/pbglass")
-    marginalize_mass_uu(ensemble, [0, 0], np.logspace(-2, 0, num=10), np.linspace(1, 1, 1), "output/csi_1t")
+    marginalize_mass_uu(ensemble, [0, 0], np.logspace(-2, 0, num=10), np.linspace(5, 6, 2), "output/csi_1t_56")
 
 if __name__ == "__main__":
     main()
