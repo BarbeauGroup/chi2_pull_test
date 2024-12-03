@@ -72,4 +72,6 @@ class Ensemble:
         return -2 * (ll_stat + ll_sys)
     
     def __call__(self, x, mass, u1, u2):
-        return self.cost(x, self.flux, self.experiments, ["flux_time_offset", "flux"], mass, u1, u2)
+        # return self.cost(x, self.flux, self.experiments, ["flux_time_offset", "flux"], mass, u1, u2)
+        return self.cost(x, self.flux, self.experiments, ["flux"], mass, u1, u2)
+

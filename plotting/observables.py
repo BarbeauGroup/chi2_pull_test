@@ -45,7 +45,10 @@ def analysis_bins(observable: dict, experiment, nuisance_params, asimov=None) ->
             else: norm = experiment.params["detector"]["norms"]["nin"]
 
             e_weights = experiment.bkd_dict[bkd]["energy"]
-            t_weights = rebin_histogram(experiment.bkd_dict[bkd]["time"][1], experiment.bkd_dict[bkd]["time"][0] + nuisance_params["flux_time_offset"]/1000., t_bin_arr)
+            if "flux_time_offset" in nuisance_params:
+                t_weights = rebin_histogram(experiment.bkd_dict[bkd]["time"][1], experiment.bkd_dict[bkd]["time"][0] + nuisance_params["flux_time_offset"]/1000., t_bin_arr)
+            else:
+                t_weights = rebin_histogram(experiment.bkd_dict[bkd]["time"][1], experiment.bkd_dict[bkd]["time"][0], t_bin_arr)
 
             energy_pdf = e_weights / np.sum(e_weights)
             time_pdf = t_weights / np.sum(t_weights)
@@ -286,7 +289,6 @@ def plot_observables2d(params: dict, histograms_unosc: dict, histograms_osc: dic
     observed = histograms_unosc["beam_state"]["C"]
 
     weights = -predicted + observed * np.log(predicted) - gammaln(observed + 1)
-    print(np.sum(weights))
     ax[1, 1].set_title("Log Likelihood")
     ax[1,1].hist2d(x, y, bins=[observable_bin_arr, t_bin_arr], weights=weights.T.flatten(), cmap="Greys_r")
     cbar = plt.colorbar(ax[1,1].collections[0], ax=ax[1,1])

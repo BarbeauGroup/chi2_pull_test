@@ -1,5 +1,7 @@
 import numpy as np
 import timeit
+from numba import njit
+
 
 from utils.histograms import rebin_histogram2d
 
@@ -29,7 +31,10 @@ def create_observables(flux, experiment, nuisance_params, flavorblind=False) -> 
     flux_energy_bins = np.arange(0, 60, 1)
 
     # Do time offset
-    new_time_edges = flux["nuE"][0][0][:-1] + nuisance_params["flux_time_offset"]
+    if "flux_time_offset" in nuisance_params:
+        new_time_edges = flux["nuE"][0][0][:-1] + nuisance_params["flux_time_offset"]
+    else:
+        new_time_edges = flux["nuE"][0][0][:-1]
 
     # Calculate the efficiency arrays
     energy_efficiency = experiment.energy_efficiency(observable_bin_arr)

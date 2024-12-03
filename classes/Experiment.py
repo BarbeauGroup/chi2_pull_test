@@ -8,7 +8,7 @@ from utils.data_loaders import read_brns_nins_from_txt, read_data_from_txt
 from flux.ssb_pdf import make_ssb_pdf
 
 class Experiment:
-    def __init__(self, config_file, e_eff, t_eff, asimov, bkgs_exist):
+    def __init__(self, config_file, e_eff, t_eff, asimov, bkgs_exist, ssb_exists):
         with open(config_file, 'r') as f:
             self.params = json.load(f)
         
@@ -18,27 +18,21 @@ class Experiment:
         self.matrix = self.flux_matrix
 
         self.num_atoms = num_atoms(self.params)
-        print(self.num_atoms)
 
         self.observable_energy_bins = np.asarray(self.params["analysis"]["energy_bins"])
         self.observable_time_bins = np.asarray(self.params["analysis"]["time_bins"])
 
         self.asimov = asimov
-        if not asimov:
-            # load in data and ssb histograms
-            self.data_dict = read_data_from_txt(self.params)
-            self.ssb_dict = make_ssb_pdf(self.params)
+        if not asimov: self.data_dict = read_data_from_txt(self.params)
+        else: self.data_dict = None
 
-        else:
-            self.data_dict = None
-            self.ssb_dict = None
+        self.ssb_exists = ssb_exists
+        if ssb_exists: self.ssb_dict = make_ssb_pdf(self.params)
+        else: self.ssb_dict = None
         
         self.bkgs_exist = bkgs_exist
-        if bkgs_exist:
-            # load in brn and nin histograms
-            self.bkd_dict = read_brns_nins_from_txt(self.params)
-        else:
-            self.bkd_dict = None
+        if bkgs_exist: self.bkd_dict = read_brns_nins_from_txt(self.params)
+        else: self.bkd_dict = None
 
         self.energy_efficiency = e_eff
         self.time_efficiency = t_eff
