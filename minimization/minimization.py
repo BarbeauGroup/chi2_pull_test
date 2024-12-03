@@ -51,7 +51,8 @@ def marginalize_mass_uu_helper(i, j, k, /, cost, x0, u_bins, mass_bins):
     return (i, j, k, res.fun, res.x, res.success)
 
 def marginalize_mass_uu(cost, x0, u_bins, mass_bins, fname):
-    param_grid = list(product(range(len(u_bins)), range(len(u_bins)), range(len(mass_bins))))
+    param_grid = list(filter(lambda x: u_bins[x[0]] + u_bins[x[1]] <= 1,
+        product(range(len(u_bins)), range(len(u_bins)), range(len(mass_bins)))))
 
     with Pool() as pool:
         results = list(tqdm(pool.istarmap(partial(marginalize_mass_uu_helper, cost=cost, u_bins=u_bins, mass_bins=mass_bins, x0=x0), param_grid), total=len(param_grid)))
