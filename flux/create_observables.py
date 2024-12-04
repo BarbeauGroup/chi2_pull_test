@@ -28,7 +28,7 @@ def create_observables(flux, experiment, nuisance_params, flavorblind=False) -> 
     t_anal_bins = experiment.observable_time_bins
 
     # Flux energy bins
-    flux_energy_bins = np.arange(0, 60, 1)
+    flux_energy_bins = np.arange(0, 60, 1) # TODO add to param file? / flux object
 
     # Do time offset
     if "flux_time_offset" in nuisance_params:

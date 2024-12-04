@@ -11,7 +11,7 @@ from transform_functions import pb_glass
 
 from flux.nuflux import oscillate_flux
 from flux.create_observables import create_observables
-from plotting.observables import analysis_bins
+from plotting.observables import analysis_bins, project_histograms, plot_observables
 
 from stats.likelihood import loglike_stat, loglike_sys
 
@@ -25,9 +25,43 @@ class Ensemble:
         self.flux = read_flux_from_root(self.params, time_edges)
 
         self.experiments = []
+        self.nuisance_params = []
     
     def add_experiment(self, experiment):
         self.experiments.append(experiment)
+
+    def set_nuisance_params(self, nuisance_params):
+        self.nuisance_params = nuisance_params
+
+    def plot_experiment(self, experiment, parameters):
+        mass = parameters.get("mass", 0.0)
+        ue4 = parameters.get("ue4", 0.0)
+        umu4 = parameters.get("umu4", 0.0)
+
+        osc_params = [experiment.params["detector"]["distance"], mass, ue4, umu4, 0.0]
+        print(osc_params)
+
+        oscillated_flux = oscillate_flux(flux=self.flux, oscillation_params=osc_params)
+
+        osc_obs = create_observables(flux=oscillated_flux, experiment=experiment, nuisance_params=parameters, flavorblind=False)
+        unosc_obs = create_observables(flux=self.flux, experiment=experiment, nuisance_params=parameters, flavorblind=False)
+
+        print(np.sum(osc_obs["nuE"][1]), np.sum(unosc_obs["nuE"][1]))
+
+        hist_osc = analysis_bins(observable=osc_obs, experiment=experiment, nuisance_params=parameters)
+        hist_unosc = analysis_bins(observable=unosc_obs, experiment=experiment, nuisance_params=parameters)
+
+        hist_osc_1d = project_histograms(hist_osc)
+        hist_unosc_1d = project_histograms(hist_unosc)
+
+        alpha = [
+            parameters["flux"],
+            parameters["brn_csi"],
+            parameters["nin_csi"],
+            parameters["ssb_csi"]
+        ]
+        plot_observables(experiment.params, hist_unosc_1d, hist_osc_1d, alpha)
+
 
     def cost(self, x, flux, experiments, fit_param_keys, mass=None, ue4=None, umu4=None):
         """
@@ -73,5 +107,5 @@ class Ensemble:
     
     def __call__(self, x, mass, u1, u2):
         # return self.cost(x, self.flux, self.experiments, ["flux_time_offset", "flux"], mass, u1, u2)
-        return self.cost(x, self.flux, self.experiments, ["flux"], mass, u1, u2)
+        return self.cost(x, self.flux, self.experiments, self.nuisance_params, mass, u1, u2)
 

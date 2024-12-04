@@ -14,8 +14,7 @@ class Experiment:
         
         self.flux_matrix = np.load(self.params["detector"]["flux_matrix"])
         self.detector_matrix = np.load(self.params["detector"]["detector_matrix"])
-        # self.matrix = self.detector_matrix @ self.flux_matrix
-        self.matrix = self.flux_matrix
+        self.matrix = self.detector_matrix @ self.flux_matrix
 
         self.num_atoms = num_atoms(self.params)
 
