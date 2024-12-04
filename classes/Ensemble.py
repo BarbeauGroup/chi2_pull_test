@@ -33,6 +33,17 @@ class Ensemble:
     def set_nuisance_params(self, nuisance_params):
         self.nuisance_params = nuisance_params
 
+    def oscillated_flux(self, experiment, parameters):
+        mass = parameters.get("mass", 0.0)
+        ue4 = parameters.get("ue4", 0.0)
+        umu4 = parameters.get("umu4", 0.0)
+
+        osc_params = [experiment.params["detector"]["distance"], mass, ue4, umu4, 0.0]
+
+        return oscillate_flux(flux=self.flux, oscillation_params=osc_params)
+
+        
+
     def histograms(self, experiment, parameters):
         mass = parameters.get("mass", 0.0)
         ue4 = parameters.get("ue4", 0.0)
