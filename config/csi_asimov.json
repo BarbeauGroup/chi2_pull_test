@@ -16,7 +16,10 @@
             }
         ],
         "systematics": {
-            "flux": 0.11
+            "flux": 0.11,
+            "brn_csi": 0.25,
+            "nin_csi": 0.7,
+            "ssb_csi": 0.02
         },
         "norms": {
             "ssb": 128600

@@ -5,6 +5,7 @@ from transform_functions import csi
 from transform_functions import pb_glass
 
 from minimization.minimization import marginalize_mass_u, marginalize_mass_uu
+from plotting.observables import plot_csi
 
 import numpy as np
 
@@ -40,19 +41,41 @@ def main():
     # ensemble3.add_experiment(pbglass40)
     # marginalize_mass_uu(ensemble3, [0], np.logspace(-3, 0, num=100, endpoint=True), np.logspace(-1, 1.7, num=30), "output/pb_glass3")
 
-    ensemble4 = Ensemble("config/ensemble.json")
+    # ensemble4 = Ensemble("config/ensemble.json")
+    # parameters = {
+    #     "mass": 3.0,
+    #     "ue4": 0.1,
+    #     "umu4": 0.0,
+    #     "flux_time_offset": 80,
+    #     "flux": 0.0,
+    #     "brn_csi": 0.0,
+    #     "nin_csi": 0.0,
+    #     "ssb_csi": 0.0
+    # }
+    # alpha = [
+    #     parameters["flux"],
+    #     parameters["brn_csi"],
+    #     parameters["nin_csi"],
+    #     parameters["ssb_csi"]
+    # ]
+    # ensemble4.add_experiment(csi_real)
+    # hist_osc_1d, hist_unosc_1d = ensemble4.histograms(csi_real, parameters)
+    # plot_csi(csi_real.params, hist_unosc_1d, hist_osc_1d, alpha)
+
+    ensemble5 = Ensemble("config/ensemble.json")
+    print(pbglass20.detector_matrix.shape)
     parameters = {
         "mass": 3.0,
         "ue4": 0.1,
         "umu4": 0.0,
-        "flux_time_offset": 80,
+        "flux_time_offset": 0,
         "flux": 0.0,
-        "brn_csi": 0.0,
-        "nin_csi": 0.0,
-        "ssb_csi": 0.0
     }
-    ensemble4.add_experiment(csi_real)
-    ensemble4.plot_experiment(csi_real, parameters)
+    ensemble5.add_experiment(pbglass20)
+    hist_osc_1d, hist_unosc_1d = ensemble5.histograms(pbglass20, parameters)
+
+
+    print(hist_osc_1d)
 
 if __name__ == "__main__":
 

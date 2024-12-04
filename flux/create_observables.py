@@ -23,6 +23,7 @@ def create_observables(flux, experiment, nuisance_params, flavorblind=False) -> 
     # Load in energy binning
     dx = experiment.params["detector"]["detector_matrix_dx"]
     observable_bin_arr = np.arange(0, experiment.matrix.shape[0] * dx, dx)
+    print("obs bin arr", observable_bin_arr)
 
     # Load in time analysis bins
     t_anal_bins = experiment.observable_time_bins

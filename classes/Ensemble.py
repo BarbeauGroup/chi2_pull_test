@@ -11,7 +11,7 @@ from transform_functions import pb_glass
 
 from flux.nuflux import oscillate_flux
 from flux.create_observables import create_observables
-from plotting.observables import analysis_bins, project_histograms, plot_observables
+from plotting.observables import analysis_bins, project_histograms, plot_csi
 
 from stats.likelihood import loglike_stat, loglike_sys
 
@@ -33,34 +33,30 @@ class Ensemble:
     def set_nuisance_params(self, nuisance_params):
         self.nuisance_params = nuisance_params
 
-    def plot_experiment(self, experiment, parameters):
+    def histograms(self, experiment, parameters):
         mass = parameters.get("mass", 0.0)
         ue4 = parameters.get("ue4", 0.0)
         umu4 = parameters.get("umu4", 0.0)
 
         osc_params = [experiment.params["detector"]["distance"], mass, ue4, umu4, 0.0]
-        print(osc_params)
 
         oscillated_flux = oscillate_flux(flux=self.flux, oscillation_params=osc_params)
 
         osc_obs = create_observables(flux=oscillated_flux, experiment=experiment, nuisance_params=parameters, flavorblind=False)
         unosc_obs = create_observables(flux=self.flux, experiment=experiment, nuisance_params=parameters, flavorblind=False)
 
-        print(np.sum(osc_obs["nuE"][1]), np.sum(unosc_obs["nuE"][1]))
+        # print(np.sum(osc_obs["nuE"][1]), np.sum(unosc_obs["nuE"][1]),)
 
         hist_osc = analysis_bins(observable=osc_obs, experiment=experiment, nuisance_params=parameters)
         hist_unosc = analysis_bins(observable=unosc_obs, experiment=experiment, nuisance_params=parameters)
+        
+        # print(np.sum(hist_osc["neutrinos"]["nuE"]), np.sum(hist_unosc["neutrinos"]["nuE"]),)
 
         hist_osc_1d = project_histograms(hist_osc)
         hist_unosc_1d = project_histograms(hist_unosc)
 
-        alpha = [
-            parameters["flux"],
-            parameters["brn_csi"],
-            parameters["nin_csi"],
-            parameters["ssb_csi"]
-        ]
-        plot_observables(experiment.params, hist_unosc_1d, hist_osc_1d, alpha)
+        return hist_osc_1d, hist_unosc_1d
+        # plot_csi(experiment.params, hist_unosc_1d, hist_osc_1d, alpha)
 
 
     def cost(self, x, flux, experiments, fit_param_keys, mass=None, ue4=None, umu4=None):

@@ -4,7 +4,7 @@ import scienceplots
 import numpy as np
 from scipy.special import gammaln
 
-from utils.histograms import rebin_histogram, rebin_histogram2d
+from utils.histograms import rebin_histogram, rebin_histogram2d, centers_to_edges
 
 plt.style.use(['science'])
 
@@ -27,7 +27,7 @@ def analysis_bins(observable: dict, experiment, nuisance_params, asimov=None) ->
             beam_dict[beam_state] = data_hist
 
         histograms["beam_state"] = beam_dict
-    else:
+    elif asimov is not None:
         weights = rebin_histogram2d(asimov["combined"][1], asimov["combined"][0][1], asimov["combined"][0][0]/1000, observable_bin_arr, t_bin_arr)
         histograms["beam_state"] = {"C": weights}
 
@@ -35,7 +35,11 @@ def analysis_bins(observable: dict, experiment, nuisance_params, asimov=None) ->
 
     flavor_dict = {}
     for flavor in observable.keys():
-        weights = rebin_histogram2d(observable[flavor][1], observable[flavor][0][1], observable[flavor][0][0]/1000, observable_bin_arr, t_bin_arr)
+        # print(flavor)
+        # print(observable[flavor][1])
+        # print(observable[flavor][1].shape, centers_to_edges(observable[flavor][0][1]).shape, observable[flavor][0][0].shape, observable_bin_arr.shape, t_bin_arr.shape)
+        weights = rebin_histogram2d(observable[flavor][1], centers_to_edges(observable[flavor][0][1]), observable[flavor][0][0]/1000, observable_bin_arr, t_bin_arr)
+        # print(weights)
         flavor_dict[flavor] = weights
 
     histograms["neutrinos"] = flavor_dict
@@ -63,21 +67,23 @@ def project_histograms(histograms: dict) -> dict:
     # project in energy and time and return dictionary with energy and time keys
     projected_histograms = {}
 
-    beam_state_hists = {}
-    for beam_state in histograms["beam_state"].keys():
-        e = np.sum(histograms["beam_state"][beam_state], axis=1)
-        t = np.sum(histograms["beam_state"][beam_state], axis=0)
-        beam_state_hists[beam_state] = {"energy": e, "time": t}
+    if "beam_state" in histograms:
+        beam_state_hists = {}
+        for beam_state in histograms["beam_state"].keys():
+            e = np.sum(histograms["beam_state"][beam_state], axis=1)
+            t = np.sum(histograms["beam_state"][beam_state], axis=0)
+            beam_state_hists[beam_state] = {"energy": e, "time": t}
 
-    projected_histograms["beam_state"] = beam_state_hists
+        projected_histograms["beam_state"] = beam_state_hists
 
-    neutrino_hists = {}
-    for flavor in histograms["neutrinos"].keys():
-        e = np.sum(histograms["neutrinos"][flavor], axis=1)
-        t = np.sum(histograms["neutrinos"][flavor], axis=0)
-        neutrino_hists[flavor] = {"energy": e, "time": t}
+    if "neutrinos" in histograms:
+        neutrino_hists = {}
+        for flavor in histograms["neutrinos"].keys():
+            e = np.sum(histograms["neutrinos"][flavor], axis=1)
+            t = np.sum(histograms["neutrinos"][flavor], axis=0)
+            neutrino_hists[flavor] = {"energy": e, "time": t}
 
-    projected_histograms["neutrinos"] = neutrino_hists
+        projected_histograms["neutrinos"] = neutrino_hists
     
     # Other hists
     for k in histograms.keys():
@@ -89,8 +95,8 @@ def project_histograms(histograms: dict) -> dict:
     return projected_histograms
 
 
-def plot_observables(params: dict, histograms_1d_unosc: dict, histograms_1d_osc: dict, alpha) -> None:
-    fig, ax = plt.subplots(1, 2, figsize=(16, 6))
+def plot_csi(params: dict, histograms_1d_unosc: dict, histograms_1d_osc: dict, alpha) -> None:
+    fig, ax = plt.subplots(1, 2, figsize=(16, 6), sharey=True)
 
     colors = ["#d73027", "#f46d43", "#fdae61", "#fee090", "#e0f3f8", "#abd9e9", "#74add1", "#4575b4"]
     label_dict = {
@@ -202,9 +208,10 @@ def plot_observables(params: dict, histograms_1d_unosc: dict, histograms_1d_osc:
 
     ax[1].set_xlabel(r"Time [$\mu$s]")
     ax[1].set_ylabel(r"Counts / 10 $\mu$s")
+    ax[1].yaxis.set_tick_params(which='both', labelleft=True)
 
-    ax[1].set_xscale('function', functions=(lambda x: np.where(x < 1, x, (x - 1) / 3 + 1),
-                                            lambda x: np.where(x < 1, x, 3 * (x - 1) + 1)))
+    ax[1].set_xscale('function', functions=(lambda x: np.where(x < 1, x, (x - 1) / 4 + 1),
+                                            lambda x: np.where(x < 1, x, 4 * (x - 1) + 1)))
 
     ax[0].legend(*map(reversed, ax[0].get_legend_handles_labels()))
     ax[1].legend(*map(reversed, ax[1].get_legend_handles_labels()))
