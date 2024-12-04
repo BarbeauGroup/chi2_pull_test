@@ -49,12 +49,18 @@ def loglike_stat(histograms: dict, nuisance_params: dict, exp_name: str) -> floa
     for flavor in histograms["neutrinos"].keys():
         if flavor != "combined":
             continue
-        predicted += histograms["neutrinos"][flavor] * (1 + nuisance_params["flux"])
+
+        flux_nuisance = 1
+        for k in nuisance_params.keys():
+            if k.startswith("flux"):
+                flux_nuisance += nuisance_params[k]
+
+        predicted += histograms["neutrinos"][flavor] * flux_nuisance
 
     for key in histograms.keys():
         if key == "neutrinos" or key == "beam_state":
             continue
-        predicted += histograms[key] * (1 + nuisance_params[f"{key}_{exp_name}"])
+        predicted += histograms[key] * (1 + nuisance_params.get(f"{key}_{exp_name}", 0))
 
     with np.errstate(all='raise'):
         try:

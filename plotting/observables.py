@@ -95,7 +95,7 @@ def project_histograms(histograms: dict) -> dict:
     return projected_histograms
 
 
-def plot_csi(params: dict, histograms_1d_unosc: dict, histograms_1d_osc: dict, alpha) -> None:
+def plot_histograms(params: dict, histograms_1d_unosc: dict, histograms_1d_osc: dict, alpha) -> None:
     fig, ax = plt.subplots(1, 2, figsize=(16, 6), sharey=True)
 
     colors = ["#d73027", "#f46d43", "#fdae61", "#fee090", "#e0f3f8", "#abd9e9", "#74add1", "#4575b4"]
@@ -123,13 +123,15 @@ def plot_csi(params: dict, histograms_1d_unosc: dict, histograms_1d_osc: dict, a
     t_bin_arr = np.asarray(params["analysis"]["time_bins"])
 
     # beam state subtraction
-    pe_hist = (histograms_1d_unosc["beam_state"]["C"]["energy"] - histograms_1d_unosc["ssb"]["energy"] * ( 1 + alpha[3])) / np.diff(observable_bin_arr)
-    t_hist = (histograms_1d_unosc["beam_state"]["C"]["time"] - histograms_1d_unosc["ssb"]["time"] * ( 1 + alpha[3])) / np.diff(t_bin_arr) / 10.
-    pe_err = np.sqrt(histograms_1d_unosc["beam_state"]["C"]["energy"] + histograms_1d_unosc["ssb"]["energy"] * ( 1 + alpha[3])) / np.diff(observable_bin_arr)
-    t_err = np.sqrt(histograms_1d_unosc["beam_state"]["C"]["time"] + histograms_1d_unosc["ssb"]["time"] * ( 1 + alpha[3])) / np.diff(t_bin_arr) / 10.
+    if histograms_1d_unosc.get("ssb") is not None and histograms_1d_unosc.get("beam_state") is not None:
+        pe_hist = (histograms_1d_unosc["beam_state"]["C"]["energy"] - histograms_1d_unosc["ssb"]["energy"] * ( 1 + alpha[3])) / np.diff(observable_bin_arr)
+        t_hist = (histograms_1d_unosc["beam_state"]["C"]["time"] - histograms_1d_unosc["ssb"]["time"] * ( 1 + alpha[3])) / np.diff(t_bin_arr) / 10.
+        pe_err = np.sqrt(histograms_1d_unosc["beam_state"]["C"]["energy"] + histograms_1d_unosc["ssb"]["energy"] * ( 1 + alpha[3])) / np.diff(observable_bin_arr)
+        t_err = np.sqrt(histograms_1d_unosc["beam_state"]["C"]["time"] + histograms_1d_unosc["ssb"]["time"] * ( 1 + alpha[3])) / np.diff(t_bin_arr) / 10.
 
     # 3+1 model
     for bkd in ["brn", "nin"]:
+        if histograms_1d_osc.get(bkd) is None: continue
         if(bkd == "brn"): scale = alpha[1]
         if(bkd == "nin"): scale = alpha[2]
         x.append(observable_bin_arr[:-1])
@@ -140,7 +142,7 @@ def plot_csi(params: dict, histograms_1d_unosc: dict, histograms_1d_osc: dict, a
         labels.append(bkd)
 
     for flavor in histograms_1d_osc["neutrinos"].keys():
-        if flavor == "nuS" or flavor == "nuSBar":
+        if flavor not in params["detector"]["observable_flavors"]:
             continue
         # don't plot empty flavors
         if np.sum(histograms_1d_osc["neutrinos"][flavor]["energy"]) == 0: continue
@@ -178,19 +180,20 @@ def plot_csi(params: dict, histograms_1d_unosc: dict, histograms_1d_osc: dict, a
                 alpha=1,
                 color=colors[:len(labels)])
     
-    # Standard Model
+    # Unoscillated
 
     e_weights = 0
     t_weights = 0
 
     for bkd in ["brn", "nin"]:
+        if histograms_1d_unosc.get(bkd) is None: continue
         if bkd == "brn": scale = alpha[1]
         if bkd == "nin": scale = alpha[2]
         e_weights += histograms_1d_unosc[bkd]["energy"] * (1 + scale) / np.diff(observable_bin_arr)
         t_weights += histograms_1d_unosc[bkd]["time"] * (1 + scale) / np.diff(t_bin_arr) / 10.
 
     for flavor in histograms_1d_unosc["neutrinos"].keys():
-        if flavor == "nuS" or flavor == "nuSBar":
+        if flavor not in params["detector"]["observable_flavors"]:
             continue
         scale = alpha[0]
         e_weights += histograms_1d_unosc["neutrinos"][flavor]["energy"] * (1 + scale) / np.diff(observable_bin_arr)
@@ -200,11 +203,12 @@ def plot_csi(params: dict, histograms_1d_unosc: dict, histograms_1d_osc: dict, a
     ax[1].hist(t_bin_arr[:-1], bins=t_bin_arr, weights=t_weights, histtype='step', linestyle='dashed', label="No Oscillation", color="grey")
 
     # data
-    ax[0].errorbar(x=(observable_bin_arr[1:] + observable_bin_arr[:-1])/2, y=pe_hist, ls="none", yerr=np.sqrt(pe_err), label="Data", color="black", marker="x", markersize=5)
-    ax[1].errorbar(x=(t_bin_arr[1:] + t_bin_arr[:-1])/2, y=t_hist, ls="none", yerr=np.sqrt(t_err), label="Data", color="black", marker="x", markersize=5)
+    if histograms_1d_unosc.get("ssb") is not None and histograms_1d_unosc.get("beam_state") is not None:
+        ax[0].errorbar(x=(observable_bin_arr[1:] + observable_bin_arr[:-1])/2, y=pe_hist, ls="none", yerr=np.sqrt(pe_err), label="Data", color="black", marker="x", markersize=5)
+        ax[1].errorbar(x=(t_bin_arr[1:] + t_bin_arr[:-1])/2, y=t_hist, ls="none", yerr=np.sqrt(t_err), label="Data", color="black", marker="x", markersize=5)
     
-    ax[0].set_xlabel("Energy [PE]")
-    ax[0].set_ylabel("Counts / PE")
+    ax[0].set_xlabel(f"Energy [{params['analysis']['_energy_units']}]")
+    ax[0].set_ylabel(f"Counts / {params['analysis']['_energy_units']}")
 
     ax[1].set_xlabel(r"Time [$\mu$s]")
     ax[1].set_ylabel(r"Counts / 10 $\mu$s")
