@@ -44,7 +44,7 @@
             "nuS": 0.0,
             "nuSBar": 0.0
         },
-        "pot": 3.198e23
+        "pot": 9.6e23
     },  
     "analysis": {
         "energy_roi": [0.0, 60.0],

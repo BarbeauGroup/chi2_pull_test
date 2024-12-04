@@ -70,3 +70,4 @@ def marginalize_mass_uu(cost, x0, u_bins, mass_bins, fname):
     np.save(f"{fname}_chi2_mass_uu.npy", chi2)
     np.save(f"{fname}_success_mass_uu.npy", success)
     np.save(f"{fname}_params_mass_uu.npy", xs)
+    np.savez(f"{fname}_bins_mass_uu.npz", u_bins=u_bins, mass_bins=mass_bins)
