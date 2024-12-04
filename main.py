@@ -30,16 +30,11 @@ def main():
     ensemble2.add_experiment(csi_oneton)
     marginalize_mass_uu(ensemble2, [0], np.logspace(-3, 0, num=100, endpoint=True), np.logspace(-1, 1.7, num=30), "output/csi_1t")
 
-<<<<<<< HEAD
     ensemble3 = Ensemble("config/ensemble.json")
     ensemble3.add_experiment(pbglass20)
     ensemble3.add_experiment(pbglass30)
     ensemble3.add_experiment(pbglass40)
     marginalize_mass_uu(ensemble3, [0], np.logspace(-3, 0, num=100, endpoint=True), np.logspace(-1, 1.7, num=30), "output/pb_glass3")
-=======
-    # marginalize_mass_u(ensemble, [0, 0, 0], np.linspace(0.01, 1, 1000), np.linspace(0, 50, 100), "output/pbglass")
-    marginalize_mass_uu(ensemble, [0, 0], np.logspace(-2, 0, num=10), np.linspace(5, 6, 2), "output/csi_1t_56")
->>>>>>> 0bc23dc42aca4ac3d3cc46e56177abec69eb1a52
 
 if __name__ == "__main__":
 
