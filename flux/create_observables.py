@@ -23,7 +23,6 @@ def create_observables(flux, experiment, nuisance_params, flavorblind=False) -> 
     # Load in energy binning
     dx = experiment.params["detector"]["detector_matrix_dx"]
     observable_bin_arr = np.arange(0, experiment.matrix.shape[0] * dx, dx)
-    print("obs bin arr", observable_bin_arr)
 
     # Load in time analysis bins
     t_anal_bins = experiment.observable_time_bins
@@ -40,8 +39,6 @@ def create_observables(flux, experiment, nuisance_params, flavorblind=False) -> 
     # Calculate the efficiency arrays
     energy_efficiency = experiment.energy_efficiency(observable_bin_arr)
     time_efficiency = experiment.time_efficiency(new_time_edges)
-
-    # efficiency = energy_efficiency[:, None] * time_efficiency
     
     observables = {}
 

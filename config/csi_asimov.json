@@ -1,4 +1,5 @@
 {
+    "_comments": "3 years 1 tonne (scaled from CsI POT. SSB Scaled to match",
     "name": "csi",
     "detector": {
         "distance": 27, "_distance_units": "m",
@@ -22,7 +23,7 @@
             "ssb_csi": 0.02
         },
         "norms": {
-            "ssb": 128600
+            "ssb": 264247
         },
         "flux_matrix": "data/flux_transfer_matrices/csi_flux_smearing_matrix.npy",
         "detector_matrix": "data/flux_transfer_matrices/csi_quenching_detector_matrix.npy",

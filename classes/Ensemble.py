@@ -11,7 +11,7 @@ from transform_functions import pb_glass
 
 from flux.nuflux import oscillate_flux
 from flux.create_observables import create_observables
-from plotting.observables import analysis_bins, project_histograms, plot_csi
+from plotting.observables import analysis_bins, project_histograms, plot_histograms
 
 from stats.likelihood import loglike_stat, loglike_sys
 
