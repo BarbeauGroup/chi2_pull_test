@@ -28,10 +28,21 @@ def analysis_bins(observable: dict, experiment, nuisance_params, asimov=None) ->
 
         histograms["beam_state"] = beam_dict
     elif asimov is not None:
-        weights = rebin_histogram2d(asimov["combined"][1], asimov["combined"][0][1], asimov["combined"][0][0]/1000, observable_bin_arr, t_bin_arr)
-        histograms["beam_state"] = {"C": weights}
+        weights = rebin_histogram2d(asimov["combined"][1], centers_to_edges(asimov["combined"][0][1]), asimov["combined"][0][0]/1000, observable_bin_arr, t_bin_arr)
 
-        # if ssb exists add ssb here to C and ssb
+        # if ssb exists add ssb here to C and ssb -- flat ssb for pb glass
+        if experiment.ssb_exists:
+            ssb_time_pdf = experiment.ssb_dict["time"] / np.sum(experiment.ssb_dict["time"])
+            normalized_ssb = experiment.params["detector"]["norms"]["ssb"] * np.outer(experiment.ssb_dict["energy"], ssb_time_pdf) # energy is already normalized to 1 
+
+            weights += normalized_ssb
+            histograms["ssb"] = normalized_ssb
+
+        elif experiment.flat_ssb:
+            weights += np.ones_like(weights) * experiment.params["detector"]["norms"]["ssb"] / np.prod(weights.shape)
+            histograms["ssb"] = np.ones_like(weights) * experiment.params["detector"]["norms"]["ssb"] / np.prod(weights.shape)
+
+        histograms["beam_state"] = {"C": weights}
 
     flavor_dict = {}
     for flavor in observable.keys():
@@ -50,8 +61,8 @@ def analysis_bins(observable: dict, experiment, nuisance_params, asimov=None) ->
             else: norm = experiment.params["detector"]["norms"]["nin"]
 
             e_weights = experiment.bkd_dict[bkd]["energy"]
-            if "flux_time_offset" in nuisance_params:
-                t_weights = rebin_histogram(experiment.bkd_dict[bkd]["time"][1], experiment.bkd_dict[bkd]["time"][0] + nuisance_params["flux_time_offset"]/1000., t_bin_arr)
+            if "nu_time_offset" in nuisance_params:
+                t_weights = rebin_histogram(experiment.bkd_dict[bkd]["time"][1], experiment.bkd_dict[bkd]["time"][0] + nuisance_params["nu_time_offset"]/1000., t_bin_arr)
             else:
                 t_weights = rebin_histogram(experiment.bkd_dict[bkd]["time"][1], experiment.bkd_dict[bkd]["time"][0], t_bin_arr)
 

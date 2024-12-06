@@ -5,15 +5,73 @@ from flux.probabilities import sin2theta
 
 import matplotlib.pyplot as plt
 
-def plot_sin2theta(index):
+def utosin(u):
+    return 4 * (u - u*u)
 
-    # load stuff to plot it with
+def sintou(sin):
+    return 0.5 * (1 - np.sqrt(1 - sin))
+
+def plot(filestems, labels, levels):
+    colors = ["#2c7bb6", "#008837", "#e66101", "#7b3294"]
+    colors = colors[:len(filestems)]
+
+    sin2_bins = np.logspace(-6, 0, 200, endpoint=True)
+
+    fig, ax = plt.subplots(2, 2)
+    ax = ax.flatten()
+
+    for file, label, color in zip(filestems, labels, colors):
+        bins = np.load(file + "_bins_mass_uu.npz")
+        chi2 = np.load(file + "_chi2_mass_uu.npy")
+        u_bins = bins["u_bins"]
+        mass_bins = bins["mass_bins"]
+        sinx, siny = np.meshgrid(sin2_bins, mass_bins)
+        ux, uy = np.meshgrid(u_bins, mass_bins)
+
+        us4_chi2 = np.full((len(u_bins), len(mass_bins)), 1e6)
+        sin2_ee_chi2 = np.full((len(sin2_bins), len(mass_bins)), 1e6)
+        sin2_mm_chi2 = np.full((len(sin2_bins), len(mass_bins)), 1e6)
+        sin2_em_chi2 = np.full((len(sin2_bins), len(mass_bins)), 1e6)
+
+        for i, ue4 in enumerate(u_bins):
+            for j, umu4 in enumerate(u_bins):
+                for k, mass in enumerate(mass_bins):
+                    if ue4 + umu4 > 1: continue
+                    s2_ee = sin2theta(1, 1, ue4, 0, 0)
+                    s2_mm = sin2theta(2, 2, 0, umu4, 0)
+                    s2_em = sin2theta(1, 2, ue4, umu4, 0)
+                    us4 = 1 - ue4 - umu4
+
+                    idx_ee = np.searchsorted(sin2_bins, s2_ee)
+                    idx_mm = np.searchsorted(sin2_bins, s2_mm)
+                    idx_em = np.searchsorted(sin2_bins, s2_em)
+                    idx_us4 = np.searchsorted(u_bins, us4)
+
+                    if chi2[i, j, k] < us4_chi2[idx_us4, k]:
+                        us4_chi2[idx_us4, k] = chi2[i, j, k]
+                    if chi2[i, j, k] < sin2_ee_chi2[idx_ee, k]:
+                        sin2_ee_chi2[idx_ee, k] = chi2[i, j, k]
+                    if chi2[i, j, k] < sin2_mm_chi2[idx_mm, k]:
+                        sin2_mm_chi2[idx_mm, k] = chi2[i, j, k]
+                    if chi2[i, j, k] < sin2_em_chi2[idx_em, k]:
+                        sin2_em_chi2[idx_em, k] = chi2[i, j, k]
+                    
+        us4_chi2_ma = np.ma.masked_where(us4_chi2 > 1e5, us4_chi2)
+        sin2_ee_chi2_ma = np.ma.masked_where(sin2_ee_chi2 > 1e5, sin2_ee_chi2)
+        sin2_mm_chi2_ma = np.ma.masked_where(sin2_mm_chi2 > 1e5, sin2_mm_chi2)
+        sin2_em_chi2_ma = np.ma.masked_where(sin2_em_chi2 > 1e5, sin2_em_chi2)
+
+        ax[0].contour(ux, uy, us4_chi2_ma.T, levels=levels, colors=color)
+        ax[1].contour(sinx, siny, sin2_ee_chi2_ma.T, levels=levels, colors=color)
+        ax[2].contour(sinx, siny, sin2_mm_chi2_ma.T, levels=levels, colors=color)
+        ax[3].contour(sinx, siny, sin2_em_chi2_ma.T, levels=levels, colors=color)
+
+        ax[3].plot([], [], color=color, label=label)
+    
+    # Plot BEST data on s_ee plot
     BEST_data1 = np.loadtxt("data/bad_data_thief/best_sage_gallex_pt1.csv", delimiter=",", skiprows=1)
     BEST_sin21 = BEST_data1[:, 0]
     BEST_mass1 = BEST_data1[:, 1]
-
-    # BEST_sin21 = np.append(BEST_sin21, BEST_sin21[0])
-    # BEST_mass1 = np.append(BEST_mass1, BEST_mass1[0])
 
     BEST_data2 = np.loadtxt("data/bad_data_thief/best_sage_gallex_pt2.csv", delimiter=",", skiprows=1)
     BEST_sin22 = BEST_data2[:, 0]
@@ -21,88 +79,11 @@ def plot_sin2theta(index):
 
     BEST_sin22 = np.append(BEST_sin22, BEST_sin22[0])
     BEST_mass2 = np.append(BEST_mass2, BEST_mass2[0])
+    ax[1].fill(BEST_sin21, BEST_mass1, 10, color="red", alpha=0.5)
+    ax[1].fill(BEST_sin22, BEST_mass2, 10, color="red", alpha=0.5)
+    ax[1].fill([], [], color="red", alpha=0.5, label="GALLEX+SAGE+BEST 90% CL")
 
-
-
-
-    bins =  np.load("output/combined_bins_mass_uu.npz")# np.logspace(-2, 0, num=10), np.linspace(1, 2, 2)
-    u_bins = bins["u_bins"]
-    mass_bins = bins["mass_bins"]
-
-    chi2_file = "output/combined_chi2_mass_uu.npy"
-    success_file = "output/combined_success_mass_uu.npy"
-
-    labels = ['90% CL']
-    label = labels[0]
-
-    # sin2_bins = np.linspace(0.01, 1, 50) 
-    # ... kind of magic
-    little_u_bins = np.linspace(0.01, 1, 100)
-    sin2_bins = np.unique(sin2theta(1, 1, little_u_bins, 0, 0))[::2]
-    sin2_bins = np.append(sin2_bins, 1)
-    sin2_bins = np.unique(sin2_bins)
-    
-    sin2_chi2 = {label: np.full((len(sin2_bins), len(mass_bins)), 1e6) for label in labels}
-    sin2_marginu = {label: np.zeros((len(sin2_bins), len(mass_bins))) for label in labels}
-
-    chi2 = np.load(chi2_file)
-    # margin_u = np.load(margin_file)
-    suc = np.load(success_file)
-    chi2 = np.ma.masked_where(suc == 0, chi2)
-    # margin_u = np.ma.masked_where(suc == 0, margin_u)
-
-    for i, ue4 in enumerate(u_bins):
-        for j, umu4 in enumerate(u_bins):
-            for k, mass in enumerate(mass_bins):
-                if index == 1:
-                    s2 = sin2theta(1, 1, ue4, 0, 0)
-                elif index == 2:
-                    s2 = sin2theta(2, 2, 0, umu4, 0)
-                idx = np.searchsorted(sin2_bins, s2)
-                if idx >= len(sin2_bins):
-                    print(s2, idx)
-                if chi2[i, j, k] < sin2_chi2[label][idx, k]:
-                    sin2_chi2[label][idx, k] = chi2[i, j, k]
-
-    # plot chi2
-    fig, ax = plt.subplots()
-    xv, yv = np.meshgrid(mass_bins, sin2_bins)
-
-    sin2_chi2_ma = np.ma.masked_where(sin2_chi2[label] > 1e5, sin2_chi2[label])
-
-    levels = [4.61]
-    # ax.imshow(sin2_chi2_ma.T, extent=(sin2_bins.min(), sin2_bins.max(), mass_bins.min(), mass_bins.max()), aspect="auto", origin="lower", vmax=4.61)
-    ax.contour(xv, yv, sin2_chi2_ma, levels=levels)
-
-    # for i, x in enumerate(xv):
-    #     for j, y in enumerate(yv):
-    #         print(xv[i, j], yv[i, j], sin2_chi2_ma[i, j])
-
-    ax.plot([], [], color="black", label=r"20t Pb glass, two baslines 95\% CL")
-
-    ax.set_yscale("log")
-    # ax.set_yscale("log")
-    if index == 1:
-        ax.set_ylabel(r"$\sin^2 2\theta_{ee}$")
-    elif index == 2:
-        ax.set_ylabel(r"$\sin^2 2\theta_{\mu\mu}$")
-    ax.set_xlabel(r"$\Delta m^2_{41}$")
-    ax.set_ylim(1e-2, 1)
-    ax.set_xlim(0, 15)
-
-
-    # add intervals for best
-    ax.fill(BEST_sin21, BEST_mass1, 10, color="red", alpha=0.5)#, label="GALLEX+SAGE+BEST 90\% CL")
-    ax.fill(BEST_sin22, BEST_mass2, 10, color="red", alpha=0.5)
-
-    plt.legend()
-
-    plt.show()
-
-def plot_sin2theta_mue():
-
-    # load stuff to plot it with
-
+    # Plot uboone and lsnd1 data on s_em plot
     uboone_data = np.loadtxt("data/bad_data_thief/uboone-limits.csv", delimiter=",")
     uboone_sin2 = uboone_data[:, 0]
     uboone_mass = uboone_data[:, 1]
@@ -114,80 +95,31 @@ def plot_sin2theta_mue():
     lsnd1_sin2 = np.append(lsnd1_sin2, lsnd1_sin2[-1])
     lsnd1_mass = np.append(lsnd1_mass, lsnd1_mass[-1])
 
+    ax[3].plot(uboone_sin2, uboone_mass, "red", alpha=0.5, label="MicroBooNE 95% CL")
+    ax[3].fill_between(lsnd1_sin2, lsnd1_mass, 50, color="blue", alpha=0.5, label="LSND 90% CL")
 
-    # 
+    for a in ax:
+        a.set_xscale("log")
+        a.set_yscale("log")
+        a.set_xlim(1e-4, 1)
+        a.set_ylim(0.1, 50)
+        a.set_ylabel(r"$\Delta m^2_{41}$")
+    
+    ax[0].set_xlim(0.1,1)
+    ax[0].set_xlabel(r"$|U_{s4}|^2$")
+    ax[1].set_xlabel(r"$\sin^2 2\theta_{ee}$")
+    ax[2].set_xlabel(r"$\sin^2 2\theta_{\mu\mu}$")
+    ax[3].set_xlabel(r"$\sin^2 2\theta_{e\mu}$")
 
-    bins =  np.load("output/combined_bins_mass_uu.npz")# np.logspace(-2, 0, num=10), np.linspace(1, 2, 2)
-    u_bins = bins["u_bins"]
-    mass_bins = bins["mass_bins"]
+    secax = ax[1].secondary_xaxis('top', functions=(sintou, utosin))
+    secax.set_xlabel(r"$|U_{e4}|^2$")
 
-    sin2_bins = np.logspace(-5, 0, 200, endpoint=True)
-    # print(sin2_bins)
-    # return
-    # sin2_bins = np.unique(sin2theta(1, 2, little_u_bins, little_u_bins, 0))[::2]
-    # sin2_bins = np.append(sin2_bins, 1)
-    # sin2_bins = np.unique(sin2_bins)
-
-    fig, ax = plt.subplots()
-
-    xv, yv = np.meshgrid(sin2_bins, mass_bins)
-
-    for chi2_file, color in zip(["output/csi_1t_chi2_mass_uu.npy", "output/combined_chi2_mass_uu.npy", "output/pb_glass3_chi2_mass_uu.npy"], ["black", "blue", "green"]):
-    # chi2_file = "output/combined_chi2_mass_uu.npy"
-        chi2 = np.load(chi2_file)
-
-        sin2_chi2 = np.full((len(sin2_bins), len(mass_bins)), 1e6)
-
-        for i, u1 in enumerate(u_bins):
-            for j, u2 in enumerate(u_bins):
-                for k, mass in enumerate(mass_bins):
-                    if u1 + u2 > 1: continue
-                    s2 = sin2theta(1, 2, u1, u2, 0)
-
-                    idx = np.searchsorted(sin2_bins, s2)
-
-                    if chi2[i, j, k] < sin2_chi2[idx, k]:
-                        sin2_chi2[idx, k] = chi2[i, j, k]
-
-        sin2_chi2_ma = np.ma.masked_where(sin2_chi2 > 1e5, sin2_chi2)
-        # for i, s in enumerate(sin2_bins):
-        #     for j, m in enumerate(mass_bins):
-        #         print(s, m, sin2_chi2_ma[i, j])
-
-        levels = [3,5,7,9,11]
-        # ax.contour(xv, yv, sin2_chi2_ma.T, levels=levels, colors=["blue", "red", "purple", "black", "yellow"])
-        ax.imshow(sin2_chi2_ma.T, origin='lower', aspect='auto', vmax=11)
-        break
-
-        # add a patch with this color so we can label it as two baseline pb glass 95% CL
-        ax.plot([], [], color=color, label=chi2_file.split("/")[1].split("_")[0])
-
-    # ax.set_xscale("log")
-    # ax.set_yscale("log")
-
-    # ax.set_xlabel(r"$\sin^2 2\theta_{\mu e}$")
-    # ax.set_ylabel(r"$\Delta m^2_{41}$")
-    # ax.set_xlim(sin2_bins.min(), sin2_bins.max())
-    # ax.set_ylim(mass_bins.min(), mass_bins.max())
-    # ax.set_xlim(5e-6, 1)
-    # ax.set_ylim(0.1, 50)
-
-    # add uboone limits
-    # ax.plot(uboone_sin2, uboone_mass, "red", alpha=0.5, label=r"MicroBooNE 95\% CL")
-
-    # lsnd1 is a closed interval so fill it
-    # ax.fill_between(lsnd1_sin2, lsnd1_mass, 50, color="blue", alpha=0.5, label=r"LSND 90\% CL")
+    fig.suptitle("95% CL Contours")
 
     plt.legend()
-
     plt.show()
 
 if __name__ == "__main__":
-
-
-    # plot_sin2theta(1)
-
-    # plot_sin2theta(2)
-
-    plot_sin2theta_mue()
+    
+    plot(["output/pb_glass3_2dssb", "output/combined", "output/csi_1t"], ["20ty Pb Glass @ 20, 30, 40m", "Combined", "CsI 3 ty"], [5.99])
 

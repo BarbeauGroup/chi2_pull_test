@@ -42,8 +42,6 @@ class Ensemble:
 
         return oscillate_flux(flux=self.flux, oscillation_params=osc_params)
 
-        
-
     def histograms(self, experiment, parameters):
         mass = parameters.get("mass", 0.0)
         ue4 = parameters.get("ue4", 0.0)
@@ -69,10 +67,11 @@ class Ensemble:
         return hist_osc_1d, hist_unosc_1d
         # plot_csi(experiment.params, hist_unosc_1d, hist_osc_1d, alpha)
 
-
+    # TODO : pull asimov out of cost function loop
+    # If there's no time offset, pull create observables out too
     def cost(self, x, flux, experiments, fit_param_keys, mass=None, ue4=None, umu4=None):
         """
-        fit_param_keys e.g. flux_time_offset
+        fit_param_keys e.g. nu_time_offset
         """
 
         fit_params = dict(zip(fit_param_keys, x))
@@ -92,6 +91,7 @@ class Ensemble:
 
         for experiment in experiments:
             for k in experiment.params["detector"]["systematics"].keys():
+                if k not in fit_param_keys: continue # skip unused nuisance parameters
                 v = fit_param_priors.get(k)
                 if v is not None and v != experiment.params["detector"]["systematics"][k]:
                     raise ValueError("Mismatch in priors for shared nuisance parameters")
@@ -112,7 +112,14 @@ class Ensemble:
 
         return -2 * (ll_stat + ll_sys)
     
-    def __call__(self, x, mass, u1, u2):
-        # return self.cost(x, self.flux, self.experiments, ["flux_time_offset", "flux"], mass, u1, u2)
+    def __call__(self, x, mass=None, u1=None, u2=None):
+        if mass is None or u1 is None or u2 is None:
+            if mass is not None or u1 is not None or u2 is not None:
+                raise ValueError("If any of mass, u1, or u2 are specified, all must be specified")
+            mass = x[0]
+            u1 = x[1]
+            u2 = x[2]
+            x = x[3:]
+        
         return self.cost(x, self.flux, self.experiments, self.nuisance_params, mass, u1, u2)
 
