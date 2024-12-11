@@ -8,7 +8,7 @@ from utils.data_loaders import read_brns_nins_from_txt, read_data_from_txt
 from flux.ssb_pdf import make_ssb_pdf
 
 class Experiment:
-    def __init__(self, config_file, e_eff, t_eff, asimov, bkgs_exist, ssb_exists, flat_ssb=False):
+    def __init__(self, config_file, e_eff, t_eff, asimov, bkgs_exist, ssb_exists, flat_ssb=False, form_factor=None):
         with open(config_file, 'r') as f:
             self.params = json.load(f)
         
@@ -41,3 +41,11 @@ class Experiment:
 
         self.energy_efficiency = e_eff
         self.time_efficiency = t_eff
+
+        # form factor stuff
+        self.form_factor = form_factor
+        self.R0 = self.params["detector"]["R0"]
+        self.iso_mass = self.params["detector"]["isotope_mass"]
+        self.flux_matrix_dx = self.params["detector"]["flux_matrix_dx"]
+
+        

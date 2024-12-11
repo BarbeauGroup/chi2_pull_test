@@ -52,7 +52,13 @@ def create_observables(flux, experiment, nuisance_params, flavorblind=False) -> 
         flux_object = rebin_histogram2d(flux_object, flux_energy_bins, new_time_edges, flux_energy_bins, t_anal_bins*1000.)
 
         # Load in energy and calculate observable energy before efficiencies
-        observable = experiment.matrix @ flux_object
+        # observable = experiment.matrix @ flux_object
+
+        recoil_spectrum = experiment.flux_matrix @ flux_object
+        print(recoil_spectrum.shape)
+        recoil_bins = np.linspace(0, recoil_spectrum*experiment["flux_matrix_dx"], len(recoil_spectrum))
+        recoil_spectrum = recoil_spectrum # * experiment.form_factor(recoil_bins, isotope_mass, r0 + nuisance_params["R0"])**2
+        observable = experiment.detector_matrix @ recoil_spectrum
 
         # Rescale counts
         observable *= experiment.num_atoms * pot_per_cm2
