@@ -18,14 +18,7 @@ def main():
 
     ensemble.set_nuisance_params(["flux", "nu_time_offset", "brn_csi", "nin_csi", "ssb_csi"])
 
-
     ensemble([0, 0, 0, 0, 0, 0, 0, 0], 1.0, 1.0, 1.0)
-
-
-
-    
-
-
 
 if __name__ == "__main__":
     main()

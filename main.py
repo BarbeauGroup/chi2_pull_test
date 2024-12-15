@@ -6,6 +6,7 @@ from transform_functions import pb_glass
 
 from minimization.minimization import marginalize_mass_uu
 from plotting.observables import plot_histograms
+from transform_functions import form_factors
 
 import numpy as np
 
@@ -16,11 +17,11 @@ import iminuit
 def main():
     # ensemble = Ensemble("config/ensemble.json")
 
-    csi_oneton = Experiment("config/csi_asimov.json", csi.energy_efficiency, csi.time_efficiency, True, False, True)
-    pbglass20 = Experiment("config/pb_glass_20m.json", pb_glass.energy_efficiency, pb_glass.time_efficiency, True, False, False, True)
-    pbglass30 = Experiment("config/pb_glass_30m.json", pb_glass.energy_efficiency, pb_glass.time_efficiency, True, False, False, True)
-    pbglass40 = Experiment("config/pb_glass_40m.json", pb_glass.energy_efficiency, pb_glass.time_efficiency, True, False, False, True)
-    # csi_real = Experiment("config/csi.json", csi.energy_efficiency, csi.time_efficiency, False, True, True)
+    # csi_oneton = Experiment("config/csi_asimov.json", csi.energy_efficiency, csi.time_efficiency, True, False, True)
+    # pbglass20 = Experiment("config/pb_glass_20m.json", pb_glass.energy_efficiency, pb_glass.time_efficiency, True, False, False, True)
+    # pbglass30 = Experiment("config/pb_glass_30m.json", pb_glass.energy_efficiency, pb_glass.time_efficiency, True, False, False, True)
+    # pbglass40 = Experiment("config/pb_glass_40m.json", pb_glass.energy_efficiency, pb_glass.time_efficiency, True, False, False, True)
+    csi_real = Experiment("config/csi.json", csi.energy_efficiency, csi.time_efficiency, False, True, True, False, form_factors.helm)
 
     # ensemble.add_experiment(pbglass20)
     # ensemble.add_experiment(pbglass30)
@@ -28,14 +29,14 @@ def main():
     # ensemble.set_nuisance_params(["flux", "flux_pbxs"])
     # marginalize_mass_uu(ensemble, [0, 0], np.logspace(-3, 0, num=100, endpoint=True), np.logspace(-1, 1.7, num=20), "output/pb_glass3_2dssb")
 
-    print(np.logspace(-3, 0, num=100, endpoint=True))
-    ensemble2 = Ensemble("config/ensemble.json")
-    ensemble2.add_experiment(csi_oneton)
-    ensemble2.set_nuisance_params(["flux"])
-    # marginalize_mass_uu(ensemble2, [0], np.logspace(-3, 0, num=100, endpoint=True), np.logspace(-1, 1.7, num=20), "output/csi_1t")
-    bounds = Bounds([1.370383450663168, 0.14174741629268048, 0.84, -np.inf], [1.370383450663168, 0.14174741629268048, 0.84, np.inf])
-    res = iminuit.minimize(ensemble2, [1.370383450663168, 0.14174741629268048, 0.84, 0], bounds=bounds)
-    print(res)
+    # print(np.logspace(-3, 0, num=100, endpoint=True))
+    # ensemble2 = Ensemble("config/ensemble.json")
+    # ensemble2.add_experiment(csi_oneton)
+    # ensemble2.set_nuisance_params(["flux"])
+    # # marginalize_mass_uu(ensemble2, [0], np.logspace(-3, 0, num=100, endpoint=True), np.logspace(-1, 1.7, num=20), "output/csi_1t")
+    # bounds = Bounds([1.370383450663168, 0.14174741629268048, 0.84, -np.inf], [1.370383450663168, 0.14174741629268048, 0.84, np.inf])
+    # res = iminuit.minimize(ensemble2, [1.370383450663168, 0.14174741629268048, 0.84, 0], bounds=bounds)
+    # print(res)
 
     # ensemble3 = Ensemble("config/ensemble.json")
     # ensemble3.set_nuisance_params(["flux", "flux_pbxs"])
@@ -56,14 +57,15 @@ def main():
 
     ensemble4 = Ensemble("config/ensemble.json")
     parameters = {
-        "mass": 1.370,
-        "ue4": 0.1417,
-        "umu4": 0.8583,
+        "mass": 0, #1.370,
+        "ue4": 0, #0.1417,
+        "umu4": 0, #0.8583,
         "nu_time_offset": 0,
-        "flux": 0.10917781,
+        "flux": 0, #0.10917781,
         "brn_csi": 0.0,
         "nin_csi": 0.0,
-        "ssb_csi": 0.0
+        "ssb_csi": 0.0,
+        "R_A_csi": 0.0
     }
 
     # print("thetaee", sin2theta(1, 1, parameters["ue4"], parameters["umu4"], 0))
@@ -80,9 +82,16 @@ def main():
     # hist_osc_1d, hist_unosc_1d = ensemble4.histograms(pbglass20, parameters)
     # plot_histograms(pbglass20.params, hist_unosc_1d, hist_osc_1d, alpha)
 
-    ensemble4.add_experiment(csi_oneton)
-    hist_osc_1d, hist_unosc_1d = ensemble4.histograms(csi_oneton, parameters)
-    # plot_histograms(csi_oneton.params, hist_unosc_1d, hist_osc_1d, alpha)
+    ensemble4.add_experiment(csi_real)
+    hist_osc_1d, hist_unosc_1d = ensemble4.histograms(csi_real, parameters)
+    plot_histograms(csi_real.params, hist_unosc_1d, hist_osc_1d, alpha)
+
+    e = 0
+    t = 0
+    for k in hist_unosc_1d["neutrinos"].keys():
+        e += np.sum(hist_unosc_1d["neutrinos"][k]["energy"])
+        t += np.sum(hist_unosc_1d["neutrinos"][k]["time"])
+    print(e, t)
 
     # ensemble5 = Ensemble("config/ensemble.json")
     # parameters = {

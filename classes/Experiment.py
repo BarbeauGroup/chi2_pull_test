@@ -12,11 +12,16 @@ class Experiment:
         with open(config_file, 'r') as f:
             self.params = json.load(f)
         
-        self.flux_matrix = np.load(self.params["detector"]["flux_matrix"])
-        self.detector_matrix = np.load(self.params["detector"]["detector_matrix"])
-        self.matrix = self.detector_matrix @ self.flux_matrix
+        # self.flux_matrix = np.load(self.params["detector"]["flux_matrix"]) # deprecated
 
-        self.num_atoms = num_atoms(self.params)
+        for isotope in self.params["detector"]["isotopes"]:
+            isotope["flux_matrix"] = np.load(isotope["flux_matrix"])
+            isotope["num_atoms"] = num_atoms(self.params, isotope)
+        
+        self.detector_matrix = np.load(self.params["detector"]["detector_matrix"])
+        # self.matrix = self.detector_matrix @ self.flux_matrix
+
+        # self.num_atoms = num_atoms(self.params) # calc isotope num atoms
 
         self.observable_energy_bins = np.asarray(self.params["analysis"]["energy_bins"])
         self.observable_time_bins = np.asarray(self.params["analysis"]["time_bins"])
@@ -44,8 +49,6 @@ class Experiment:
 
         # form factor stuff
         self.form_factor = form_factor
-        self.R0 = self.params["detector"]["R0"]
-        self.iso_mass = self.params["detector"]["isotope_mass"]
         self.flux_matrix_dx = self.params["detector"]["flux_matrix_dx"]
 
         

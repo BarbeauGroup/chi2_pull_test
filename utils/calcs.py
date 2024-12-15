@@ -1,12 +1,6 @@
-def num_atoms(params):
+def num_atoms(params, isotope):
     mass = params["detector"]["mass"]
-    num_isotopes = len(params["detector"]["isotopes"])
-    Da = 1.66e-27
-
-    A = 0
-    for isotope in params["detector"]["isotopes"]:
-        A += isotope["mass"] * isotope["abundance"]
+    molar_mass = params["detector"]["molar_mass"]
+    Av = 6.022e23
     
-    A /= num_isotopes
-
-    return mass / (A * Da)
+    return (mass * 1000) / molar_mass * Av * isotope["abundance"]

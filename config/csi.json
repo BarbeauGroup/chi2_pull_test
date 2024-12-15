@@ -3,32 +3,37 @@
     "detector": {
         "distance": 19.3, "_distance_units": "m",
         "mass": 14.6, "_mass_units": "kg",
+        "molar_mass": 259.809, "_molar_mass_units": "g/mol",
         "isotopes": [
             {
-                "name": "Cs137",
+                "name": "Cs133",
+                "A": 133,
                 "mass": 132.91,
-                "abundance": 1.0
+                "abundance": 1.0,
+                "flux_matrix": "data/flux_transfer_matrices/csi_Cs133_flux_smearing_matrix_unity.npy"
             },
             {
                 "name": "I127",
+                "A": 127,
                 "mass": 126.90,
-                "abundance": 1.0
+                "abundance": 1.0,
+                "flux_matrix": "data/flux_transfer_matrices/csi_I127_flux_smearing_matrix_unity.npy"
             }
         ],
         "systematics": {
             "flux": 0.11,
             "brn_csi": 0.25,
             "nin_csi": 0.7,
-            "ssb_csi": 0.02
+            "ssb_csi": 0.02,
+            "R_A_csi": 0.05
         },
         "norms": {
             "ssb": 1286,
             "brn": 18.4,
             "nin": 5.6
         },
-        "flux_matrix": "data/flux_transfer_matrices/csi_flux_smearing_matrix.npy",
-        "flux_matrix_dx": 1.0,
-        "R0": 1.0,
+        "flux_matrix": "data/flux_transfer_matrices/csi_flux_smearing_matrix_unity.npy",
+        "flux_matrix_dx": 0.01,
         "isotope_mass": 1.0,
 
         "detector_matrix": "data/flux_transfer_matrices/csi_quenching_detector_matrix.npy",

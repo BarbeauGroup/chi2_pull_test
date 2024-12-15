@@ -22,7 +22,7 @@ def create_observables(flux, experiment, nuisance_params, flavorblind=False) -> 
 
     # Load in energy binning
     dx = experiment.params["detector"]["detector_matrix_dx"]
-    observable_bin_arr = np.arange(0, experiment.matrix.shape[0] * dx, dx)
+    observable_bin_arr = np.arange(0, experiment.detector_matrix.shape[0] * dx, dx)
 
     # Load in time analysis bins
     t_anal_bins = experiment.observable_time_bins
@@ -39,12 +39,8 @@ def create_observables(flux, experiment, nuisance_params, flavorblind=False) -> 
     # Calculate the efficiency arrays
     energy_efficiency = experiment.energy_efficiency(observable_bin_arr)
     time_efficiency = experiment.time_efficiency(new_time_edges)
-    
-    observables = {}
 
-    combined_flux = 0
-
-    def calculate(flux_object):
+    def calculate(isotope, flux_object):
         # Apply time efficiency to flux object
         flux_object *= time_efficiency
 
@@ -54,30 +50,56 @@ def create_observables(flux, experiment, nuisance_params, flavorblind=False) -> 
         # Load in energy and calculate observable energy before efficiencies
         # observable = experiment.matrix @ flux_object
 
-        recoil_spectrum = experiment.flux_matrix @ flux_object
-        print(recoil_spectrum.shape)
-        recoil_bins = np.linspace(0, recoil_spectrum*experiment["flux_matrix_dx"], len(recoil_spectrum))
-        recoil_spectrum = recoil_spectrum # * experiment.form_factor(recoil_bins, isotope_mass, r0 + nuisance_params["R0"])**2
+        recoil_spectrum = isotope["flux_matrix"] @ flux_object # TODO: change flux matrix
+        recoil_spectrum = recoil_spectrum * ff_2[:, None]
         observable = experiment.detector_matrix @ recoil_spectrum
 
-        # Rescale counts
-        observable *= experiment.num_atoms * pot_per_cm2
+        # Rescale counts 
+        observable *= isotope["num_atoms"] * pot_per_cm2 # TODO: Change num atoms
 
         # Apply energy efficiency
         post_efficiency = observable * energy_efficiency[:, None]
 
         return post_efficiency
-
-    for flavor in flux.keys():
-        if flavorblind:
-            if flavor in experiment.params["detector"]["observable_flavors"]:
-                combined_flux += flux[flavor][1]
-        else:
-            observables[flavor] = ((t_anal_bins*1000., observable_bin_arr), calculate(flux[flavor][1].T))
     
+    # Add together isotope fluxes somehow
     if flavorblind:
         observables = {
-            "combined": ((t_anal_bins*1000., observable_bin_arr), calculate(combined_flux.T))
+            "combined": [[t_anal_bins*1000., observable_bin_arr], 0]
         }
+    else:
+        observables = {
+            "nuE": [[t_anal_bins*1000., observable_bin_arr], 0],
+            "nuMu": [[t_anal_bins*1000., observable_bin_arr], 0],
+            "nuTau": [[t_anal_bins*1000., observable_bin_arr], 0],
+            "nuEBar": [[t_anal_bins*1000., observable_bin_arr], 0],
+            "nuMuBar": [[t_anal_bins*1000., observable_bin_arr], 0],
+            "nuTauBar": [[t_anal_bins*1000., observable_bin_arr], 0],
+            "nuS": [[t_anal_bins*1000., observable_bin_arr], 0],
+            "nuSBar": [[t_anal_bins*1000., observable_bin_arr], 0],
+        }
+
+    for isotope in experiment.params["detector"]["isotopes"]:
+        recoil_bins = np.linspace(0, isotope["flux_matrix"].shape[0] * experiment.params["detector"]["flux_matrix_dx"], isotope["flux_matrix"].shape[0])
+
+        ff_2 = experiment.form_factor(isotope, recoil_bins, nuisance_params[f"R_A_{experiment.params["name"]}"])**2
+        print(isotope["name"])
+
+        combined_flux = 0
+        for flavor in flux.keys():
+            if flavorblind:
+                if flavor in experiment.params["detector"]["observable_flavors"]:
+                    combined_flux += flux[flavor][1]
+            else:
+                observables[flavor][1] +=  calculate(isotope, flux[flavor][1].T)
+                print(flavor, np.sum(observables[flavor][1]))
+        
+        if flavorblind:
+            observables["combined"][1] += calculate(isotope, combined_flux.T)
+    
+    e = 0
+    for flavor in observables.keys():
+        e += np.sum(observables[flavor][1])
+    print("total", e)
 
     return observables
