@@ -15,3 +15,5 @@ data/csi_anc
 .DS_Store
 data/.DS_Store
 output.prof
+
+.idea/

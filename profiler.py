@@ -1,5 +1,8 @@
 from tqdm import tqdm
 import numpy as np
+import sys
+
+np.set_printoptions(threshold=sys.maxsize)
 
 from flux.probabilities import sin2theta
 
@@ -23,15 +26,24 @@ def plot(filestems, labels, levels):
     for file, label, color in zip(filestems, labels, colors):
         bins = np.load(file + "_bins_mass_uu.npz")
         chi2 = np.load(file + "_chi2_mass_uu.npy")
+        params = np.load(file + "_params_mass_uu.npy")
+        success = np.load(file + "_success_mass_uu.npy")
         u_bins = bins["u_bins"]
         mass_bins = bins["mass_bins"]
         sinx, siny = np.meshgrid(sin2_bins, mass_bins)
         ux, uy = np.meshgrid(u_bins, mass_bins)
 
-        us4_chi2 = np.full((len(u_bins), len(mass_bins)), 1e6)
-        sin2_ee_chi2 = np.full((len(sin2_bins), len(mass_bins)), 1e6)
-        sin2_mm_chi2 = np.full((len(sin2_bins), len(mass_bins)), 1e6)
-        sin2_em_chi2 = np.full((len(sin2_bins), len(mass_bins)), 1e6)
+        us4_chi2 = np.full((len(u_bins), len(mass_bins)), 1e6, dtype=float)
+        sin2_ee_chi2 = np.full((len(sin2_bins), len(mass_bins)), 1e6, dtype=float)
+        sin2_mm_chi2 = np.full((len(sin2_bins), len(mass_bins)), 1e6, dtype=float)
+        sin2_em_chi2 = np.full((len(sin2_bins), len(mass_bins)), 1e6, dtype=float)
+
+        ue4_mm = np.full((len(sin2_bins), len(mass_bins)), 2.0, dtype=float)
+        us4_em = np.full((len(sin2_bins), len(mass_bins)), 2.0, dtype=float)
+        umu4_ee = np.full((len(sin2_bins), len(mass_bins)), 2.0, dtype=float)
+
+        ue4s = np.full((len(sin2_bins), len(mass_bins)), 2.0, dtype=float)
+        umu4s = np.full((len(sin2_bins), len(mass_bins)), 2.0, dtype=float)
 
         for i, ue4 in enumerate(u_bins):
             for j, umu4 in enumerate(u_bins):
@@ -51,11 +63,44 @@ def plot(filestems, labels, levels):
                         us4_chi2[idx_us4, k] = chi2[i, j, k]
                     if chi2[i, j, k] < sin2_ee_chi2[idx_ee, k]:
                         sin2_ee_chi2[idx_ee, k] = chi2[i, j, k]
+                        umu4_ee[idx_ee, k] = umu4
+                        ue4s[idx_ee, k] = ue4
+                        umu4s[idx_ee, k] = umu4
                     if chi2[i, j, k] < sin2_mm_chi2[idx_mm, k]:
                         sin2_mm_chi2[idx_mm, k] = chi2[i, j, k]
+                        ue4_mm[idx_mm, k] = ue4
                     if chi2[i, j, k] < sin2_em_chi2[idx_em, k]:
                         sin2_em_chi2[idx_em, k] = chi2[i, j, k]
+                        us4_em[idx_em, k] = us4
                     
+        # idx_s = np.searchsorted(sin2_bins, 0.99)
+        # idx_m = np.searchsorted(mass_bins, 3)
+
+        idx_s, idx_m = np.unravel_index(np.argmax(np.ma.masked_where(sin2_ee_chi2 > 100, sin2_ee_chi2)), sin2_ee_chi2.shape)
+        idx_ue4 = np.searchsorted(u_bins, ue4s[idx_s, idx_m])
+        idx_umu4 = np.searchsorted(u_bins, umu4s[idx_s, idx_m])
+        idx_better_umu4 = np.searchsorted(u_bins, 1 - ue4s[idx_s, idx_m])
+
+        # print(ue4s, umu4s)
+
+        print(file)
+        print("ue4", ue4s[idx_s, idx_m])
+        print("umu4", umu4s[idx_s, idx_m])
+        print("sin2", sin2_bins[idx_s])
+        print("mass", mass_bins[idx_m])
+        print("params", params[idx_ue4, idx_umu4, idx_m])
+        print("params better umu4", params[idx_ue4, idx_better_umu4, idx_m])
+        print("chi2", chi2[idx_ue4, idx_umu4, idx_m])
+        print("chi2 better umu4", chi2[idx_ue4, idx_better_umu4, idx_m])
+        print("success", success[idx_ue4, idx_umu4, idx_m])
+        print("success better umu4", success[idx_ue4, idx_better_umu4, idx_m])
+
+        
+        # print(file)
+        # print("ue4_mm", ue4_mm)
+        # print("us4_em", us4_em)
+        # print("umu4_ee", umu4_ee)
+
         us4_chi2_ma = np.ma.masked_where(us4_chi2 > 1e5, us4_chi2)
         sin2_ee_chi2_ma = np.ma.masked_where(sin2_ee_chi2 > 1e5, sin2_ee_chi2)
         sin2_mm_chi2_ma = np.ma.masked_where(sin2_mm_chi2 > 1e5, sin2_mm_chi2)
@@ -120,6 +165,6 @@ def plot(filestems, labels, levels):
     plt.show()
 
 if __name__ == "__main__":
-    
-    plot(["output/pb_glass3_2dssb", "output/combined", "output/csi_1t"], ["20ty Pb Glass @ 20, 30, 40m", "Combined", "CsI 3 ty"], [5.99])
+
+    plot(["output/pb_glass3_2dssb", "output/combined", "output/csi_1t"], ["20ty Pb Glass @ 20, 30, 40m", "combined", "CsI 3 ty"], [5.99])
 
