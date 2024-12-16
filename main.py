@@ -65,7 +65,7 @@ def main():
         "brn_csi": 0.0,
         "nin_csi": 0.0,
         "ssb_csi": 0.0,
-        "R_A_csi": 0.0
+        "r_n_csi": 0.0
     }
 
     # print("thetaee", sin2theta(1, 1, parameters["ue4"], parameters["umu4"], 0))

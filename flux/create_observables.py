@@ -39,28 +39,6 @@ def create_observables(flux, experiment, nuisance_params, flavorblind=False) -> 
     # Calculate the efficiency arrays
     energy_efficiency = experiment.energy_efficiency(observable_bin_arr)
     time_efficiency = experiment.time_efficiency(new_time_edges)
-
-    def calculate(isotope, flux_object):
-        # Apply time efficiency to flux object
-        flux_object *= time_efficiency
-
-        # Rebin in time
-        flux_object = rebin_histogram2d(flux_object, flux_energy_bins, new_time_edges, flux_energy_bins, t_anal_bins*1000.)
-
-        # Load in energy and calculate observable energy before efficiencies
-        # observable = experiment.matrix @ flux_object
-
-        recoil_spectrum = isotope["flux_matrix"] @ flux_object # TODO: change flux matrix
-        recoil_spectrum = recoil_spectrum * ff_2[:, None]
-        observable = experiment.detector_matrix @ recoil_spectrum
-
-        # Rescale counts 
-        observable *= isotope["num_atoms"] * pot_per_cm2 # TODO: Change num atoms
-
-        # Apply energy efficiency
-        post_efficiency = observable * energy_efficiency[:, None]
-
-        return post_efficiency
     
     # Add together isotope fluxes somehow
     if flavorblind:
@@ -82,8 +60,33 @@ def create_observables(flux, experiment, nuisance_params, flavorblind=False) -> 
     for isotope in experiment.params["detector"]["isotopes"]:
         recoil_bins = np.linspace(0, isotope["flux_matrix"].shape[0] * experiment.params["detector"]["flux_matrix_dx"], isotope["flux_matrix"].shape[0])
 
-        ff_2 = experiment.form_factor(isotope, recoil_bins, nuisance_params[f"R_A_{experiment.params["name"]}"])**2
+        ff_2 = experiment.form_factor(isotope, recoil_bins, nuisance_params[f"r_n_{experiment.params["name"]}"])**2
         print(isotope["name"])
+        print(ff_2)
+
+        def calculate(flux_object):
+            # Apply time efficiency to flux object
+            flux_post_te = flux_object * time_efficiency
+
+            # Rebin in time
+            flux_rebinned = rebin_histogram2d(flux_post_te, flux_energy_bins, new_time_edges, flux_energy_bins, t_anal_bins*1000.)
+
+            # Load in energy and calculate observable energy before efficiencies
+            # observable = experiment.matrix @ flux_object
+
+            recoil_spectrum = isotope["flux_matrix"] @ flux_rebinned # TODO: change flux matrix
+            recoil_spectrum_post_ff = recoil_spectrum * ff_2[:, None]
+            observable = experiment.detector_matrix @ recoil_spectrum_post_ff
+
+            # Rescale counts 
+            observable *= isotope["num_atoms"] * pot_per_cm2 # TODO: Change num atoms
+
+            # Apply energy efficiency
+            post_efficiency = observable * energy_efficiency[:, None]
+
+            print(np.sum(post_efficiency))
+
+            return post_efficiency
 
         combined_flux = 0
         for flavor in flux.keys():
@@ -91,11 +94,11 @@ def create_observables(flux, experiment, nuisance_params, flavorblind=False) -> 
                 if flavor in experiment.params["detector"]["observable_flavors"]:
                     combined_flux += flux[flavor][1]
             else:
-                observables[flavor][1] +=  calculate(isotope, flux[flavor][1].T)
-                print(flavor, np.sum(observables[flavor][1]))
+                observables[flavor][1] += calculate(flux[flavor][1].T)
+                print(flavor, np.sum(flux[flavor][1]))
         
         if flavorblind:
-            observables["combined"][1] += calculate(isotope, combined_flux.T)
+            observables["combined"][1] += calculate(combined_flux.T)
     
     e = 0
     for flavor in observables.keys():

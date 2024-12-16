@@ -10,14 +10,16 @@
                 "A": 133,
                 "mass": 132.91,
                 "abundance": 1.0,
-                "flux_matrix": "data/flux_transfer_matrices/csi_Cs133_flux_smearing_matrix_unity.npy"
+                "flux_matrix": "data/flux_transfer_matrices/csi_Cs133_flux_smearing_matrix_unity.npy",
+                "r_n": 5.104
             },
             {
                 "name": "I127",
                 "A": 127,
                 "mass": 126.90,
                 "abundance": 1.0,
-                "flux_matrix": "data/flux_transfer_matrices/csi_I127_flux_smearing_matrix_unity.npy"
+                "flux_matrix": "data/flux_transfer_matrices/csi_I127_flux_smearing_matrix_unity.npy",
+                "r_n": 5.050
             }
         ],
         "systematics": {
@@ -25,7 +27,7 @@
             "brn_csi": 0.25,
             "nin_csi": 0.7,
             "ssb_csi": 0.02,
-            "R_A_csi": 0.05
+            "r_n_csi": 0.05
         },
         "norms": {
             "ssb": 1286,
@@ -34,7 +36,6 @@
         },
         "flux_matrix": "data/flux_transfer_matrices/csi_flux_smearing_matrix_unity.npy",
         "flux_matrix_dx": 0.01,
-        "isotope_mass": 1.0,
 
         "detector_matrix": "data/flux_transfer_matrices/csi_quenching_detector_matrix.npy",
         "detector_matrix_dx": 0.1,

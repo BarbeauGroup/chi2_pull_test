@@ -20,5 +20,14 @@ def main():
 
     ensemble([0, 0, 0, 0, 0, 0, 0, 0], 1.0, 1.0, 1.0)
 
+def test():
+    i127 = np.load("data/flux_transfer_matrices/csi_I127_flux_smearing_matrix_unity.npy")
+    recoil_bins = np.linspace(0, 5885 * 0.01, 5885)
+    isotope = {"A": 127, "mass": 126.9}
+    ff_2 = form_factors.helm(isotope, recoil_bins, 0)**2
+    ffed = i127 * ff_2[:, None]
+    np.savetxt("test.csv", ffed[:, 58])
+    
 if __name__ == "__main__":
-    main()
+    # main()
+    test()
