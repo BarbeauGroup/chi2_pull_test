@@ -1,5 +1,22 @@
 import numpy as np
 
+def quenching_factor(Erec):
+    """
+    Calculate the quenching factor.
+
+    Parameters
+    ----------
+    Erec : float
+        Recoil energy in MeV (Eee)
+
+    Returns
+    -------
+    float
+        The observed energy in MeV (Enr)
+    """
+
+    return 0.0554628*Erec + 4.30681*np.power(Erec, 2) - 111.707 * np.power(Erec, 3) + 840.384 * np.power(Erec, 4)
+
 def energy_efficiency(x):
     """
     Calculate the CsI detector efficiency.
