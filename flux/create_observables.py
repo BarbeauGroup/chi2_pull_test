@@ -60,7 +60,7 @@ def create_observables(flux, experiment, nuisance_params, flavorblind=False) -> 
     for isotope in experiment.params["detector"]["isotopes"]:
         recoil_bins = np.linspace(0, isotope["flux_matrix"].shape[0] * experiment.params["detector"]["flux_matrix_dx"], isotope["flux_matrix"].shape[0])
 
-        ff_2 = experiment.form_factor(isotope, recoil_bins, nuisance_params[f"r_n_{experiment.params["name"]}"])**2
+        ff_2 = experiment.form_factor(isotope, recoil_bins, nuisance_params[f"r_n_{experiment.params['name']}"])**2
         print(isotope["name"])
         print(ff_2)
 
