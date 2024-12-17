@@ -59,31 +59,32 @@ def create_observables(flux, experiment, nuisance_params, flavorblind=False) -> 
 
     for isotope in experiment.params["detector"]["isotopes"]:
         recoil_bins = np.linspace(0, isotope["flux_matrix"].shape[0] * experiment.params["detector"]["flux_matrix_dx"], isotope["flux_matrix"].shape[0])
-        ff_2 = experiment.form_factor(isotope, recoil_bins, nuisance_params[f"r_n_{experiment.params["name"]}"])**2 # TODO: make optional
 
-        PE_bins_weird = experiment.params["detector"]["light_yield"] * experiment.quenching_factor(recoil_bins) # TODO: edges to centers?
-        PE_bins = np.linspace(0, experiment.params["analysis"]["energy_bins"][-1], int(experiment.params["analysis"]["energy_bins"][-1] / experiment.params["detector"]["detector_matrix_dx"]) + 1)
+        ff_2 = experiment.form_factor(isotope, recoil_bins, nuisance_params[f"r_n_{experiment.params["name"]}"])**2
+        print(isotope["name"])
+        print(ff_2)
 
         def calculate(flux_object):
             # Apply time efficiency to flux object
-            flux_post_te = flux_object * time_efficiency # TODO: make optional 
+            flux_post_te = flux_object * time_efficiency
 
             # Rebin in time
             flux_rebinned = rebin_histogram2d(flux_post_te, flux_energy_bins, new_time_edges, flux_energy_bins, t_anal_bins*1000.)
 
-            # Load in energy and calculate observable energy before energy efficiency
-            recoil_spectrum = isotope["flux_matrix"] @ flux_rebinned # Add in *dE_nu (which is coincidentally 1?)
-            recoil_spectrum_post_ff = recoil_spectrum * ff_2[:, None]
+            # Load in energy and calculate observable energy before efficiencies
+            # observable = experiment.matrix @ flux_object
 
-            # Apply quenching factor
-            recoil_spectrum_post_qf = rebin_histogram2d(recoil_spectrum_post_ff, PE_bins_weird, t_anal_bins*1000., PE_bins, t_anal_bins*1000.)
-            observable = experiment.detector_matrix @ recoil_spectrum_post_qf # Add in *dPE? which is coincidentally dEnr?
+            recoil_spectrum = isotope["flux_matrix"] @ flux_rebinned # TODO: change flux matrix
+            recoil_spectrum_post_ff = recoil_spectrum * ff_2[:, None]
+            observable = experiment.detector_matrix @ recoil_spectrum_post_ff
 
             # Rescale counts 
-            observable *= isotope["num_atoms"] * pot_per_cm2
+            observable *= isotope["num_atoms"] * pot_per_cm2 # TODO: Change num atoms
 
             # Apply energy efficiency
-            post_efficiency = observable * energy_efficiency[:, None] # TODO: make optional
+            post_efficiency = observable * energy_efficiency[:, None]
+
+            print(np.sum(post_efficiency))
 
             return post_efficiency
 
@@ -98,10 +99,10 @@ def create_observables(flux, experiment, nuisance_params, flavorblind=False) -> 
         
         if flavorblind:
             observables["combined"][1] += calculate(combined_flux.T)
-        
-        e = 0
-        for k in observables.keys():
-            e += np.sum(observables[k][1])
-        print(e)
+    
+    e = 0
+    for flavor in observables.keys():
+        e += np.sum(observables[flavor][1])
+    print("total", e)
 
     return observables
