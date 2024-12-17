@@ -21,7 +21,7 @@ def main():
     # pbglass20 = Experiment("config/pb_glass_20m.json", pb_glass.energy_efficiency, pb_glass.time_efficiency, True, False, False, True)
     # pbglass30 = Experiment("config/pb_glass_30m.json", pb_glass.energy_efficiency, pb_glass.time_efficiency, True, False, False, True)
     # pbglass40 = Experiment("config/pb_glass_40m.json", pb_glass.energy_efficiency, pb_glass.time_efficiency, True, False, False, True)
-    csi_real = Experiment("config/csi.json", csi.energy_efficiency, csi.time_efficiency, False, True, True, False, form_factors.helm)
+    csi_real = Experiment("config/csi.json", csi.energy_efficiency, csi.time_efficiency, False, True, True, False, form_factors.helm, csi.quenching_factor)
 
     # ensemble.add_experiment(pbglass20)
     # ensemble.add_experiment(pbglass30)

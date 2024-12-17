@@ -37,7 +37,9 @@
         "flux_matrix": "data/flux_transfer_matrices/csi_flux_smearing_matrix_unity.npy",
         "flux_matrix_dx": 0.01,
 
-        "detector_matrix": "data/flux_transfer_matrices/csi_quenching_detector_matrix.npy",
+        "light_yield": 13.35, "_light_yield_units": "PE/keV",
+
+        "detector_matrix": "data/flux_transfer_matrices/csi_energy_smearing_matrix.npy",
         "detector_matrix_dx": 0.1,
         "beam_ac_data_file": "data/csi_anc/dataBeamOnAC.txt",
         "beam_c_data_file": "data/csi_anc/dataBeamOnC.txt",
