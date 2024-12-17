@@ -62,7 +62,7 @@ def analysis_bins(observable: dict, experiment, nuisance_params, asimov=None) ->
 
             e_weights = experiment.bkd_dict[bkd]["energy"]
             if "nu_time_offset" in nuisance_params:
-                t_weights = rebin_histogram(experiment.bkd_dict[bkd]["time"][1], experiment.bkd_dict[bkd]["time"][0] + nuisance_params["nu_time_offset"]/1000., t_bin_arr)
+                t_weights = rebin_histogram(experiment.bkd_dict[bkd]["time"][1], experiment.bkd_dict[bkd]["time"][0] + nuisance_params.get(f"{bkd}_time_offset_{experiment.params['name']}")/1000., t_bin_arr)
             else:
                 t_weights = rebin_histogram(experiment.bkd_dict[bkd]["time"][1], experiment.bkd_dict[bkd]["time"][0], t_bin_arr)
 

@@ -61,6 +61,8 @@ def main():
         "ue4": 0, #0.1417,
         "umu4": 0, #0.8583,
         "nu_time_offset": 0,
+        "brn_time_offset_csi": 0,
+        "nin_time_offset_csi": 0,
         "flux": 0, #0.10917781,
         "brn_csi": 0.0,
         "nin_csi": 0.0,
