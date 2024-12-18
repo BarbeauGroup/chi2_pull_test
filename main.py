@@ -46,12 +46,22 @@ def main():
     # ensemble3.add_experiment(pbglass40)
     # # marginalize_mass_uu(ensemble3, [0, 0], np.logspace(-3, 0, num=100, endpoint=True), np.logspace(-1, 1.7, num=20), "output/combined")
 
-    # ensemble4 = Ensemble("config/ensemble.json")
-    # ensemble4.add_experiment(csi_real)
-    # ensemble4.set_nuisance_params(["flux", "nu_time_offset", "brn_csi", "nin_csi", "ssb_csi"])
-    # bounds = Bounds([0, 0, 0, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf], [100, 1, 1, np.inf, np.inf, np.inf, np.inf, np.inf])
-    # res = iminuit.minimize(ensemble4, [0, 0, 0, 0, 100, 0, 0, 0], bounds=bounds)
-    # print(res)
+    ensemble = Ensemble("config/ensemble.json")
+    ensemble.add_experiment(csi_real)
+    ensemble.set_nuisance_params(["flux", 
+                                  "flux_qf_csi",
+                                  "nu_time_offset", 
+                                  "brn_time_offset_csi",
+                                  "nin_time_offset_csi",
+                                  "brn_csi", 
+                                  "nin_csi", 
+                                  "ssb_csi",
+                                  "r_n_csi"])
+    bounds = Bounds([0, 0, 0, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf], 
+                    [100, 1, 1, np.inf, np.inf, np.inf, np.inf, np.inf, np.inf, np.inf, np.inf, np.inf])
+    res = iminuit.minimize(ensemble, [0, 0, 0, 0, 100, 100, 100, 0, 0, 0, 0, 0], bounds=bounds)
+    print(res)
+    return 
     # print(-2 * (ensemble4(res.x) - ensemble4([0, 0, 0, 0, 0, 0, 0, 0])))
     # marginalize_mass_uu(ensemble4, [0, 80, 0, 0, 0], np.logspace(-3, 0, num=100, endpoint=True), np.logspace(-1, 1.7, num=20), "output/real_csi")
 

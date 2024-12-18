@@ -61,8 +61,8 @@ def create_observables(flux, experiment, nuisance_params, flavorblind=False) -> 
         recoil_bins = np.linspace(0, isotope["flux_matrix"].shape[0] * experiment.params["detector"]["flux_matrix_dx"], isotope["flux_matrix"].shape[0])
 
         ff_2 = experiment.form_factor(isotope, recoil_bins, nuisance_params[f"r_n_{experiment.params['name']}"])**2
-        print(isotope["name"])
-        print(ff_2)
+        # print(isotope["name"])
+        # print(ff_2)
 
         def calculate(flux_object):
             # Apply time efficiency to flux object
@@ -84,7 +84,7 @@ def create_observables(flux, experiment, nuisance_params, flavorblind=False) -> 
             # Apply energy efficiency
             post_efficiency = observable * energy_efficiency[:, None]
 
-            print(np.sum(post_efficiency))
+            # print(np.sum(post_efficiency))
 
             return post_efficiency
 
@@ -95,14 +95,14 @@ def create_observables(flux, experiment, nuisance_params, flavorblind=False) -> 
                     combined_flux += flux[flavor][1]
             else:
                 observables[flavor][1] += calculate(flux[flavor][1].T)
-                print(flavor, np.sum(flux[flavor][1]))
+                # print(flavor, np.sum(flux[flavor][1]))
         
         if flavorblind:
             observables["combined"][1] += calculate(combined_flux.T)
     
-    e = 0
-    for flavor in observables.keys():
-        e += np.sum(observables[flavor][1])
-    print("total", e)
+    # e = 0
+    # for flavor in observables.keys():
+    #     e += np.sum(observables[flavor][1])
+    # print("total", e)
 
     return observables

@@ -24,6 +24,7 @@
         ],
         "systematics": {
             "flux": 0.11,
+            "flux_qf_csi": 0.04,
             "brn_csi": 0.25,
             "nin_csi": 0.7,
             "ssb_csi": 0.02,
