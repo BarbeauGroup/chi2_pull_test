@@ -28,7 +28,11 @@
             "brn_csi": 0.25,
             "nin_csi": 0.7,
             "ssb_csi": 0.02,
-            "r_n_csi": 0.05
+            "r_n_csi": 0.05,
+
+            "nu_time_offset": [-250, 250],
+            "brn_time_offset_csi": [-250, 250],
+            "nin_time_offset_csi": [-250, 250]
         },
         "norms": {
             "ssb": 1286,

@@ -23,7 +23,6 @@ def main():
     # pbglass30 = Experiment("config/pb_glass_30m.json", pb_glass.energy_efficiency, pb_glass.time_efficiency, True, False, False, True)
     # pbglass40 = Experiment("config/pb_glass_40m.json", pb_glass.energy_efficiency, pb_glass.time_efficiency, True, False, False, True)
     csi_real = Experiment("config/csi.json", csi.energy_efficiency, csi.time_efficiency, False, True, True, False, form_factors.helm)
-
     # ensemble.add_experiment(pbglass20)
     # ensemble.add_experiment(pbglass30)
     # ensemble.add_experiment(pbglass40)
@@ -64,8 +63,8 @@ def main():
     # res = iminuit.minimize(ensemble, [0, 0, 0, 0, 100, 100, 100, 0, 0, 0, 0, 0], bounds=bounds)
     # print(res)
     x0 = [0, 0, 0, 100, 100, 100, 0, 0, 0, 0]
-    print(evaluate_gridpoint(5, 5, cost=ensemble, x0=x0, sin_bins=np.logspace(-3, 0, num=10, endpoint=True), mass_bins=np.logspace(0, 2, num=10), angle="me"))
-    # feldmancousins(ensemble, [0, 0, 0, 100, 100, 100, 0, 0, 0, 0], np.logspace(-3, 0, num=10, endpoint=True), np.logspace(0, 2, num=10), "me", "output/real_csi")
+    # print(evaluate_gridpoint(5, 5, cost=ensemble, x0=x0, sin_bins=np.logspace(-3, 0, num=10, endpoint=True), mass_bins=np.logspace(0, 2, num=10), angle="me"))
+    feldmancousins(ensemble, [0, 0, 0, 100, 100, 100, 0, 0, 0, 0], np.logspace(-3, 0, num=10, endpoint=True), np.logspace(0, 2, num=10), "me", "output/real_csi")
     return 
     # print(-2 * (ensemble4(res.x) - ensemble4([0, 0, 0, 0, 0, 0, 0, 0])))
     # marginalize_mass_uu(ensemble4, [0, 80, 0, 0, 0], np.logspace(-3, 0, num=100, endpoint=True), np.logspace(-1, 1.7, num=20), "output/real_csi")
