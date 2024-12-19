@@ -64,7 +64,7 @@ def main():
     # print(res)
     x0 = [0, 0, 0, 100, 100, 100, 0, 0, 0, 0]
     # print(evaluate_gridpoint(5, 5, cost=ensemble, x0=x0, sin_bins=np.logspace(-3, 0, num=10, endpoint=True), mass_bins=np.logspace(0, 2, num=10), angle="me"))
-    feldmancousins(ensemble, [0, 0, 0, 100, 100, 100, 0, 0, 0, 0], np.logspace(-3, 0, num=10, endpoint=True), np.logspace(0, 2, num=10), "me", "output/real_csi")
+    feldmancousins(ensemble, [0, 0, 0, 100, 100, 100, 0, 0, 0, 0], np.logspace(-3, 0, num=5, endpoint=True), np.logspace(0, 2, num=5), "ee", "output/real_csi2")
     return 
     # print(-2 * (ensemble4(res.x) - ensemble4([0, 0, 0, 0, 0, 0, 0, 0])))
     # marginalize_mass_uu(ensemble4, [0, 80, 0, 0, 0], np.logspace(-3, 0, num=100, endpoint=True), np.logspace(-1, 1.7, num=20), "output/real_csi")

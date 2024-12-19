@@ -6,6 +6,7 @@ from itertools import product
 from functools import partial
 from tqdm import tqdm
 from scipy.optimize import Bounds
+from utils import istarmap
 
 def evaluate_gridpoint(i, j, /, ensemble, x0, sin_bins, mass_bins, angle):
     sin_2 = sin_bins[i]
@@ -13,27 +14,46 @@ def evaluate_gridpoint(i, j, /, ensemble, x0, sin_bins, mass_bins, angle):
 
     if angle == "ee":
         Ue4_2 = 0.5 * (1 - np.sqrt(1 - sin_2))
-        bounds = None
+
+        bounds_l = np.append([0.], np.full(len(x0[:-1]), -np.inf))
+        bounds_u = np.append([0.5], np.full(len(x0[:-1]), np.inf))
+        bounds = Bounds(bounds_l, bounds_u, keep_feasible=True)
         res = iminuit.minimize(ensemble, x0, (mass, Ue4_2), bounds=bounds)
-        return (i, j, res.fun)
+
+        x_min = res.x
+
+        # Generate predicted histogram given the best fit parameters
+
+        # Calculate n cost functions for the predicted histogram varied Poisson-like
+
+        samples = ensemble.generate_samples(ensemble.nuisance_params, 1000)
+        u_samples = np.random.uniform(0., 0.5, size=1000)
+        costs = []
+        for sample, u_sample in zip(samples, u_samples):
+            cost = ensemble(sample, mass, Ue4_2, u_sample)
+            costs.append(cost)
+
+        return i, j, res.fun, costs
     
     elif angle == "me":
+        # scan over Ue4_2 and calulate Umu4_2 from sin_2
         bounds_l = np.append([sin_2 / 2.], np.full(len(x0[:-1]), -np.inf))
         bounds_u = np.append([0.5], np.full(len(x0[:-1]), np.inf))
         bounds = Bounds(bounds_l, bounds_u, keep_feasible=True)
         res = iminuit.minimize(ensemble, x0, (mass, None, None, sin_2), bounds=bounds)
 
-        samples = ensemble.generate_samples(ensemble.nuisance_params, 2)
-        u_samples = np.random.uniform(sin_2 / 2., 0.5, size=2)
+        samples = ensemble.generate_samples(ensemble.nuisance_params, 1000)
+        u_samples = np.random.uniform(sin_2 / 2., 0.5, size=1000)
+        costs = []
         for sample, u_sample in zip(samples, u_samples):
             cost = ensemble(sample, mass, u_sample, None, sin_2)
-            print(cost)
+            costs.append(cost)
 
         # return (i, j, res.fun)
         # print("mass", mass)
         # print("sin2", sin_2)
         # print("Umu4", sin_2 / (4 * res.x[0]))
-        return res
+        return i, j, res.fun, costs
 
     elif angle == "mm":
         Umu4_2 = 0.5 * (1 - np.sqrt(1 - sin_2))
@@ -52,15 +72,16 @@ def feldmancousins(ensemble, x0, sin_bins, mass_bins, angle: str, fname):
         results = list(tqdm(pool.istarmap(partial(evaluate_gridpoint, ensemble=ensemble, sin_bins=sin_bins, mass_bins=mass_bins, x0=x0, angle=angle), param_grid), total=len(param_grid)))
 
     chi2 = np.full((len(sin_bins), len(mass_bins)), 1e6)
+    costs = np.full((len(sin_bins), len(mass_bins), 1000), 1e6)
 
-    for i, j, val in results:
+    for i, j, val, c in results:
         chi2[i, j] = val
+        costs[i, j] = c
 
         # Monte Carlo Step
-    
-    chi2 = chi2 - np.min(chi2)
 
     np.save(f"{fname}_{angle}_chi2_fc.npy", chi2)
+    np.save(f"{fname}_{angle}_costs_fc.npy", costs)
 
     # At every point run a monte carlo simulation
 

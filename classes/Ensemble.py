@@ -84,10 +84,10 @@ class Ensemble:
             for k in parameters:
                 prior = fit_param_priors.get(k)
                 if hasattr(prior, "__len__"):
-                    print(k, prior)
+                    # print(k, prior)
                     sample.append(np.random.uniform(prior[0], prior[1]))
                 else:
-                    print(k, prior)
+                    # print(k, prior)
                     sample.append(np.random.normal(0, prior))
             samples.append(sample)
         
@@ -153,6 +153,6 @@ class Ensemble:
             else:
                 u2 = sinmue / (4 * u1)
                 
-        print(mass, u1, u2, sinmue)
+        # print(mass, u1, u2, sinmue)
         return self.cost(x, self.flux, self.experiments, self.nuisance_params, mass, u1, u2)
 
