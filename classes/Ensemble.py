@@ -67,6 +67,30 @@ class Ensemble:
         return hist_osc_1d, hist_unosc_1d
         # plot_csi(experiment.params, hist_unosc_1d, hist_osc_1d, alpha)
 
+    def generate_samples(self, parameters, n_samples):
+        fit_param_priors = {}
+
+        for experiment in self.experiments:
+            for k in experiment.params["detector"]["systematics"].keys():
+                if k not in parameters: continue # skip unused nuisance parameters
+                v = fit_param_priors.get(k)
+                if v is not None and v != experiment.params["detector"]["systematics"][k]:
+                    raise ValueError("Mismatch in priors for shared nuisance parameters")
+                fit_param_priors[k] = experiment.params["detector"]["systematics"][k]
+        
+        samples = []
+        for i in range(n_samples):
+            sample = []
+            for k in parameters:
+                prior = fit_param_priors.get(k)
+                if prior is None:
+                    sample.append(np.random.uniform(-np.inf, np.inf))
+                else:
+                    sample.append(np.random.normal(0, prior))
+            samples.append(sample)
+        
+        return samples
+
     # TODO : pull asimov out of cost function loop
     # If there's no time offset, pull create observables out too
     def cost(self, x, flux, experiments, fit_param_keys, mass=None, ue4=None, umu4=None):
@@ -112,14 +136,21 @@ class Ensemble:
 
         return -2 * (ll_stat + ll_sys)
     
-    def __call__(self, x, mass=None, u1=None, u2=None):
-        if mass is None or u1 is None or u2 is None:
-            if mass is not None or u1 is not None or u2 is not None:
-                raise ValueError("If any of mass, u1, or u2 are specified, all must be specified")
+
+    def __call__(self, x, mass=None, u1=None, u2=None, sinmue=None):
+        if mass is None:
             mass = x[0]
-            u1 = x[1]
-            u2 = x[2]
-            x = x[3:]
+            x = x[1:]
+        if u1 is None:
+            u1 = x[0]
+            x = x[1:]
+        if u2 is None:
+            if sinmue is None:
+                u2 = x[0]
+                x = x[1:]
+            else:
+                print(mass, u1, u2, sinmue)
+                u2 = sinmue / (4 * u1)
         
         return self.cost(x, self.flux, self.experiments, self.nuisance_params, mass, u1, u2)
 

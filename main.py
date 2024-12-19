@@ -5,6 +5,7 @@ from transform_functions import csi
 from transform_functions import pb_glass
 
 from minimization.minimization import marginalize_mass_uu
+from minimization.feldmancousins import feldmancousins, evaluate_gridpoint
 from plotting.observables import plot_histograms
 from transform_functions import form_factors
 
@@ -57,10 +58,14 @@ def main():
                                   "nin_csi", 
                                   "ssb_csi",
                                   "r_n_csi"])
-    bounds = Bounds([0, 0, 0, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf], 
-                    [100, 1, 1, np.inf, np.inf, np.inf, np.inf, np.inf, np.inf, np.inf, np.inf, np.inf])
-    res = iminuit.minimize(ensemble, [0, 0, 0, 0, 100, 100, 100, 0, 0, 0, 0, 0], bounds=bounds)
-    print(res)
+    # ensemble.set_nuisance_params([])
+    # bounds = Bounds([0, 0, 0, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf], 
+    #                 [100, 1, 1, np.inf, np.inf, np.inf, np.inf, np.inf, np.inf, np.inf, np.inf, np.inf])
+    # res = iminuit.minimize(ensemble, [0, 0, 0, 0, 100, 100, 100, 0, 0, 0, 0, 0], bounds=bounds)
+    # print(res)
+    x0 = [0, 0, 0, 100, 100, 100, 0, 0, 0, 0]
+    print(evaluate_gridpoint(5, 5, cost=ensemble, x0=x0, sin_bins=np.logspace(-3, 0, num=10, endpoint=True), mass_bins=np.logspace(0, 2, num=10), angle="me"))
+    # feldmancousins(ensemble, [0, 0, 0, 100, 100, 100, 0, 0, 0, 0], np.logspace(-3, 0, num=10, endpoint=True), np.logspace(0, 2, num=10), "me", "output/real_csi")
     return 
     # print(-2 * (ensemble4(res.x) - ensemble4([0, 0, 0, 0, 0, 0, 0, 0])))
     # marginalize_mass_uu(ensemble4, [0, 80, 0, 0, 0], np.logspace(-3, 0, num=100, endpoint=True), np.logspace(-1, 1.7, num=20), "output/real_csi")
