@@ -15,25 +15,22 @@ def evaluate_gridpoint(i, j, /, ensemble, x0, sin_bins, mass_bins, angle):
     if angle == "ee":
         Ue4_2 = 0.5 * (1 - np.sqrt(1 - sin_2))
 
-        bounds_l = np.append([0.], np.full(len(x0[:-1]), -np.inf))
-        bounds_u = np.append([0.5], np.full(len(x0[:-1]), np.inf))
+        bounds_l = np.append([0.], np.full(len(x0[:-1]), -50))
+        bounds_u = np.append([0.25], np.full(len(x0[:-1]), 150))
         bounds = Bounds(bounds_l, bounds_u, keep_feasible=True)
         res = iminuit.minimize(ensemble, x0, (mass, Ue4_2), bounds=bounds)
 
         x_min = res.x
 
         # Generate predicted histogram given the best fit parameters
+        hists = ensemble.analysis_hists(x_min[1:], mass, Ue4_2, x_min[0])
 
         # Calculate n cost functions for the predicted histogram varied Poisson-like
-
-        samples = ensemble.generate_samples(ensemble.nuisance_params, 1000)
-        u_samples = np.random.uniform(0., 0.5, size=1000)
         costs = []
-        for sample, u_sample in zip(samples, u_samples):
-            cost = ensemble(sample, mass, Ue4_2, u_sample)
-            costs.append(cost)
+        for _ in range(1000):
+            costs.append(ensemble.cost(x_min[1:], hists_arr=hists, poisson=True))
 
-        return i, j, res.fun, costs
+        return i, j, res.fun, costs, x_min
     
     elif angle == "me":
         # scan over Ue4_2 and calulate Umu4_2 from sin_2
@@ -73,15 +70,18 @@ def feldmancousins(ensemble, x0, sin_bins, mass_bins, angle: str, fname):
 
     chi2 = np.full((len(sin_bins), len(mass_bins)), 1e6)
     costs = np.full((len(sin_bins), len(mass_bins), 1000), 1e6)
+    xs = np.full((len(sin_bins), len(mass_bins), len(x0)), 0)
 
-    for i, j, val, c in results:
+    for i, j, val, c, x_min in results:
         chi2[i, j] = val
         costs[i, j] = c
+        xs[i, j] = x_min
 
         # Monte Carlo Step
 
     np.save(f"{fname}_{angle}_chi2_fc.npy", chi2)
     np.save(f"{fname}_{angle}_costs_fc.npy", costs)
+    np.save(f"{fname}_{angle}_params_fc.npy", xs)
 
     # At every point run a monte carlo simulation
 

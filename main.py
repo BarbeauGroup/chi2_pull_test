@@ -63,7 +63,7 @@ def main():
     # res = iminuit.minimize(ensemble, [0, 0, 0, 0, 100, 100, 100, 0, 0, 0, 0, 0], bounds=bounds)
     # print(res)
     x0 = [0, 0, 0, 100, 100, 100, 0, 0, 0, 0]
-    # print(evaluate_gridpoint(5, 5, cost=ensemble, x0=x0, sin_bins=np.logspace(-3, 0, num=10, endpoint=True), mass_bins=np.logspace(0, 2, num=10), angle="me"))
+    # print(evaluate_gridpoint(5, 5, ensemble=ensemble, x0=x0, sin_bins=np.logspace(-3, 0, num=10, endpoint=True), mass_bins=np.logspace(0, 2, num=10), angle="ee"))
     feldmancousins(ensemble, [0, 0, 0, 100, 100, 100, 0, 0, 0, 0], np.logspace(-3, 0, num=5, endpoint=True), np.logspace(0, 2, num=5), "ee", "output/real_csi2")
     return 
     # print(-2 * (ensemble4(res.x) - ensemble4([0, 0, 0, 0, 0, 0, 0, 0])))
@@ -71,12 +71,12 @@ def main():
 
     ensemble4 = Ensemble("config/ensemble.json")
     parameters = {
-        "mass": 0, #1.370,
-        "ue4": 0, #0.1417,
-        "umu4": 0, #0.8583,
-        "nu_time_offset": 0,
-        "brn_time_offset_csi": 0,
-        "nin_time_offset_csi": 0,
+        "mass": 100.0, #1.370,
+        "ue4": 0.5, #0.1417,
+        "umu4": 0.0, #0.8583,
+        "nu_time_offset": 199,
+        "brn_time_offset_csi": 100,
+        "nin_time_offset_csi": 100,
         "flux": 0, #0.10917781,
         "brn_csi": 0.0,
         "nin_csi": 0.0,

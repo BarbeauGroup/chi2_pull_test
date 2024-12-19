@@ -39,7 +39,7 @@ def loglike_stat_asimov(histograms_osc: dict, histograms_unosc: dict, nuisance_p
     return loglike 
 
 
-def loglike_stat(histograms: dict, nuisance_params: dict, exp_name: str) -> float:
+def loglike_stat(histograms: dict, nuisance_params: dict, exp_name: str, poisson=False) -> float:
     loglike = 0
 
     # Coincident Data
@@ -61,6 +61,9 @@ def loglike_stat(histograms: dict, nuisance_params: dict, exp_name: str) -> floa
         if key == "neutrinos" or key == "beam_state":
             continue
         predicted += histograms[key] * (1 + nuisance_params.get(f"{key}_{exp_name}", 0))
+
+    if poisson:
+        predicted = 1.0 * np.random.poisson(predicted) # 1.0 * casts to float
 
     with np.errstate(all='raise'):
         try:

@@ -66,6 +66,33 @@ class Ensemble:
 
         return hist_osc_1d, hist_unosc_1d
         # plot_csi(experiment.params, hist_unosc_1d, hist_osc_1d, alpha)
+    
+    def analysis_hists(self,  x, mass=None, ue4=None, umu4=None):
+        fit_params = dict(zip(self.nuisance_params, x))
+        if mass is None:
+            mass = fit_params["mass"]
+        if ue4 is None:
+            ue4 = fit_params["ue4"]
+        if umu4 is None:
+            umu4 = fit_params["umu4"]
+
+        asimov_fit_params = deepcopy(fit_params)
+        for k in asimov_fit_params.keys():
+            asimov_fit_params[k] = 0
+
+        hists = []
+
+        for experiment in self.experiments:
+            osc_params = [experiment.params["detector"]["distance"], mass, ue4, umu4, 0.0]
+
+            oscillated_flux = oscillate_flux(flux=self.flux, oscillation_params=osc_params)
+
+            osc_obs = create_observables(flux=oscillated_flux, experiment=experiment, nuisance_params=fit_params, flavorblind=True)
+            asimov = create_observables(flux=self.flux, experiment=experiment, nuisance_params=asimov_fit_params, flavorblind=True)
+            
+            hists.append(analysis_bins(observable=osc_obs, experiment=experiment, nuisance_params=fit_params, asimov=asimov))
+        
+        return hists
 
     def generate_samples(self, parameters, n_samples):
         fit_param_priors = {}
@@ -95,44 +122,25 @@ class Ensemble:
 
     # TODO : pull asimov out of cost function loop
     # If there's no time offset, pull create observables out too
-    def cost(self, x, flux, experiments, fit_param_keys, mass=None, ue4=None, umu4=None):
+    def cost(self, x, mass=None, ue4=None, umu4=None, /, hists_arr=None, poisson=False):
         """
         fit_param_keys e.g. nu_time_offset
         """
-
-        fit_params = dict(zip(fit_param_keys, x))
-        if mass is None:
-            mass = fit_params["mass"]
-        if ue4 is None:
-            ue4 = fit_params["ue4"]
-        if umu4 is None:
-            umu4 = fit_params["umu4"]
-
-        asimov_fit_params = deepcopy(fit_params)
-        for k in asimov_fit_params.keys():
-            asimov_fit_params[k] = 0
+        fit_param_priors = {}
+        fit_params = dict(zip(self.nuisance_params, x))
+        if hists_arr is None:
+            hists_arr = self.analysis_hists(x, mass, ue4, umu4)
 
         ll_stat = 0
-        fit_param_priors = {}
-
-        for experiment in experiments:
+        for experiment, hists in zip(self.experiments, hists_arr):
             for k in experiment.params["detector"]["systematics"].keys():
-                if k not in fit_param_keys: continue # skip unused nuisance parameters
+                if k not in self.nuisance_params: continue # skip unused nuisance parameters
                 v = fit_param_priors.get(k)
                 if v is not None and v != experiment.params["detector"]["systematics"][k]:
                     raise ValueError("Mismatch in priors for shared nuisance parameters")
                 fit_param_priors[k] = experiment.params["detector"]["systematics"][k]
-
-            osc_params = [experiment.params["detector"]["distance"], mass, ue4, umu4, 0.0]
-
-            oscillated_flux = oscillate_flux(flux=flux, oscillation_params=osc_params)
-
-            osc_obs = create_observables(flux=oscillated_flux, experiment=experiment, nuisance_params=fit_params, flavorblind=True)
-            asimov = create_observables(flux=flux, experiment=experiment, nuisance_params=asimov_fit_params, flavorblind=True)
             
-            hists = analysis_bins(observable=osc_obs, experiment=experiment, nuisance_params=fit_params, asimov=asimov)
-
-            ll_stat += loglike_stat(hists, fit_params, experiment.params["name"])
+            ll_stat += loglike_stat(hists, fit_params, experiment.params["name"], poisson)
             
         ll_sys = loglike_sys(fit_params, fit_param_priors)
 
@@ -154,5 +162,5 @@ class Ensemble:
                 u2 = sinmue / (4 * u1)
                 
         # print(mass, u1, u2, sinmue)
-        return self.cost(x, self.flux, self.experiments, self.nuisance_params, mass, u1, u2)
+        return self.cost(x, mass, u1, u2)
 

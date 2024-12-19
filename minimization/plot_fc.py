@@ -6,6 +6,7 @@ def main():
     grid_mins = np.load("output/real_csi2_ee_chi2_fc.npy")
     grid_samples = np.load("output/real_csi2_ee_costs_fc.npy")
 
+
     # Bins
     sin_bins = np.logspace(-3, 0, num=5, endpoint=True)
     mass_bins = np.logspace(0, 2, num=5)
@@ -18,12 +19,20 @@ def main():
     acceptance = np.full_like(grid_mins, False)
     c = np.full_like(grid_mins, 0.0)
 
+    i, j = 2, 2
+    print(sin_bins[i], mass_bins[j])
+    c_alpha = np.percentile(grid_samples[i, j], 100 * alpha)
+    chi2_i_min = grid_mins[i, j]
+    delta_chi2_c = c_alpha - chi2_i_min
+    delta_chi2_i = chi2_i_min - chi2_g_min
+
     # Plot chi^2 dist for one bin
-    c_alpha = np.percentile(grid_samples[4, 4], 100 * alpha)
     plt.hist(grid_samples[4, 4] -  chi2_g_min, bins=30)
     plt.axvline(c_alpha - chi2_g_min, color='r', label=f"c_alpha = {c_alpha - chi2_g_min}")
-    plt.xlabel("Chi^2")
+    plt.axvline(chi2_i_min - chi2_g_min, color='g', label=f"chi2_i_min = {chi2_i_min - chi2_g_min}")
+    plt.xlabel("Delta Chi^2")
     plt.ylabel("Frequency")
+    plt.legend()
     plt.show()
     return
 
