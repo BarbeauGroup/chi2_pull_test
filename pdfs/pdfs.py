@@ -1,70 +1,53 @@
 import numpy as np
 from scipy.special import gamma
-from scipy.integrate import quad
+from scipy.integrate import dblquad
 import matplotlib.pyplot as plt
 
 import cProfile
 
-def er_spectrum(x):
+def Pee(Enu, L, Ue4_2, deltam_2):
+    return 1 - 4*(Ue4_2 - Ue4_2**2)*np.sin(1.267*deltam_2*L/Enu)**2
+
+def EeeFlux(Enu, L, Ue4_2, deltam_2):
+    mMu = 105.6583755  # MeV
+
+    return (192./mMu) * (Enu/mMu)**2 *(0.5 - Enu/mMu) * Pee(Enu, L, Ue4_2, deltam_2)
+
+def TtoQ(T, M):
+    hbarc_fmMeV = 197.327  # fm MeV
+
+    return np.sqrt(2*M*T + T**2) / hbarc_fmMeV
+
+def rnToR0(rn):
+    s = 0.3  # fm
+    return np.sqrt(5./3. * (rn**2 - 3*s**2))
+
+def j1(x):
+    return (-x*np.cos(x) + np.sin(x))/(x**2)
+
+def helmff(Q, rn):
+    s = 0.3  # fm
+    if Q == 0:
+        return 1
+    return (3*j1(Q*rnToR0(rn))/(Q*rnToR0(rn)))*np.exp(-Q**2 * s**2 / 2)
+
+def F(T, rn, M):
+    return helmff(TtoQ(T, M), rn)
+
+def XSection(Enu, Er):
     # Constants and variables
     Gv = 0.0298 * 55 - 0.5117 * 78
     Ga = 0
     M = 123800.645  # MeV
     GF = 1.16637e-11  # MeV^-2
-    mMu = 105.6583755  # MeV
-    s = 0.3  # fm
     rn = 4.77305  # fm
     a = 0.0749 / 1000
     b = 9.56 * 1000
     hbarc_cmMeV2 = 3.894e-22  # cm^2 MeV^2
-    hbarc_fmMeV = 197.327  # fm MeV
 
-    result = (
-        -(
-            (27 * np.exp(-(s**2 * x * (2 * M + x) / hbarc_fmMeV**2))
-            * GF**2 * hbarc_fmMeV**4 * hbarc_cmMeV2 * M
-            * (
-                -8 * Ga * Gv * x * (
-                    mMu**2 * (mMu - 3 * x)
-                    + 6 * np.sqrt(2) * mMu * x * np.sqrt(M * x)
-                    + 4 * np.sqrt(2) * (M * x)**(3/2)
-                    - 6 * M * x * (mMu + x)
-                )
-                - Gv**2 * (
-                    mMu**4
-                    - 4 * mMu**3 * x
-                    + 12 * mMu**2 * x * (-M + x)
-                    - 4 * M * x**2 * (3 * M - 6 * x + 4 * np.sqrt(2) * np.sqrt(M * x))
-                    + 8 * mMu * x * (
-                        3 * M * x
-                        + 2 * np.sqrt(2) * M * np.sqrt(M * x)
-                        - 3 * np.sqrt(2) * x * np.sqrt(M * x)
-                    )
-                )
-                - Ga**2 * (
-                    mMu**4
-                    - 4 * mMu**3 * x
-                    + 12 * mMu**2 * x * (M + x)
-                    + 4 * M * x**2 * (9 * M + 6 * x - 4 * np.sqrt(2) * np.sqrt(M * x))
-                    - 8 * mMu * x * (
-                        -3 * M * x
-                        + 4 * np.sqrt(2) * M * np.sqrt(M * x)
-                        + 3 * np.sqrt(2) * x * np.sqrt(M * x)
-                    )
-                )
-            )
-            * (
-                np.sqrt(15) * np.sqrt(rn**2 - 3 * s**2) * np.sqrt(x * (2 * M + x))
-                * np.cos((np.sqrt(5/3) * np.sqrt(rn**2 - 3 * s**2) * np.sqrt(x * (2 * M + x))) / hbarc_fmMeV)
-                - 3 * hbarc_fmMeV * np.sin((np.sqrt(5/3) * np.sqrt(rn**2 - 3 * s**2) * np.sqrt(x * (2 * M + x))) / hbarc_fmMeV)
-            )**2
-            )
-        ) / (
-            125 * mMu**4 * np.pi * (rn**2 - 3 * s**2)**3 * x**3 * (2 * M + x)**3
-        )
-    )
+    return (hbarc_cmMeV2 * GF**2 * M / (2*np.pi)) * (F(Er, rn, M)**2) * ( (Gv + Ga)**2 + (Gv - Ga)**2 * (1 - Er/Enu)**2 - (Gv**2 - Ga**2)*M*(Er / Enu**2))
 
-    return result
+
 
 def smear(x, e):
     a = 0.0749 / 1000
@@ -98,8 +81,15 @@ def quenching_factor(Erec):
 def main():
     M = 123800.645  # MeV
     mMu = 105.6583755  # MeV
-    max_recoil_nr = 2*(mMu/2)**2/M
-    print(max_recoil_nr)
+
+    max_nuE = mMu/2.
+    max_recoil_nr = 2*(max_nuE)**2/M
+
+    result = dblquad(lambda Enu,Er: EeeFlux(Enu, 19.3, 0, 0)*XSection(Enu, Er)*smear(10, quenching_factor(Er)), 0, max_recoil_nr, lambda Er: np.sqrt(M*Er/2), lambda Er: max_nuE)
+    print("result: ", result)
+
+
+    return
     result = quad(lambda er: er_spectrum(er) * smear(10, quenching_factor(er)), 0, max_recoil_nr)
     print(result)
 
