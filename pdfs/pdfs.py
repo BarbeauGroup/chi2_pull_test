@@ -5,6 +5,15 @@ from scipy import LowLevelCallable
 from scipy.stats import rv_continuous, expon
 import matplotlib.pyplot as plt
 import os, ctypes
+from itertools import product
+from multiprocessing import Pool
+from tqdm import tqdm
+from functools import partial
+import cProfile
+import sys
+
+sys.path.append('..')
+from utils import istarmap
 
 lib = ctypes.CDLL(os.path.abspath('cfuncs.so'))
 lib.recoil_spectrum.restype = ctypes.c_double
@@ -13,61 +22,6 @@ lib.recoil_spectrum.argtypes = (ctypes.c_int, ctypes.POINTER(ctypes.c_double), c
 lib.recoil_spectrum_int.restype = ctypes.c_double
 lib.recoil_spectrum_int.argtypes = (ctypes.c_int, ctypes.POINTER(ctypes.c_double), ctypes.c_void_p)
 
-import cProfile
-
-def Pee(Enu, L, Ue4_2, deltam_2):
-    return 1 - 4*(Ue4_2 - Ue4_2**2)*np.sin(1.267*deltam_2*L/Enu)**2
-
-def EeeFlux(Enu, L, Ue4_2, deltam_2):
-    mMu = 105.6583755  # MeV
-
-    return (192./mMu) * (Enu/mMu)**2 *(0.5 - Enu/mMu) * Pee(Enu, L, Ue4_2, deltam_2)
-
-def TtoQ(T, M):
-    hbarc_fmMeV = 197.327  # fm MeV
-
-    return np.sqrt(2*M*T + T**2) / hbarc_fmMeV
-
-def rnToR0(rn):
-    s = 0.3  # fm
-    return np.sqrt(5./3. * (rn**2 - 3*s**2))
-
-def j1(x):
-    return (-x*np.cos(x) + np.sin(x))/(x**2)
-
-def helmff(Q, rn):
-    s = 0.3  # fm
-    if Q == 0:
-        return 1
-    return (3*j1(Q*rnToR0(rn))/(Q*rnToR0(rn)))*np.exp(-Q**2 * s**2 / 2)
-
-def F(T, rn, M):
-    return helmff(TtoQ(T, M), rn)
-
-def XSection(Enu, Er):
-    # Constants and variables
-    Gv = 0.0298 * 55 - 0.5117 * 78
-    Ga = 0
-    M = 123800.645  # MeV
-    GF = 1.16637e-11  # MeV^-2
-    rn = 4.77305  # fm
-    a = 0.0749 / 1000
-    b = 9.56 * 1000
-    hbarc_cmMeV2 = 3.894e-22  # cm^2 MeV^2
-
-    return (hbarc_cmMeV2 * GF**2 * M / (2*np.pi)) * (F(Er, rn, M)**2) * ( (Gv + Ga)**2 + (Gv - Ga)**2 * (1 - Er/Enu)**2 - (Gv**2 - Ga**2)*M*(Er / Enu**2))
-
-def smear(x, e):
-    a = 0.0749 / 1000
-    b = 9.56 * 1000
-
-    result = (
-        (a / e * (1 + b * e))**(1 + b * e) / gamma(1 + b * e)
-        * x**(b * e)
-        * np.exp(-a / e * (1 + b * e) * x)
-    )
-
-    return result
 
 def quenching_factor(Erec):
     """
@@ -158,17 +112,27 @@ def get_total_counts(theta):
 
     flux_average_xs = tplquad(func, 0, max_pe, lambda pe: 0, lambda pe: max_recoil_nr, lambda pe,Er: np.sqrt(M*Er/2), lambda pe,Er: max_nuE)[0]
 
-    # flux_average_xs = tplquad(lambda Enu,Er,pe: EeeFlux(Enu, 19.3, theta[0], theta[1])
-    #                                                 * XSection(Enu, Er)
-    #                                                 * smear(pe, quenching_factor(Er)),
-    #                                                 0, max_pe, lambda pe: 0, lambda pe: max_recoil_nr, lambda pe,Er: np.sqrt(M*Er/2), lambda pe,Er: max_nuE)[0]
-
     num_atoms = 4.53e24 # 1kg Cs
     flux = 8.46e14 # nu/cm2/yr (at 20m)
     exposure = 135.0 # kg yr
 
     return flux_average_xs * num_atoms * flux * exposure
 
+def evaluate_gridpoint(i, j, /, data, u, m, n_toy):
+    theta = [u[i], m[j]]
+    nu0 = get_total_counts(theta)
+    _nll0 = nll0(data, theta)
+
+    chi2 = -2 * (_nll0 + nll_poiss(data, nu0))
+
+    delta_nu = np.random.poisson(nu0, n_toy)
+    nll_arr = [_nll0 + nll_poiss(data, nu) for nu in delta_nu]
+
+    chi2s_toys = -2 * np.asarray(nll_arr)
+    chi2_crit = np.percentile(chi2s_toys, 90)
+    chi2_min = np.min(chi2s_toys)
+
+    return i, j, chi2, chi2_crit, chi2_min
 
 def main():
     # True parameters are u_e4^2 = 0.25 and delta m^2 = 1
@@ -182,7 +146,7 @@ def main():
     # print(data)
     
     # Set up a 2d grid to do some FC on
-    u = np.linspace(0, 1, 20)
+    u = np.linspace(0, 0.5, 10)
     m = np.linspace(0, 10, 20)
 
     n_toy = 1000
@@ -191,22 +155,33 @@ def main():
     chi2_mins = 1e6*np.ones((len(u), len(m)))
     chi2_crits = 1e6*np.ones((len(u), len(m)))
 
-    for i in range(len(u)):
-        print(i)
-        for j in range(len(m)):
-            print(j)
-            theta = [u[i], m[j]]
-            nu0 = get_total_counts(theta)
-            _nll0 = nll0(data, theta)
+    param_grid = list(product(range(len(u)), range(len(m))))
 
-            chi2s[i,j] = -2 * (_nll0 + nll_poiss(data, nu0))
+    with Pool() as pool:
+        results = list(tqdm(pool.istarmap(partial(evaluate_gridpoint, 
+                                                  data=data, u=u, m=m, n_toy=n_toy), param_grid), total=len(param_grid)))
+    
+    for i, j, chi2, chi2_crit, chi2_min in results:
+        chi2s[i, j] = chi2
+        chi2_crits[i, j] = chi2_crit
+        chi2_mins[i, j] = chi2_min
 
-            delta_nu = np.random.poisson(nu0, n_toy)
-            nll_arr = [_nll0 + nll_poiss(data, nu) for nu in delta_nu]
+    # for i in range(len(u)):
+    #     print(i)
+    #     for j in range(len(m)):
+    #         print(j)
+    #         theta = [u[i], m[j]]
+    #         nu0 = get_total_counts(theta)
+    #         _nll0 = nll0(data, theta)
 
-            chi2s_toys = -2 * np.asarray(nll_arr)
-            chi2_crits[i,j] = np.percentile(chi2s_toys, 90)
-            chi2_mins[i,j] = np.min(chi2s_toys)
+    #         chi2s[i,j] = -2 * (_nll0 + nll_poiss(data, nu0))
+
+    #         delta_nu = np.random.poisson(nu0, n_toy)
+    #         nll_arr = [_nll0 + nll_poiss(data, nu) for nu in delta_nu]
+
+    #         chi2s_toys = -2 * np.asarray(nll_arr)
+    #         chi2_crits[i,j] = np.percentile(chi2s_toys, 90)
+    #         chi2_mins[i,j] = np.min(chi2s_toys)
 
     global_min = np.min(chi2s)
 
@@ -216,7 +191,7 @@ def main():
             delta_chi2_c = chi2_crits[i,j] - chi2_mins[i,j]
             delta_chi2_i = chi2s[i,j] - global_min
 
-            acceptance[i,j] = delta_chi2_i - delta_chi2_c
+            acceptance[i,j] = delta_chi2_i < delta_chi2_c
 
     
     # Plot the acceptance region
