@@ -1,10 +1,17 @@
 import numpy as np
 from scipy.special import gamma
 from scipy.integrate import dblquad, tplquad
+from scipy import LowLevelCallable
 from scipy.stats import rv_continuous, expon
 import matplotlib.pyplot as plt
+import os, ctypes
 
+lib = ctypes.CDLL(os.path.abspath('cfuncs.so'))
+lib.recoil_spectrum.restype = ctypes.c_double
+lib.recoil_spectrum.argtypes = (ctypes.c_int, ctypes.POINTER(ctypes.c_double), ctypes.c_void_p)
 
+lib.recoil_spectrum_int.restype = ctypes.c_double
+lib.recoil_spectrum_int.argtypes = (ctypes.c_int, ctypes.POINTER(ctypes.c_double), ctypes.c_void_p)
 
 import cProfile
 
@@ -86,10 +93,17 @@ def p(x, theta):
     max_nuE = mMu/2.
     max_recoil_nr = 2*(max_nuE)**2/M
 
-    return dblquad(lambda Enu,Er: EeeFlux(Enu, 19.3, theta[0], theta[1])
-                                                * XSection(Enu, Er)
-                                                * smear(x, quenching_factor(Er)),
-                                                0, max_recoil_nr, lambda Er: np.sqrt(M*Er/2), lambda Er: max_nuE)[0]
+    _theta = (ctypes.c_double*3)(x, theta[0], theta[1])
+    user_data = ctypes.cast(_theta, ctypes.c_void_p)
+
+    func = LowLevelCallable(lib.recoil_spectrum, user_data)
+
+    return dblquad(func, 0, max_recoil_nr, lambda Er: np.sqrt(M*Er/2), lambda Er: max_nuE)[0]
+
+    # return dblquad(lambda Enu,Er: EeeFlux(Enu, 19.3, theta[0], theta[1])
+    #                                             * XSection(Enu, Er)
+    #                                             * smear(x, quenching_factor(Er)),
+    #                                             0, max_recoil_nr, lambda Er: np.sqrt(M*Er/2), lambda Er: max_nuE)[0]
 
 def q(x):
     return expon.pdf(x, scale=10.)
@@ -99,13 +113,22 @@ def sample(size, theta):
     pe_spec = [p(p_, theta) for p_ in pe]
     max_p = np.max(pe_spec)
 
-    xs = np.random.exponential(10, size)
-    cs = np.random.uniform(0, 1, size)
-    k =  11. * max_p
-    p_ = np.asarray([p(x, theta) for x in xs])
-    q_ = np.asarray([q(x) for x in xs])
-    mask = p_ / (k * q_) > cs
-    return xs[mask]
+    out = []
+
+    i = 0
+
+    while len(out) < size:
+        print(i)
+        xs = np.random.exponential(10, size)
+        cs = np.random.uniform(0, 1, size)
+        k =  11. * max_p
+        p_ = np.asarray([p(x, theta) for x in xs])
+        q_ = np.asarray([q(x) for x in xs])
+        mask = p_ / (k * q_) > cs
+        out.extend(xs[mask])
+        i += 1
+    
+    return out[:size]
 
 def nll0(data, theta):
     p_ = np.asarray([p(x, theta) for x in data])
@@ -128,10 +151,17 @@ def get_total_counts(theta):
     light_yield = 13.35 * 1000. # PE/MeV
     max_pe = light_yield * quenching_factor(max_recoil_nr)
 
-    flux_average_xs = tplquad(lambda Enu,Er,pe: EeeFlux(Enu, 19.3, theta[0], theta[1])
-                                                    * XSection(Enu, Er)
-                                                    * smear(pe, quenching_factor(Er)),
-                                                    0, max_pe, lambda pe: 0, lambda pe: max_recoil_nr, lambda pe,Er: np.sqrt(M*Er/2), lambda pe,Er: max_nuE)[0]
+    _theta = (ctypes.c_double*2)(theta[0], theta[1])
+    user_data = ctypes.cast(_theta, ctypes.c_void_p)
+
+    func = LowLevelCallable(lib.recoil_spectrum_int, user_data)
+
+    flux_average_xs = tplquad(func, 0, max_pe, lambda pe: 0, lambda pe: max_recoil_nr, lambda pe,Er: np.sqrt(M*Er/2), lambda pe,Er: max_nuE)[0]
+
+    # flux_average_xs = tplquad(lambda Enu,Er,pe: EeeFlux(Enu, 19.3, theta[0], theta[1])
+    #                                                 * XSection(Enu, Er)
+    #                                                 * smear(pe, quenching_factor(Er)),
+    #                                                 0, max_pe, lambda pe: 0, lambda pe: max_recoil_nr, lambda pe,Er: np.sqrt(M*Er/2), lambda pe,Er: max_nuE)[0]
 
     num_atoms = 4.53e24 # 1kg Cs
     flux = 8.46e14 # nu/cm2/yr (at 20m)
@@ -146,13 +176,14 @@ def main():
     true_m = 1
 
     n_observed = get_total_counts([true_u, true_m])
+    print(n_observed)
     data = sample(int(n_observed), [true_u, true_m])
 
-    print(data)
+    # print(data)
     
     # Set up a 2d grid to do some FC on
-    u = np.linspace(0, 1, 10)
-    m = np.linspace(0, 10, 10)
+    u = np.linspace(0, 1, 20)
+    m = np.linspace(0, 10, 20)
 
     n_toy = 1000
 
@@ -161,7 +192,9 @@ def main():
     chi2_crits = 1e6*np.ones((len(u), len(m)))
 
     for i in range(len(u)):
+        print(i)
         for j in range(len(m)):
+            print(j)
             theta = [u[i], m[j]]
             nu0 = get_total_counts(theta)
             _nll0 = nll0(data, theta)
