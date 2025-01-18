@@ -40,19 +40,39 @@ def quenching_factor(Erec):
 
     return 0.0554628*Erec + 4.30681*np.power(Erec, 2) - 111.707 * np.power(Erec, 3) + 840.384 * np.power(Erec, 4)
 
-def p(x, theta):
+def norm_p(theta):
     M = 123800.645  # MeV
     mMu = 105.6583755  # MeV
 
     max_nuE = mMu/2.
     max_recoil_nr = 2*(max_nuE)**2/M
 
+    light_yield = 13.35 * 1000. # PE/MeV
+    max_pe = light_yield * quenching_factor(max_recoil_nr)
+
+    _theta = (ctypes.c_double*2)(theta[0], theta[1])
+    user_data = ctypes.cast(_theta, ctypes.c_void_p)
+
+    func = LowLevelCallable(lib.recoil_spectrum_int, user_data)
+
+    return tplquad(func, 0, max_pe, lambda pe: 0, lambda pe: max_recoil_nr, lambda pe,Er: np.sqrt(M*Er/2), lambda pe,Er: max_nuE)[0]
+
+def p(x, theta, a=1.):
+    M = 123800.645  # MeV
+    mMu = 105.6583755  # MeV
+
+    max_nuE = mMu/2.
+    max_recoil_nr = 2*(max_nuE)**2/M
+
+    light_yield = 13.35 * 1000. # PE/MeV
+    max_pe = light_yield * quenching_factor(max_recoil_nr)
+
     _theta = (ctypes.c_double*3)(x, theta[0], theta[1])
     user_data = ctypes.cast(_theta, ctypes.c_void_p)
 
     func = LowLevelCallable(lib.recoil_spectrum, user_data)
 
-    return dblquad(func, 0, max_recoil_nr, lambda Er: np.sqrt(M*Er/2), lambda Er: max_nuE)[0]
+    return 1./a * dblquad(func, 0, max_recoil_nr, lambda Er: np.sqrt(M*Er/2), lambda Er: max_nuE)[0]
 
     # return dblquad(lambda Enu,Er: EeeFlux(Enu, 19.3, theta[0], theta[1])
     #                                             * XSection(Enu, Er)
@@ -125,7 +145,8 @@ def evaluate_gridpoint(i, j, /, data, u, m, n_toy):
     theta = [u[i], m[j]]
     nu0 = get_total_counts(theta)
 
-    p_ = np.asarray([p(x, theta) for x in data])
+    a = norm_p(theta)
+    p_ = np.asarray([p(x, theta, a) for x in data])
     chi2 = 2 * (nll_new(get_total_counts(theta), p_))
 
     # _nll0 = nll0(data, theta)
