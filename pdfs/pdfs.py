@@ -95,6 +95,9 @@ def nll_poiss(data, nu):
 def nll(data, theta, nu):
     return nll0(data, theta) + nll_poiss(data, nu)
 
+def nll_new(nu, p_arr):
+    return nu - np.sum(np.log(p_arr*nu))
+
 def get_total_counts(theta):
     M = 123800.645  # MeV
     mMu = 105.6583755  # MeV
@@ -121,16 +124,25 @@ def get_total_counts(theta):
 def evaluate_gridpoint(i, j, /, data, u, m, n_toy):
     theta = [u[i], m[j]]
     nu0 = get_total_counts(theta)
-    _nll0 = nll0(data, theta)
 
-    chi2 = -2 * (_nll0 + nll_poiss(data, nu0))
+    p_ = np.asarray([p(x, theta) for x in data])
+    chi2 = 2 * (nll_new(get_total_counts(theta), p_))
+
+    # _nll0 = nll0(data, theta)
+    # chi2 = 2 * (_nll0 + nll_poiss(data, nu0))
 
     delta_nu = np.random.poisson(nu0, n_toy)
-    nll_arr = [_nll0 + nll_poiss(data, nu) for nu in delta_nu]
+    nll_arr = [nll_new(nu, p_) for nu in delta_nu]
 
-    chi2s_toys = -2 * np.asarray(nll_arr)
+    chi2s_toys = 2 * np.asarray(nll_arr)
     chi2_crit = np.percentile(chi2s_toys, 90)
     chi2_min = np.min(chi2s_toys)
+
+
+    print("\tu: ", u[i], " m: ", m[j])
+    print("\ttotal expected counts: ", nu0)
+    print("\tchi2: ", chi2)
+
 
     return i, j, chi2, chi2_crit, chi2_min
 
@@ -140,10 +152,18 @@ def main():
     true_m = 1
 
     n_observed = get_total_counts([true_u, true_m])
-    print(n_observed)
+    print("data: ", n_observed)
     data = sample(int(n_observed), [true_u, true_m])
 
-    # print(data)
+    r0 = evaluate_gridpoint(0, 0, data=data, u=[0.], m=[0], n_toy=1000)
+    print('\n')
+    r1 = evaluate_gridpoint(0, 0, data=data, u=[0.25], m=[1], n_toy=1000)
+    print('\n')
+    r2 = evaluate_gridpoint(0, 0, data=data, u=[0.5], m=[1], n_toy=1000)
+
+    return
+
+    print(data)
     
     # Set up a 2d grid to do some FC on
     u = np.linspace(0, 0.5, 10)
@@ -192,6 +212,10 @@ def main():
             delta_chi2_i = chi2s[i,j] - global_min
 
             acceptance[i,j] = delta_chi2_i < delta_chi2_c
+
+    min_u_index, min_m_index = np.unravel_index(np.argmin(chi2s), chi2s.shape)
+    print(f"Minimum value of u: {u[min_u_index]}")
+    print(f"Minimum value of m: {m[min_m_index]}")
 
     
     # Plot the acceptance region
